@@ -1,3 +1,8 @@
+# Alternativa para levantar la app fuera de Coolify (VPS a mano, local, otro PaaS).
+#
+# En Coolify usa el build pack "Dockerfile", no este archivo: ahí el volumen,
+# el dominio, el puerto y las variables se configuran desde la interfaz, y el
+# mapeo de puertos de abajo choca con su proxy.
 services:
   nova-ads-studio:
     build:

@@ -91,7 +91,8 @@ Ver [.env.example](.env.example).
 ## Desplegar en Coolify
 
 1. **New Resource → Application → Public/Private Repository**, apuntando a este repo.
-2. Build Pack: **Dockerfile**.
+2. Build Pack: **Dockerfile** (no Docker Compose: el volumen, el puerto y las
+   variables se configuran desde la interfaz de Coolify).
 3. **Environment Variables**:
    - `APP_PASSWORD` → tu contraseña.
    - `SESSION_SECRET` → salida de `openssl rand -hex 32`.
