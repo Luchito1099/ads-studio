@@ -1,0 +1,5 @@
+# Normaliza a LF en el repo: el build corre en Linux (Coolify/Docker).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.db binary
