@@ -19,29 +19,87 @@ export const onUnauthorized = (fn) => {
   return () => listeners.delete(fn);
 };
 
-async function request(method, key, body) {
-  const res = await fetch(`/api/kv?key=${encodeURIComponent(key)}`, {
-    method,
-    credentials: "same-origin",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+class StorageError extends Error {
+  constructor(message, { status = 0, transient = false } = {}) {
+    super(message);
+    this.status = status;
+    this.transient = transient; // vale la pena reintentar
+  }
+}
+
+async function attempt(method, key, body) {
+  let res;
+  try {
+    res = await fetch(`/api/kv?key=${encodeURIComponent(key)}`, {
+      method,
+      credentials: "same-origin",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new StorageError("Sin conexión con el servidor", { transient: true });
+  }
 
   if (res.status === 401) {
     listeners.forEach((fn) => fn());
-    throw new Error("No autenticado");
+    throw new StorageError("No autenticado", { status: 401 });
   }
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Error de almacenamiento (${res.status})`);
+  if (res.status >= 500) {
+    throw new StorageError(`Error del servidor (${res.status})`, { status: res.status, transient: true });
+  }
+  if (!res.ok) throw new StorageError(`Error de almacenamiento (${res.status})`, { status: res.status });
   return res.status === 204 ? null : res.json();
 }
 
+async function request(method, key, body, retries = 0) {
+  for (let i = 0; ; i++) {
+    try {
+      return await attempt(method, key, body);
+    } catch (err) {
+      if (!err.transient || i >= retries) throw err;
+      await new Promise((r) => setTimeout(r, 300 * 2 ** i));
+    }
+  }
+}
+
+/**
+ * Claves cuya lectura falló: no sabemos qué hay en el servidor.
+ *
+ * Importa porque el componente, si no logra leer, asume base vacía y escribe
+ * los datos de ejemplo encima (nova-ads-studio.jsx:564). Con un solo parpadeo
+ * de red eso borraría todo el pipeline. Mientras una clave esté acá,
+ * rechazamos escribirla: preferimos perder una edición a perder la base.
+ * El flag se limpia solo en cuanto una lectura vuelve a funcionar.
+ */
+const unreadable = new Set();
+
 export const serverStorage = {
-  get: (key) => request("GET", key),
+  async get(key) {
+    try {
+      const out = await request("GET", key, null, 3);
+      unreadable.delete(key);
+      return out;
+    } catch (err) {
+      unreadable.add(key);
+      throw err;
+    }
+  },
+
   // El tercer parámetro del API original (`shared`) se ignora: acá todo el
   // almacenamiento es privado del servidor y protegido por la contraseña.
-  set: (key, value) => request("PUT", key, { value: String(value) }),
-  delete: (key) => request("DELETE", key),
+  async set(key, value) {
+    if (unreadable.has(key)) {
+      console.error(
+        `[nova] Escritura de "${key}" bloqueada: la lectura inicial falló y ` +
+          `escribir ahora sobrescribiría los datos del servidor. Recarga la página.`
+      );
+      throw new StorageError("Lectura previa fallida; no se sobrescribe");
+    }
+    return request("PUT", key, { value: String(value) }, 2);
+  },
+
+  delete: (key) => request("DELETE", key, null, 2),
 };
 
 export function installStorage() {
