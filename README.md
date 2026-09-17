@@ -10,7 +10,9 @@ Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes e
 
 La interfaz sigue el prototipo de [docs/prototipo/nova-studio-de-ads.html](docs/prototipo/nova-studio-de-ads.html). Barra lateral por flujo:
 
-- **Crear** · **Ideas de contenido**, **Biblioteca** (anuncios de otras marcas por fuente, colección y marca, con su ID; subir, arrastrar, pegar con Ctrl+V o capturar con la extensión **Nova Swipe**; extracción de guion con transcripción y lectura de texto en pantalla que aísla las letras, filtra por confianza y no inventa texto cuando no hay; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
+- **Crear** · **Ideas de contenido**, **Biblioteca** (anuncios de otras marcas por fuente, colección y marca, con su ID; subir, arrastrar, pegar con Ctrl+V o capturar con la extensión **Nova Swipe**; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
+- **Guion automático** · Todo lo que llega con archivo se extrae solo, de a uno (se apaga en Ajustes): fotogramas, transcripción de la voz y lectura del texto en pantalla. La lectura aísla las letras y filtra por confianza; lo que sale dudoso no se mezcla con el guion, queda aparte como “texto en pantalla ilegible · ver lo leído” y se puede aceptar o borrar. Si el lector de texto falla, igual se guarda la voz.
+- **Ficha del anuncio** · Guion en modo leer o editar con el hook arriba y sus estadísticas (duración, tramos, palabras por minuto, textos legibles), **storyboard** en 3, 4 o 6 columnas que se copia o se descarga como imagen, señal de días activo, clasificación por chips con sugerencias, copy del anuncio (primera línea como hook, título, descripción, botón y a dónde lleva) y origen con ID y enlace.
 - **Producir** · **Pipeline** Idea → Guion → Producción → Lanzado → Testing → Resultado. Cada pieza tiene guion por bloques, creativos y copy, y resultados. El resultado (Ganador / Perdedor / TBD) lo decide el CPA real contra el tope al llegar a la muestra mínima.
 - **Lanzar** · **Embudo**: pizarra TOFU / MOFU / BOFU con objetivo y públicos por etapa.
 - **Medir** · **Análisis 80/20**, **Fatiga** (motor `MotorFatiga` del predictor) y **Tracker** de CPA real.
@@ -79,7 +81,7 @@ Extensión de Chrome ([extension/](extension)) que guarda anuncios en la Bibliot
 - **Botón «Guardar» sobre el contenido**: aparece al pasar el mouse por cualquier video o imagen y lo envía con un clic (se puede desactivar en las opciones).
 - **Clic derecho → Guardar en Nova Studio** sobre un anuncio, video, imagen o enlace.
 - **Ícono de la extensión**: muestra el contenido principal de la página ya elegido, con marca e ID; producto, fuente, colección y otros archivos son opcionales.
-- **ID + marca automáticos**: Biblioteca de Meta (ID de la biblioteca, anunciante, fecha y texto), TikTok (ID del video y @cuenta), Instagram (código del post o reel y @cuenta), Facebook (ID del video o post y página) y YouTube (ID y canal).
+- **ID + marca automáticos**: Biblioteca de Meta (ID de la biblioteca, anunciante, fecha, texto, título, descripción, botón y a dónde lleva), TikTok (ID del video y @cuenta), Instagram (código del post o reel y @cuenta), Facebook (ID del video o post y página) y YouTube (ID y canal).
 - **TikTok**: el video se obtiene de los datos de la página del video y se descarga con el `Referer` que exige TikTok (regla de `declarativeNetRequest` solo para las descargas de la extensión). Instagram y Facebook, que reproducen por partes, se toman del último video descargado por la página.
 
 Se descarga desde **Biblioteca → Descargar extensión** (`/api/swipe/extension.zip?config=1`), ya con la dirección del Studio y la clave. Instalación: `chrome://extensions` → Modo de desarrollador → Cargar descomprimida. Para Chrome Web Store hay una versión sin clave.

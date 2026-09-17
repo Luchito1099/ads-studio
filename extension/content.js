@@ -74,6 +74,36 @@
     return enlace || "";
   }
 
+  // Ficha comercial del anuncio: el botón, a dónde lleva, y el título y la
+  // descripción que van pegados al botón. Si no se reconoce, se deja vacío.
+  const RE_CTA = /^(comprar ahora|comprar|enviar mensaje|enviar mensaje de whatsapp|enviar wasap|más información|mas informacion|obtener oferta|registrarte|reservar|reservar ahora|solicitar ahora|ver más|ver mas|ordenar ahora|pedir ahora|contactarnos|llamar ahora|descargar|suscribirte|shop now|learn more|send message|order now|sign up|get offer|book now|contact us|download|subscribe|whatsapp)$/i;
+  function copiaMeta(card) {
+    const out = { titulo: "", descripcion: "", boton: "", destino: "" };
+    if (!card) return out;
+    const salida = [...card.querySelectorAll("a[href]")].map((a) => a.getAttribute("href") || "")
+      .map((h) => { const m = h.match(/[?&]u=([^&]+)/); return m ? decodeURIComponent(m[1]) : h; })
+      .find((h) => /^https?:/i.test(h) && !/facebook\.com|fbcdn\.net/i.test(h));
+    if (salida) {
+      try {
+        const host = new URL(salida).hostname.replace(/^www\./, "");
+        out.destino = /wa\.me|whatsapp/i.test(salida) ? "WhatsApp" : /m\.me|messenger/i.test(salida) ? "Messenger" : host;
+      } catch {}
+    }
+    const btn = [...card.querySelectorAll('div[role="button"],a[role="button"],span')]
+      .find((e) => { const t = limpio(e.innerText); return t && t.length < 45 && RE_CTA.test(t); });
+    if (!btn) return out;
+    out.boton = limpio(btn.innerText);
+    const caja = btn.closest("div")?.parentElement?.parentElement || btn.parentElement;
+    const lineas = (caja.innerText || "").split(String.fromCharCode(10)).map(limpio)
+      .filter((t) => t && t !== out.boton && t.length < 120 && !RE_ID.test(t) && !RE_DESDE.test(t) && !RE_PATROCINADO.test(t))
+      .filter((t) => !/^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(t));
+    if (lineas.length) {
+      out.titulo = lineas.length > 1 ? lineas[lineas.length - 2] : lineas[0];
+      if (lineas.length > 1) out.descripcion = lineas[lineas.length - 1];
+    }
+    return out;
+  }
+
   function infoMeta(el) {
     const card = el ? tarjetaMeta(el) : null;
     const pagina = new URLSearchParams(location.search).get("id") || "";
@@ -89,6 +119,7 @@
       brand: marcaMeta(card),
       adText: bloques[0] || "",
       startedAt: limpio((t.match(RE_DESDE) || [])[1]),
+      ...copiaMeta(card),
       link: adId ? `https://www.facebook.com/ads/library/?id=${adId}` : location.href,
       contenedor: card,
     };

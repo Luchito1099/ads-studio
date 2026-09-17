@@ -31,6 +31,11 @@ const IC={
  text:'<path d="M4 7V5h16v2M9 19h6M12 5v14"/>',
  cards:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M8 2h12a2 2 0 0 1 2 2v12"/>',
  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+ play:'<path d="M7 4l12 8-12 8z"/>',
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
+ check:'<path d="M5 12l5 5L20 7"/>',
+ down:'<path d="M12 4v12M6 10l6 6 6-6M4 20h16"/>',
  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>'
 };
 const ic=(n,cls='')=>`<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
@@ -166,6 +171,7 @@ async function ingest(files,{toPiece=null}={}){
   if(toPiece){ toPiece.mediaIds.push(...ids); UI.modalTab='creativos'; save(); renderModal(); toast(ids.length>1?`${ids.length} archivos agregados a la pieza`:'Archivo agregado a la pieza'); }
   else{
     for(const id of ids){ const m=thumbCache[id]; S.refs.unshift({id:uid('r'),productId:PID(),mediaId:id,kind:m.kind,format:m.kind==='image'?'imagen':'',brand:'',source:'Sin fuente',conceptId:'',angleId:'',stage:'',notes:'',link:'',created:Date.now()}); }
+    S.refs.slice(0,ids.length).forEach(r=>autoExtraer(ensureRef(r)));
     save(); UI.view='referencias'; render(); if(ids.length===1)openRef(S.refs[0].id,'datos'); toast(ids.length>1?`${ids.length} referencias guardadas`:'Referencia guardada');
   }
 }
@@ -232,8 +238,27 @@ const fmtIcon=f=>{const x=FORMATS.find(a=>a[0]===f)||FORMATS[0];return `<span cl
 const JOBS={}; const LIBS={whisper:null,ocr:null};
 const REF_SOURCES=['Biblioteca de Meta','TikTok Creative Center','Facebook','Instagram','TikTok','YouTube','Pinterest','Tienda de la competencia','Grabación propia','Sin fuente','Otro enlace'];
 const SOURCE_LEGADO={'Subido':'Sin fuente','Biblioteca de anuncios':'Biblioteca de Meta','Enlace':'Otro enlace','Propio':'Grabación propia'};
-function ensureRef(r){ if(!r.extract)r.extract={status:'',frames:[],transcript:[],ocr:[],blocks:[],analysis:null}; if(r.rating==null)r.rating=0; if(!r.format)r.format=r.kind==='image'?'imagen':''; if(r.collection==null)r.collection=''; if(SOURCE_LEGADO[r.source])r.source=SOURCE_LEGADO[r.source]; if(!REF_SOURCES.includes(r.source))r.source=r.link?linkSource(r.link):'Sin fuente'; if(r.fav==null)r.fav=false; return r; }
+function ensureRef(r){ if(!r.extract)r.extract={status:'',frames:[],transcript:[],ocr:[],blocks:[],analysis:null}; if(r.rating==null)r.rating=0; if(r.startedAt==null)r.startedAt=''; if(r.versiones==null)r.versiones=0; if(!r.adCopy)r.adCopy={titulo:'',descripcion:'',boton:'',destino:''}; if(!r.format)r.format=r.kind==='image'?'imagen':''; if(r.collection==null)r.collection=''; if(SOURCE_LEGADO[r.source])r.source=SOURCE_LEGADO[r.source]; if(!REF_SOURCES.includes(r.source))r.source=r.link?linkSource(r.link):'Sin fuente'; if(r.fav==null)r.fav=false; return r; }
 const tstr=s=>{s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
+/* Fechas que llegan de la Biblioteca de Meta: "25 de junio de 2026", "Jun 25, 2026"… */
+const MESES3=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaISO(txt){
+  const t=String(txt||'').trim(); if(!t)return '';
+  const iso=t.match(/([0-9]{4})-([0-9]{2})-([0-9]{2})/); if(iso)return iso[0];
+  const n=normTxt(t);
+  const es=n.match(/([0-9]{1,2}) de ([a-z]+)[a-z ]*?([0-9]{4})/)||n.match(/([0-9]{1,2}) ([a-z]{3,}) ([0-9]{4})/);
+  if(es){ const p=es[2].slice(0,3)==='set'?'sep':es[2].slice(0,3); const m=MESES3.indexOf(p);
+    if(m>=0)return `${es[3]}-${String(m+1).padStart(2,'0')}-${es[1].padStart(2,'0')}`; }
+  const d=new Date(t); return isNaN(d)?'':d.toISOString().slice(0,10);
+}
+const diasActivo=r=>{ const f=fechaISO(r.startedAt); if(!f)return null; const d=Math.floor((Date.now()-Date.parse(f+'T00:00:00'))/86400000); return d>=0?d:null; };
+function senalDias(d){
+  if(d==null)return null;
+  if(d<7)return {tono:'nuevo',texto:`Recién sale: lleva ${d} día${d===1?'':'s'}. Todavía no dice si funciona.`};
+  if(d<30)return {tono:'medio',texto:`Lleva ${d} días activo: sobrevivió a la prueba, algo está funcionando.`};
+  if(d<60)return {tono:'bien',texto:`Lleva ${d} días activo: es un anuncio que ya probó su rentabilidad.`};
+  return {tono:'bien',texto:`Lleva ${d} días activo: casi seguro le está vendiendo a la marca.`};
+}
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('No se pudo cargar '+src.split('/npm/')[1]));document.head.appendChild(s);});}
 function setJob(id,step,pct,msg){ JOBS[id]={step,pct,msg}; document.querySelectorAll(`[data-prog="${id}"]`).forEach(el=>{el.hidden=false;el.querySelector('span').textContent=msg;el.querySelector('i').style.width=Math.round(pct)+'%';}); }
 function endJob(id){ delete JOBS[id]; }
@@ -320,38 +345,45 @@ function palabraOCR(t){
   if(letras.length>=5&&!/[aeiouáéíóú][^aeiouáéíóú]|[^aeiouáéíóú][aeiouáéíóú]/i.test(letras))return false;
   return true;
 }
+/* Devuelve { texto, dudoso }: lo que se leyó con confianza y, aparte, lo que se
+ * leyó mal. Lo dudoso no se mezcla con el guion, pero se guarda para poder
+ * mostrar "texto en pantalla ilegible · ver lo leído" en vez de dejarlo en blanco. */
 async function leerTextoPantalla(worker,fuente){
-  const hallado=[];
+  const hallado=[],turbio=[];
   for(const lienzo of prepararOCR(fuente)){
     const {data}=await worker.recognize(lienzo);
     const lineas=data.lines||(data.blocks||[]).flatMap(b=>(b.paragraphs||[]).flatMap(p=>p.lines||[]));
     for(const l of lineas){
       const todas=(l.words||[]).filter(w=>w.text.trim());
-      if(!todas.length||l.confidence<70)continue;
+      if(!todas.length)continue;
+      const crudo=todas.map(w=>w.text.trim()).join(' ');
       const buenas=todas.filter(w=>w.confidence>=65&&palabraOCR(w.text));
       // Se toleran palabras dudosas sueltas (fotogramas de transición) si queda una frase clara.
-      if(buenas.length/todas.length<0.6||(buenas.length<2&&soloLetras(buenas[0]?.text||'').length<5))continue;
-      if(!buenas.some(w=>soloLetras(w.text).length>=3))continue;
-      if(buenas.filter(w=>soloLetras(w.text).length<=2).length>buenas.length/2)continue;
-      if(buenas.reduce((s,w)=>s+soloLetras(w.text).length,0)<4)continue;
-      hallado.push({texto:buenas.map(w=>w.text.trim()).join(' '),y:l.bbox?.y0??0});
+      const claro=l.confidence>=70
+        &&buenas.length/todas.length>=0.6
+        &&!(buenas.length<2&&soloLetras(buenas[0]?.text||'').length<5)
+        &&buenas.some(w=>soloLetras(w.text).length>=3)
+        &&buenas.filter(w=>soloLetras(w.text).length<=2).length<=buenas.length/2
+        &&buenas.reduce((s,w)=>s+soloLetras(w.text).length,0)>=4;
+      if(claro)hallado.push({texto:buenas.map(w=>w.text.trim()).join(' '),y:l.bbox?.y0??0});
+      else if(soloLetras(crudo).length>=4)turbio.push({texto:crudo,y:l.bbox?.y0??0});
     }
   }
-  const unico=[];
-  hallado.sort((a,b)=>a.y-b.y).forEach(h=>{if(!unico.some(u=>similar(u.texto,h.texto)>.6))unico.push(h);});
-  return unico.map(u=>u.texto).join(' / ');
+  const juntar=arr=>{const u=[];arr.sort((a,b)=>a.y-b.y).forEach(h=>{if(!u.some(x=>similar(x.texto,h.texto)>.6))u.push(h);});return u.map(x=>x.texto).join(' / ');};
+  return {texto:juntar(hallado),dudoso:juntar(turbio).slice(0,280)};
 }
 function cleanOCR(text){ return String(text||'').split('\n').map(l=>l.trim()).filter(l=>{const w=l.split(/\s+/).filter(x=>/[A-Za-zÁÉÍÓÚÑáéíóúñ]{2,}/.test(x));return w.length>=1&&l.length>=3&&w.join('').length/l.replace(/\s/g,'').length>.6;}).join(' ').trim(); }
 function buildBlocks(ref){
   const ex=ref.extract, dur=ex.duration||0; const tr=ex.transcript||[], oc=ex.ocr||[];
   const frameAt=t=>{let best=0;(ex.frames||[]).forEach((f,i)=>{if(Math.abs(f.t-t)<Math.abs(ex.frames[best].t-t))best=i;});return ex.frames.length?best:-1;};
-  const ocrIn=(a,b)=>[...new Set(oc.filter(o=>o.t>=a&&o.t<b).map(o=>o.text))].join(' / ');
+  const ocrIn=(a,b)=>[...new Set(oc.filter(o=>o.t>=a&&o.t<b&&o.text).map(o=>o.text))].join(' / ');
+  const ilegIn=(a,b)=>[...new Set(oc.filter(o=>o.t>=a&&o.t<b&&!o.text&&o.dudoso).map(o=>o.dudoso))].join(' / ');
   const segs=[];
   if(tr.length){ let cur=null; tr.forEach(c=>{ if(!cur)cur={start:c.start,end:c.end,voz:c.text}; else {cur.end=c.end;cur.voz+=' '+c.text;}
       if(cur.end-cur.start>=3){segs.push(cur);cur=null;} }); if(cur)segs.push(cur); }
   else if(oc.length){ oc.forEach((o,i)=>{const end=i+1<oc.length?oc[i+1].t:dur;segs.push({start:o.t,end,voz:''});}); }
   else{ for(let t=0;t<Math.max(dur,1);t+=3)segs.push({start:t,end:Math.min(dur,t+3),voz:''}); }
-  return segs.map((s,i)=>({id:uid('b'),tipo:i===0?'Hook':(i===segs.length-1&&segs.length>2?'CTA':''),tiempo:`${tstr(s.start)}–${tstr(s.end)}`,start:s.start,voz:s.voz.trim(),texto:ocrIn(s.start,Math.max(s.end,s.start+.01)),visual:'',frame:frameAt(s.start)}));
+  return segs.map((s,i)=>({id:uid('b'),tipo:i===0?'Hook':(i===segs.length-1&&segs.length>2?'CTA':''),tiempo:`${tstr(s.start)}–${tstr(s.end)}`,start:s.start,end:s.end,voz:s.voz.trim(),texto:ocrIn(s.start,Math.max(s.end,s.start+.01)),ilegible:ilegIn(s.start,Math.max(s.end,s.start+.01)),visual:'',frame:frameAt(s.start)}));
 }
 async function runExtract(ref,{voz=true,texto=true}={}){
   ensureRef(ref); if(JOBS[ref.id])return; if(!ref.mediaId){toast('Adjunta primero el archivo de este anuncio');return;}
@@ -362,9 +394,9 @@ async function runExtract(ref,{voz=true,texto=true}={}){
       setJob(ref.id,'ocr',10,'Leyendo texto de la imagen…');
       const img=await createImageBitmap(m.blob); const c=document.createElement('canvas'); c.width=Math.min(1200,img.width); c.height=Math.round(img.height*c.width/img.width); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
       const w=await loadOCR(); setJob(ref.id,'ocr',50,'Leyendo texto de la imagen…');
-      const txt=await leerTextoPantalla(w,c);
-      ex.frames=[{t:0,thumb:thumbCache[ref.mediaId]?.thumb||''}]; ex.ocr=txt?[{t:0,text:txt}]:[]; ex.transcript=[]; ex.duration=0;
-      ex.blocks=[{id:uid('b'),tipo:'Hook',tiempo:'',start:0,voz:'',texto:txt,visual:'',frame:0}];
+      const {texto:txt,dudoso}=await leerTextoPantalla(w,c);
+      ex.frames=[{t:0,thumb:thumbCache[ref.mediaId]?.thumb||''}]; ex.ocr=(txt||dudoso)?[{t:0,text:txt,dudoso}]:[]; ex.transcript=[]; ex.duration=0;
+      ex.blocks=[{id:uid('b'),tipo:'Hook',tiempo:'',start:0,voz:'',texto:txt,ilegible:txt?'':dudoso,visual:'',frame:0}];
     }else{
       setJob(ref.id,'frames',2,'Sacando fotogramas…');
       const {frames,duration}=await captureFrames(m.blob,p=>setJob(ref.id,'frames',2+p*23,`Sacando fotogramas… ${Math.round(p*100)}%`));
@@ -381,19 +413,26 @@ async function runExtract(ref,{voz=true,texto=true}={}){
         }
       }
       ex.ocr=[];
+      // Si el lector de texto no carga o falla a medias, igual se guarda la voz.
       if(texto){
+       try{
         const w=await loadOCR(); let prev='', ultimoOCR=-9;
         for(let i=0;i<frames.length;i++){
           setJob(ref.id,'ocr',62+36*(i/frames.length),`Leyendo texto en pantalla… ${i+1}/${frames.length}`);
           if(duration>60&&i>0&&frames[i].t-ultimoOCR<1.5)continue; ultimoOCR=frames[i].t;
-          const txt=await leerTextoPantalla(w,frames[i].canvas);
-          if(!txt){prev='';continue;}
-          const ult=ex.ocr[ex.ocr.length-1];
+          const {texto:txt,dudoso}=await leerTextoPantalla(w,frames[i].canvas);
+          if(!txt){
+            const antes=ex.ocr[ex.ocr.length-1];
+            if(dudoso&&!(antes&&!antes.text&&similar(dudoso,antes.dudoso)>=.5))ex.ocr.push({t:frames[i].t,text:'',dudoso});
+            prev='';continue;
+          }
+          const ult=[...ex.ocr].reverse().find(o=>o.text);
           // Mismo texto que el fotograma anterior: se queda la lectura más completa.
           if(prev&&ult&&similar(txt,ult.text)>=.5){ if(txt.length>ult.text.length)ult.text=txt; }
           else ex.ocr.push({t:frames[i].t,text:txt});
           prev=txt;
         }
+       }catch(err){ console.warn('OCR',err); toast('No se pudo leer el texto en pantalla: se guarda el resto del guion'); }
       }
       setJob(ref.id,'build',99,'Armando el guion…');
       ex.blocks=buildBlocks(ref);
@@ -402,6 +441,30 @@ async function runExtract(ref,{voz=true,texto=true}={}){
     save(); toast('Guion extraído');
   }catch(err){ console.error(err); ex.status='error'; ex.error=err.message; save(); toast('No se pudo extraer: '+err.message); }
   finally{ endJob(ref.id); if(UI.view==='referencias')render(); if(UI.refOpen===ref.id){ if(ex.status==='listo')UI.refTab='guion'; renderRefModal(); } }
+}
+
+/* ---- extracción automática ----
+ * Lo que llega con archivo (Nova Swipe, arrastrado o adjuntado) se extrae solo:
+ * de a uno, para no saturar el navegador. Se apaga desde Ajustes. */
+const COLA_AUTO=[]; let colaCorriendo=false;
+function autoExtraer(r){
+  if(!r||!r.mediaId||r.kind==='link')return;
+  if(S.settings&&S.settings.autoExtraer===false)return;
+  ensureRef(r); const ex=r.extract;
+  if(ex.status==='listo'||ex.status==='procesando'||JOBS[r.id])return;
+  if((ex.intentos||0)>=2||COLA_AUTO.includes(r.id))return;
+  COLA_AUTO.push(r.id); correrColaAuto();
+}
+async function correrColaAuto(){
+  if(colaCorriendo)return; colaCorriendo=true;
+  try{
+    while(COLA_AUTO.length){
+      const r=byId(S.refs,COLA_AUTO.shift()); if(!r)continue;
+      ensureRef(r); if(r.extract.status==='listo'||JOBS[r.id])continue;
+      r.extract.intentos=(r.extract.intentos||0)+1;
+      await runExtract(r,{voz:r.kind!=='image',texto:true});
+    }
+  }finally{ colaCorriendo=false; }
 }
 
 /* ---- fuentes, colecciones y marcas ---- */
@@ -646,9 +709,14 @@ async function recibirSwipe(it){
       mediaId=it.mediaId;
     }
   }
-  const notas=[it.notes,it.startedAt?`Activo desde: ${it.startedAt}`:''].filter(Boolean).join('\n');
-  S.refs.unshift(ensureRef({id:uid('r'),swipeId:it.id,productId,mediaId,kind,format,brand:it.brand||'',source:SOURCE_INFO[it.source]?it.source:linkSource(it.link||it.pageUrl||''),
-    conceptId:'',angleId:'',stage:'',notes:notas,link:it.link||it.pageUrl||'',adText:it.adText||'',adId:it.adId||'',created:Date.parse(it.capturedAt)||Date.now(),rating:0,fav:false,collection:it.collection||''}));
+  const inicio=fechaISO(it.startedAt);
+  const notas=[it.notes,!inicio&&it.startedAt?`Activo desde: ${it.startedAt}`:''].filter(Boolean).join(String.fromCharCode(10));
+  const nuevo=ensureRef({id:uid('r'),swipeId:it.id,productId,mediaId,kind,format,brand:it.brand||'',source:SOURCE_INFO[it.source]?it.source:linkSource(it.link||it.pageUrl||''),
+    conceptId:'',angleId:'',stage:'',notes:notas,link:it.link||it.pageUrl||'',adText:it.adText||'',adId:it.adId||'',startedAt:inicio,
+    adCopy:{titulo:it.titulo||'',descripcion:it.descripcion||'',boton:it.boton||'',destino:it.destino||''},
+    created:Date.parse(it.capturedAt)||Date.now(),rating:0,fav:false,collection:it.collection||''});
+  S.refs.unshift(nuevo);
+  autoExtraer(nuevo);
 }
 setInterval(traerBandeja,15000);
 window.addEventListener('focus',()=>traerBandeja());
@@ -710,6 +778,132 @@ function pieceFromRef(r,useAdapt=false){
   if(useAdapt&&a?.adaptacion?.hook&&p.script.blocks[0]){ if(p.format==='video')p.script.blocks[0].voz=a.adaptacion.hook; else p.script.blocks[0].texto=a.adaptacion.hook; }
   save(); closeRef(); openModal(p.id,'guion');
 }
+/* Sugerencias a partir del guion extraído y del copy: son un atajo, no un
+ * automatismo. Solo se aplican si el usuario toca el chip. */
+function sugerencias(r){
+  const ex=r.extract||{};
+  const t=normTxt([(ex.blocks||[]).map(b=>`${b.voz||''} ${b.texto||''}`).join(' '),r.adText||''].join(' '));
+  if(!t)return {stage:'',concepto:''};
+  const tiene=(...ws)=>ws.some(w=>t.includes(w));
+  let stage='';
+  if(tiene('compra','pide','pedido','oferta','descuento','ultimas unidades','promocion','precio','solo hoy','contra entrega','whatsapp','envio gratis','link','clic aqui'))stage='BOFU';
+  else if(tiene('probe','probo','mi mama','resultados','despues de','recomiendo','comprobado','me funciono','testimonio','reseña'))stage='MOFU';
+  else stage='TOFU';
+  let concepto='';
+  if(tiene('dolor','cansado','cansada','sufr','molestia','no aguant','problema'))concepto='Problema → Solución';
+  else if(tiene('probe','probo','mi mama','me compre','les cuento','testimonio'))concepto='Testimonio';
+  else if(tiene('antes','despues'))concepto='Antes y después';
+  else if(tiene('como usar','paso a paso','tutorial','asi se','se coloca'))concepto='Demostración';
+  const yaCon=concepto&&S.concepts.some(c=>c.id===r.conceptId&&normTxt(c.name)===normTxt(concepto));
+  return {stage:stage===r.stage?'':stage,concepto:yaCon?'':concepto};
+}
+function aplicarConcepto(r,nombre){
+  let c=S.concepts.find(x=>normTxt(x.name)===normTxt(nombre))||S.concepts.find(x=>normTxt(x.name).startsWith(normTxt(nombre).slice(0,8)));
+  if(!c){c={id:uid('c'),name:nombre};S.concepts.push(c);}
+  r.conceptId=c.id;
+}
+/* ---- storyboard: la tira de escenas como imagen para compartir ---- */
+function sbCaption(r,i){
+  const b=(r.extract.blocks||[]).find(x=>x.frame===i);
+  return b?{voz:b.voz||'',texto:b.texto||'',tipo:b.tipo||''}:{voz:'',texto:'',tipo:''};
+}
+function openStoryboard(r){
+  ensureRef(r);
+  if(!r.extract.frames||r.extract.frames.length<2)return toast('Este anuncio todavía no tiene fotogramas');
+  if(!UI.sb)UI.sb={cols:4,voz:true,texto:true,off:[]};
+  renderStoryboard(r);
+}
+function renderStoryboard(r){
+  const ex=r.extract,sb=UI.sb;
+  $('#sbov')?.remove();
+  const dentro=i=>!sb.off.includes(i);
+  const total=ex.frames.length,incluidas=ex.frames.filter((f,i)=>dentro(i)).length;
+  const ov=document.createElement('div');ov.className='ov';ov.id='sbov';
+  ov.innerHTML=`<div class="modal sbmodal" role="dialog" aria-modal="true" aria-label="Storyboard">
+    <div class="mh"><div style="min-width:0"><b>Storyboard · ${esc(r.brand||'Referencia')}</b>
+      <div class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''} · ${incluidas} de ${total} escenas en la captura</div></div>
+      <button class="btn ghost sm" id="sbx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
+    <div class="sbbar">
+      <div class="seg sm">${[3,4,6].map(c=>`<button data-cols="${c}" class="${sb.cols===c?'on':''}">${c} columnas</button>`).join('')}</div>
+      <label class="ck"><input type="checkbox" id="sbv" ${sb.voz?'checked':''}> Voz</label>
+      <label class="ck"><input type="checkbox" id="sbt" ${sb.texto?'checked':''}> Texto en pantalla</label>
+      <button class="lnk" id="sball">Incluir todas</button>
+      <span class="hint">Toca una escena para quitarla de la captura</span>
+      <span style="margin-left:auto;display:flex;gap:6px"><button class="btn ghost sm" id="sbcopy">${ic('copy','sm')}Copiar imagen</button><button class="btn sm" id="sbdl">${ic('down','sm')}Guardar captura</button></span>
+    </div>
+    <div class="sbgrid" style="grid-template-columns:repeat(${sb.cols},minmax(0,1fr))">
+      ${ex.frames.map((f,i)=>{const c=sbCaption(r,i);return `<div class="sbc ${dentro(i)?'':'off'}" data-sc="${i}" role="button" tabindex="0" aria-pressed="${dentro(i)}">
+        <div class="sbimg"><img src="${f.thumb}" alt="Escena ${i+1}"><span class="n">${i+1}</span>${dentro(i)?`<span class="mk">${ic('check','sm')}</span>`:''}</div>
+        <div class="sbcap"><div class="l"><b>${tstr(f.t)}</b>${c.tipo?`<span class="chip ${c.tipo==='Hook'?'win':''}">${esc(c.tipo.toUpperCase())}</span>`:''}</div>
+          ${sb.voz&&c.voz?`<p>“${esc(c.voz)}”</p>`:''}${sb.texto&&c.texto?`<p class="ptxt">${esc(c.texto)}</p>`:''}</div></div>`;}).join('')}
+    </div></div>`;
+  document.body.appendChild(ov);
+  const q=s=>ov.querySelector(s);
+  const cerrar=()=>ov.remove();
+  q('#sbx').onclick=cerrar; ov.addEventListener('mousedown',e=>{if(e.target===ov)cerrar();});
+  ov.querySelectorAll('[data-cols]').forEach(b=>b.onclick=()=>{sb.cols=+b.dataset.cols;renderStoryboard(r);});
+  q('#sbv').onchange=e=>{sb.voz=e.target.checked;renderStoryboard(r);};
+  q('#sbt').onchange=e=>{sb.texto=e.target.checked;renderStoryboard(r);};
+  q('#sball').onclick=()=>{sb.off=[];renderStoryboard(r);};
+  const alternar=i=>{sb.off=sb.off.includes(i)?sb.off.filter(x=>x!==i):[...sb.off,i];renderStoryboard(r);};
+  ov.querySelectorAll('[data-sc]').forEach(c=>{const i=+c.dataset.sc;c.onclick=()=>alternar(i);c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();alternar(i);}};});
+  q('#sbdl').onclick=async()=>{
+    const b=await storyboardPNG(r); if(!b)return toast('Elige al menos una escena');
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='storyboard_'+(r.brand||'anuncio').replace(/[^a-zA-Z0-9-]+/g,'_')+'.png';
+    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);toast('Captura guardada');
+  };
+  q('#sbcopy').onclick=async()=>{
+    const b=await storyboardPNG(r); if(!b)return toast('Elige al menos una escena');
+    try{ await navigator.clipboard.write([new ClipboardItem({'image/png':b})]); toast('Imagen copiada'); }
+    catch(e){ toast('Tu navegador no deja copiar imágenes: usa “Guardar captura”'); }
+  };
+}
+async function storyboardPNG(r){
+  const ex=r.extract,sb=UI.sb||{cols:4,voz:true,texto:true,off:[]};
+  const escenas=ex.frames.map((f,i)=>({t:f.t,thumb:f.thumb,i})).filter(f=>!sb.off.includes(f.i));
+  if(!escenas.length)return null;
+  const imgs=await Promise.all(escenas.map(f=>new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>res(null);im.src=f.thumb;})));
+  const caps=escenas.map(f=>{const c=sbCaption(r,f.i);const l=[];if(sb.voz&&c.voz)l.push('“'+c.voz+'”');if(sb.texto&&c.texto)l.push('Texto: '+c.texto);return {tipo:c.tipo,txt:l.join('  ')};});
+  const W=240,pad=28,gap=18,cols=Math.min(sb.cols,escenas.length),alturaLinea=19;
+  const FUENTE='Inter, system-ui, -apple-system, "Segoe UI", sans-serif';
+  const medidor=document.createElement('canvas').getContext('2d');
+  medidor.font='14px '+FUENTE;
+  const envolver=t=>{const out=[];let ln='';for(const p of String(t).split(' ')){const pr=ln?ln+' '+p:p;if(medidor.measureText(pr).width>W-6&&ln){out.push(ln);ln=p;}else ln=pr;}if(ln)out.push(ln);return out.slice(0,6);};
+  const lineas=caps.map(c=>c.txt?envolver(c.txt):[]);
+  const altoImg=k=>{const im=imgs[k];return im?Math.round(W*im.height/im.width):Math.round(W*16/9);};
+  const filas=[];const orden=escenas.map((_,k)=>k);
+  for(let i=0;i<orden.length;i+=cols)filas.push(orden.slice(i,i+cols));
+  const medidas=filas.map(f=>({hImg:Math.max(...f.map(altoImg)),hTxt:26+Math.max(...f.map(k=>lineas[k].length))*alturaLinea}));
+  const cvW=pad*2+cols*W+(cols-1)*gap;
+  const cvH=pad*2+56+medidas.reduce((s,m)=>s+m.hImg+m.hTxt+gap,0);
+  const cv=document.createElement('canvas');cv.width=cvW;cv.height=cvH;
+  const cx=cv.getContext('2d');
+  cx.fillStyle='#ffffff';cx.fillRect(0,0,cvW,cvH);
+  cx.fillStyle='#0f172a';cx.font='700 20px '+FUENTE;
+  cx.fillText('Storyboard · '+(r.brand||'Referencia'),pad,pad+18);
+  cx.fillStyle='#64748b';cx.font='13px '+FUENTE;
+  cx.fillText((r.source||'')+(ex.duration?' · '+tstr(ex.duration):'')+' · '+escenas.length+' escenas',pad,pad+40);
+  let y=pad+56;
+  filas.forEach((fila,fi)=>{
+    const m=medidas[fi];
+    fila.forEach((k,col)=>{
+      const x=pad+col*(W+gap),im=imgs[k];
+      cx.fillStyle='#e2e8f0';cx.fillRect(x,y,W,m.hImg);
+      if(im)cx.drawImage(im,x,y,W,altoImg(k));
+      cx.fillStyle='rgba(15,23,42,.82)';cx.fillRect(x,y+m.hImg-24,54,24);
+      cx.fillStyle='#ffffff';cx.font='700 12px '+FUENTE;
+      cx.fillText(tstr(escenas[k].t),x+8,y+m.hImg-7);
+      const ty=y+m.hImg+18;
+      cx.fillStyle='#0f172a';cx.font='700 12px '+FUENTE;
+      cx.fillText('Escena '+(escenas[k].i+1)+(caps[k].tipo?' · '+caps[k].tipo:''),x,ty);
+      cx.fillStyle='#334155';cx.font='14px '+FUENTE;
+      lineas[k].forEach((l,li)=>cx.fillText(l,x,ty+20+li*alturaLinea));
+    });
+    y+=m.hImg+m.hTxt+gap;
+  });
+  return await new Promise(res=>cv.toBlob(res,'image/png'));
+}
 function renderRefModal(){
   const r=byId(S.refs,UI.refOpen); if(!r){UI.refOpen=null;return;} ensureRef(r);
   const keep=$('#rov')?.querySelector('.rright')?.scrollTop||0; const vt=$('#rov video.player')?.currentTime||0;
@@ -719,25 +913,41 @@ function renderRefModal(){
   const tabBtn=(k,l)=>`<button role="tab" aria-selected="${tab===k}" data-rtab="${k}" class="${tab===k?'on':''}">${l}</button>`;
   let right='';
   if(tab==='guion'){
-    right=ready&&ex.blocks.length?`
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span class="hint">${ex.transcript.length?'Voz transcrita':'Sin voz detectada'} · ${ex.ocr.length} textos en pantalla · corrige lo que se haya leído mal</span>
-        <span style="margin-left:auto;display:flex;gap:6px"><button class="btn ghost sm" id="rcopy">Copiar guion</button><button class="btn sm" id="rtopiece">Crear pieza con esta estructura</button></span>
+    const modo=UI.refModo==='editar'?'editar':'leer';
+    const bl=ex.blocks||[];
+    const palabras=bl.reduce((n,b)=>n+(b.voz?normTxt(b.voz).split(' ').filter(Boolean).length:0),0);
+    const porMin=ex.duration>4&&palabras?Math.round(palabras/(ex.duration/60)):0;
+    const legibles=bl.filter(b=>b.texto).length, ilegibles=bl.filter(b=>!b.texto&&b.ilegible).length;
+    const hook=bl[0];
+    const ilegHTML=(b,i)=>b.texto?'':b.ilegible?`<button class="lnk ileg" data-ileg="${i}">${ic('text','sm')}Texto en pantalla ilegible · ver lo leído</button>
+        <div class="ilegbox" data-ilegbox="${i}" hidden><span>“${esc(b.ilegible)}”</span><button class="lnk" data-usar="${i}">Usar este texto</button></div>`:'';
+    right=ready&&bl.length?`
+      <div class="rstats">${ex.duration?`<span><b>${tstr(ex.duration)}</b>duración</span>`:''}<span><b>${bl.length}</b>tramo${bl.length===1?'':'s'}</span>${palabras?`<span><b>${palabras}</b>palabras</span>`:''}${porMin?`<span><b>${porMin}</b>/min</span>`:''}<span><b>${legibles}</b>texto${legibles===1?'':'s'} en pantalla legible${legibles===1?'':'s'}${ilegibles?` · ${ilegibles} ilegible${ilegibles===1?'':'s'} oculto${ilegibles===1?'':'s'}`:''}</span></div>
+      <div class="rbar">
+        <div class="seg sm" role="tablist">${[['leer','Leer'],['editar','Editar tramos']].map(([m,l])=>`<button role="tab" aria-selected="${modo===m}" data-rmodo="${m}" class="${modo===m?'on':''}">${l}</button>`).join('')}</div>
+        <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">${ilegibles?'<button class="btn ghost sm" id="rclean">Borrar textos ilegibles</button>':''}<button class="btn ghost sm" id="rcopy">Copiar guion</button><button class="btn sm" id="rtopiece">Crear pieza con esta estructura</button></span>
       </div>
-      <div class="tl">${ex.blocks.map((b,i)=>`<div class="tlr" data-b="${i}">
+      ${hook&&(hook.voz||hook.texto)?`<div class="hookbox"><div class="section-t">HOOK · ${esc(hook.tiempo||tstr(hook.start||0))}</div>
+        <p>“${esc((hook.voz||hook.texto).slice(0,260))}”</p>
+        ${r.kind==='video'?`<button class="lnk" data-play="${hook.start||0}">${ic('play','sm')}Ver el hook</button>`:''}</div>`:''}
+      ${modo==='leer'?`<div class="tlread">${bl.map((b,i)=>`<div class="tr" data-play="${b.start||0}" role="button" tabindex="0" aria-label="Ir a ${esc(b.tiempo||'')}">
+          <span class="t">${esc((b.tiempo||'').split('–')[0]||tstr(b.start||0))}</span>
+          <div class="c">${b.tipo?`<span class="chip ${b.tipo==='Hook'?'win':''}">${esc(b.tipo.toUpperCase())}</span>`:''}
+            <p>${b.voz?esc(b.voz):'<span class="muted">Sin voz en este tramo</span>'}</p>
+            ${b.texto?`<p class="ptxt">${ic('text','sm')}${esc(b.texto)}</p>`:ilegHTML(b,i)}
+          </div></div>`).join('')}</div>`
+      :`<div class="tl">${bl.map((b,i)=>`<div class="tlr" data-b="${i}">
         <button class="tlf" data-seek="${b.start||0}" aria-label="Ir a ${esc(b.tiempo)}">${b.frame>=0&&ex.frames[b.frame]?.thumb?`<img src="${ex.frames[b.frame].thumb}" alt="">`:''}<span>${esc(b.tiempo||'—')}</span></button>
         <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
-          <label class="visually-hidden" for="tt-${i}">Función</label>
-          <select id="tt-${i}" data-bf="tipo" class="fsel" style="align-self:flex-start"><option value="">Función del tramo</option>${BLOCK_TYPES.map(t=>`<option ${t===b.tipo?'selected':''}>${t}</option>`).join('')}</select>
-          <div class="grid2">
-            <div class="field"><label for="tv-${i}">Voz</label><textarea id="tv-${i}" data-bf="voz" rows="2">${esc(b.voz)}</textarea></div>
-            <div class="field"><label for="tx-${i}">Texto en pantalla</label><textarea id="tx-${i}" data-bf="texto" rows="2">${esc(b.texto)}</textarea></div>
-          </div>
+          <label class="visually-hidden" for="tt-${i}">Función del tramo</label>
+          <select id="tt-${i}" data-bf="tipo" class="fsel" style="align-self:stretch"><option value="">Asignar función</option>${BLOCK_TYPES.map(t=>`<option ${t===b.tipo?'selected':''}>${t}</option>`).join('')}</select>
+          <div class="field"><label for="tv-${i}">Voz</label><textarea id="tv-${i}" data-bf="voz" rows="2">${esc(b.voz)}</textarea></div>
+          ${b.texto||!b.ilegible?`<div class="field"><label for="tx-${i}">Texto en pantalla</label><textarea id="tx-${i}" data-bf="texto" rows="2">${esc(b.texto)}</textarea></div>`:ilegHTML(b,i)}
           ${b.visual?`<div class="hint">Visual: ${esc(b.visual)}</div>`:''}
-        </div></div>`).join('')}</div>`
+        </div></div>`).join('')}</div>`}`
     :`<div class="empty" style="text-align:left;display:flex;flex-direction:column;gap:10px">
-        <b style="color:var(--ink)">Todavía no hay guion extraído</b>
-        <span>${r.kind==='link'?'Este es solo un enlace. Descarga el video con Nova Swipe y adjúntalo para poder extraerlo.':'Toca “Extraer guion”: se sacan fotogramas, se transcribe la voz y se lee el texto en pantalla. Todo corre en tu navegador.'}</span>
+        <b style="color:var(--ink)">${ex.status==='procesando'||JOBS[r.id]?'Extrayendo el guion…':'Todavía no hay guion extraído'}</b>
+        <span>${r.kind==='link'?'Este es solo un enlace. Descarga el video con Nova Swipe y adjúntalo para poder extraerlo.':ex.status==='procesando'||JOBS[r.id]?'Se sacan los fotogramas, se transcribe la voz y se lee el texto en pantalla. Todo corre en tu navegador: puedes seguir trabajando.':'Se extrae solo apenas llega el archivo. Si quieres, toca “Extraer guion” para hacerlo ahora.'}</span>
         ${ex.status==='error'?`<span style="color:var(--red)">Último intento: ${esc(ex.error||'error')}</span>`:''}
       </div>`;
   }else if(tab==='desglose'){
@@ -758,36 +968,75 @@ function renderRefModal(){
           <div style="display:flex;gap:6px;margin-top:8px"><button class="btn sm" id="radapt">Crear pieza con esta adaptación</button><button class="btn ghost sm" id="raidea">Guardar como idea</button>${a.adaptacion.hook?'<button class="btn ghost sm" id="rahook">Guardar hook</button>':''}</div></div>`:''}
       </div>`:''}`;
   }else{
-    right=`<div style="display:flex;flex-direction:column;gap:12px">
-      <div class="grid2"><div class="field"><label for="db">Marca</label><input id="db" data-rf="brand" value="${esc(r.brand)}" placeholder="Ej. FLAIR Fútbol"></div>
-      <div class="field"><label for="ds">Fuente</label><select id="ds" data-rf="source">${REF_SOURCES.map(x=>`<option ${x===r.source?'selected':''}>${x}</option>`).join('')}</select></div></div>
-      <div class="grid2"><div class="field"><label for="dl">Enlace al anuncio</label><input id="dl" data-rf="link" value="${esc(r.link)}" placeholder="https://www.facebook.com/ads/library/?id=…"></div>
-      <div class="field"><label for="did">ID del anuncio o publicación</label><input id="did" data-rf="adId" value="${esc(r.adId||'')}" placeholder="Se completa solo con Nova Swipe"></div></div>
-      ${r.adText?`<div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Texto del anuncio</span><p class="hint" style="margin:0;white-space:pre-line">${esc(r.adText)}</p></div>`:''}
-      <div class="grid3"><div class="field"><label for="df">Formato</label><select id="df" data-rf="format"><option value="">—</option>${FORMATS.map(x=>`<option value="${x[0]}" ${x[0]===r.format?'selected':''}>${x[1]}</option>`).join('')}</select></div>
-      <div class="field"><label for="dc">Concepto</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
-      <div class="field"><label for="de">Etapa</label><select id="de" data-rf="stage">${stageOpt(r.stage)}</select></div></div>
-      <div class="grid2"><div class="field"><label for="da">Ángulo de ${esc(byId(S.products,r.productId)?.name||'')}</label><select id="da" data-rf="angleId">${opt(S.angles.filter(a=>a.productId===r.productId),r.angleId)}</select></div>
-      <div class="field"><label for="dco">Colección</label><select id="dco" data-rf="collection"><option value="">Sin colección</option>${libCollections().map(c=>`<option ${c===r.collection?'selected':''}>${esc(c)}</option>`).join('')}<option value="__nueva">+ Nueva colección…</option></select></div></div>
-      <div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Favorita</span><button class="btn ghost sm" id="dfav" style="align-self:flex-start">${ic('star','sm')}${r.fav?'Quitar de favoritas':'Marcar como favorita'}</button></div>
-      <div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Qué tan buena es</span><div class="seg" id="drate">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${r.rating>=n?'on':''}" aria-label="${n} de 5">★</button>`).join('')}</div></div>
-      <div class="field"><label for="dn">Notas</label><textarea id="dn" data-rf="notes" placeholder="Qué te llamó la atención">${esc(r.notes)}</textarea></div>
-      <button class="btn danger sm" id="ddel" style="align-self:flex-start">Eliminar de la biblioteca</button>
+    const dias=diasActivo(r), senal=senalDias(dias), sug=sugerencias(r);
+    const cuerpo=(r.adText||'').trim();
+    const lineas=cuerpo?cuerpo.split(String.fromCharCode(10)).map(x=>x.trim()).filter(Boolean):[];
+    const primera=lineas.length>1||(lineas[0]||'').length<160?lineas[0]||'':'';
+    const resto=(primera?lineas.slice(1):lineas).join(' ');
+    const prodName=byId(S.products,r.productId)?.name||'';
+    right=`<div class="dwrap">
+      ${senal?`<div class="panel dcard"><div class="dsenal ${senal.tono}"><b>${dias}</b><span>días activo</span></div>
+        <div style="min-width:0"><div class="section-t">Señal de rendimiento</div><p style="margin:4px 0 0">${esc(senal.texto)}</p></div></div>`:''}
+      <div class="panel dcard apilada">
+        <div class="dtop">
+          <div class="field"><label for="dstart">Activo desde</label><input type="date" id="dstart" data-rf="startedAt" value="${esc(fechaISO(r.startedAt))}"></div>
+          <div class="field"><label for="dver">Versiones</label><input type="number" min="0" step="1" id="dver" data-rfn="versiones" value="${Number(r.versiones)||0}"></div>
+          <div class="field"><span class="lbl">Tu calificación</span><div class="stars" id="drate">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${r.rating>=n?'on':''}" aria-label="${n} de 5">★</button>`).join('')}</div></div>
+          <button class="btn ghost sm" id="dfav">${ic('star','sm')}${r.fav?'Quitar de favoritas':'Marcar favorita'}</button>
+        </div>
+      </div>
+      <div class="panel dcard apilada">
+        <div class="rbar"><b>Clasificación</b><span class="hint" style="margin-left:auto">Así lo encuentras en filtros y en el análisis 80/20</span></div>
+        <div class="field"><span class="lbl">Etapa del embudo</span><div class="chips">${STAGES.map(s=>`<button class="chipb ${r.stage===s?'on '+s:''}" data-stage="${s}">${s} · ${s==='TOFU'?'Descubrimiento':s==='MOFU'?'Consideración':'Decisión'}</button>`).join('')}</div>
+          ${sug.stage?`<button class="sugb" data-sugstage="${sug.stage}">${ic('spark','sm')}Sugerido: ${sug.stage}</button>`:''}</div>
+        <div class="field"><span class="lbl">Formato</span><div class="chips">${FORMATS.map(f=>`<button class="chipb ${r.format===f[0]?'on dark':''}" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div></div>
+        <div class="grid2">
+          <div class="field"><label for="dc">Concepto</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
+          <div class="field"><label for="dco">Colección</label><select id="dco" data-rf="collection"><option value="">Sin colección</option>${libCollections().map(c=>`<option ${c===r.collection?'selected':''}>${esc(c)}</option>`).join('')}<option value="__nueva">+ Nueva colección…</option></select></div>
+        </div>
+        ${sug.concepto?`<button class="sugb" data-sugcon="${esc(sug.concepto)}">${ic('spark','sm')}Sugerido: ${esc(sug.concepto)}</button>`:''}
+        ${S.angles.some(a=>a.productId===r.productId)?`<div class="field"><span class="lbl">Ángulo de venta para ${esc(prodName)}</span><div class="chips">${S.angles.filter(a=>a.productId===r.productId).map(a=>`<button class="chipb ${r.angleId===a.id?'on dark':''}" data-ang="${a.id}">${esc(a.name)}</button>`).join('')}</div></div>`:''}
+      </div>
+      <div class="panel dcard apilada">
+        <div class="rbar"><b>Copy del anuncio</b><button class="btn ghost sm" id="dcopy" style="margin-left:auto">${ic('copy','sm')}Copiar copy</button></div>
+        ${primera?`<div class="copyhook"><span class="section-t">Primera línea (el hook del copy)</span><p>${esc(primera)}</p><button class="lnk" id="dhook">+ Guardar en hooks</button></div>`:''}
+        ${resto?`<p class="copybody">${esc(resto)}</p>`:''}
+        <div class="grid4">
+          <div class="field"><label for="dct">Título</label><input id="dct" data-rc="titulo" value="${esc(r.adCopy.titulo)}" placeholder="—"></div>
+          <div class="field"><label for="dcd">Descripción</label><input id="dcd" data-rc="descripcion" value="${esc(r.adCopy.descripcion)}" placeholder="—"></div>
+          <div class="field"><label for="dcb">Botón</label><input id="dcb" data-rc="boton" value="${esc(r.adCopy.boton)}" placeholder="Ej. Comprar"></div>
+          <div class="field"><label for="dcz">Lleva a</label><input id="dcz" data-rc="destino" value="${esc(r.adCopy.destino)}" placeholder="Ej. WhatsApp"></div>
+        </div>
+        ${cuerpo?`<details class="dorig"><summary>Ver texto original capturado</summary><p class="hint" style="white-space:pre-line;margin:8px 0 0">${esc(cuerpo)}</p></details>`:'<p class="hint" style="margin:0">Nova Swipe guarda aquí el texto del anuncio cuando lo captura.</p>'}
+      </div>
+      <div class="panel dcard apilada">
+        <b>Origen</b>
+        <div class="grid2"><div class="field"><label for="db">Marca</label><input id="db" data-rf="brand" value="${esc(r.brand)}" placeholder="Ej. FLAIR Fútbol"></div>
+        <div class="field"><label for="ds">Fuente</label><select id="ds" data-rf="source">${REF_SOURCES.map(x=>`<option ${x===r.source?'selected':''}>${x}</option>`).join('')}</select></div></div>
+        <div class="grid2"><div class="field"><label for="did">ID del anuncio o publicación</label><div class="withbtn"><input id="did" data-rf="adId" value="${esc(r.adId||'')}" placeholder="Se completa solo con Nova Swipe"><button class="btn ghost sm" data-cop="did" aria-label="Copiar ID">${ic('copy','sm')}</button></div></div>
+        <div class="field"><label for="dl">Enlace al anuncio</label><div class="withbtn"><input id="dl" data-rf="link" value="${esc(r.link)}" placeholder="https://www.facebook.com/ads/library/?id=…"><button class="btn ghost sm" data-cop="dl" aria-label="Copiar enlace">${ic('copy','sm')}</button></div></div></div>
+      </div>
+      <div class="panel dcard apilada"><div class="field"><label for="dn">Notas</label><textarea id="dn" data-rf="notes" placeholder="Qué te llamó la atención y qué harías distinto para ${esc(prodName)}">${esc(r.notes)}</textarea></div></div>
+      <div class="dfoot"><span class="ok">${ic('check','sm')}Los cambios se guardan solos</span><button class="lnk danger" id="ddel">Eliminar de la biblioteca</button></div>
     </div>`;
   }
   ov.innerHTML=`<div class="modal" style="max-width:1180px" role="dialog" aria-modal="true" aria-labelledby="rt">
     <div class="mh"><b id="rt">${esc(r.brand||'Referencia sin marca')}</b>${r.adId?`<span class="chip" style="font-family:ui-monospace,Menlo,monospace" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}<span class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>${ready?'<span class="chip win">Guion extraído</span>':''}<button class="btn ghost sm" id="rx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
     <div class="rgrid">
       <div class="rleft">
-        <div class="rplayer" id="rplayer">${r.kind==='link'?`<div style="color:#cbd5e1;padding:30px;text-align:center">${ic('link')}<p>Solo enlace</p></div>`:''}</div>
+        <div class="rplayer" id="rplayer">${r.mediaId?'':`<div class="rsube">${ic(r.kind==='link'?'link':'up')}<p>${r.kind==='link'?'Solo enlace: carga el video o la imagen para extraer el guion':'Carga el video o la imagen para ver la sincronización con el guion'}</p><button class="btn sm" id="rpick">Elegir archivo</button></div>`}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${r.mediaId?`<button class="btn sm" id="rex" ${JOBS[r.id]?'disabled':''}>${ready?'Volver a extraer':'Extraer guion'}</button>`:`<button class="btn sm" id="rattach">Adjuntar archivo</button>`}
           ${r.link?`<a class="btn ghost sm" href="${esc(r.link)}" target="_blank" rel="noopener">Abrir anuncio</a>`:''}
           ${r.mediaId?`<button class="btn ghost sm" id="rdl">Descargar</button>`:''}
         </div>
-        ${r.mediaId&&r.kind==='video'?`<div style="display:flex;gap:14px;font-size:13px"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="optv" checked> Transcribir voz</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="opto" checked> Leer texto en pantalla</label></div>`:''}
+        ${r.mediaId&&r.kind==='video'?`<details class="opex"><summary>Opciones de extracción</summary><div style="display:flex;gap:14px;font-size:13px;padding:8px 2px 0"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="optv" checked> Transcribir voz</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="opto" checked> Leer texto en pantalla</label></div></details>`:''}
         ${progHTML(r.id)}
-        ${ex.frames?.length>1?`<div><div class="section-t" style="margin-bottom:6px">Fotogramas</div><div class="frames">${ex.frames.map(fr=>`<button data-seek="${fr.t}" aria-label="Ir a ${tstr(fr.t)}"><img src="${fr.thumb}" alt=""><span>${tstr(fr.t)}</span></button>`).join('')}</div></div>`:''}
+        ${ex.frames?.length>1?`<div class="panel fpanel">
+          <button class="fhead" id="rfrtog" aria-expanded="${UI.refFrames!==false}"><b>Fotogramas</b><span class="muted">${ex.frames.length} escenas</span><span class="car">${ic(UI.refFrames!==false?'up':'down','sm')}</span></button>
+          ${UI.refFrames!==false?`<div class="frames">${ex.frames.map(fr=>`<button data-seek="${fr.t}" aria-label="Ir a ${tstr(fr.t)}"><img src="${fr.thumb}" alt=""><span>${tstr(fr.t)}</span></button>`).join('')}</div>
+          <button class="btn ghost sm" id="rsb" style="width:100%;justify-content:center">${ic('grid','sm')}Ver como storyboard</button>`:''}
+        </div>`:''}
       </div>
       <div class="rright">
         <div class="seg" role="tablist" style="margin-bottom:12px">${tabBtn('guion','Guion extraído')}${tabBtn('desglose','Desglose con IA')}${tabBtn('datos','Datos')}</div>
@@ -806,14 +1055,24 @@ function renderRefModal(){
   q('#rx').onclick=close; ov.addEventListener('mousedown',e=>{if(e.target===ov)close();});
   if(!window._escRef){window._escRef=true;document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.refOpen&&!UI.modal&&!document.querySelector('.viewer')){const o=$('#rov');if(o?._url)URL.revokeObjectURL(o._url);closeRef();}});}
   ov.querySelectorAll('[data-rtab]').forEach(b=>b.onclick=()=>{UI.refTab=b.dataset.rtab;renderRefModal();});
-  ov.querySelectorAll('[data-seek]').forEach(b=>b.onclick=()=>{const v=q('video.player');if(v){v.currentTime=Number(b.dataset.seek)||0;v.play().catch(()=>{});}});
+  const irA=t=>{const v=q('video.player');if(!v)return;v.currentTime=Number(t)||0;v.play().catch(()=>{});};
+  ov.querySelectorAll('[data-seek]').forEach(b=>b.onclick=()=>irA(b.dataset.seek));
+  ov.querySelectorAll('[data-play]').forEach(b=>{b.onclick=()=>irA(b.dataset.play);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();irA(b.dataset.play);}};});
+  if(q('#rfrtog'))q('#rfrtog').onclick=()=>{UI.refFrames=UI.refFrames===false;renderRefModal();};
+  if(q('#rsb'))q('#rsb').onclick=()=>openStoryboard(r);
   if(q('#rex'))q('#rex').onclick=()=>{const voz=q('#optv')?q('#optv').checked:false,texto=q('#opto')?q('#opto').checked:true;runExtract(r,{voz,texto});renderRefModal();};
-  if(q('#rattach'))q('#rattach').onclick=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*,video/*';inp.onchange=async()=>{const fl=filesFrom(inp.files)[0];if(!fl)return;const id=await addMedia(fl);r.mediaId=id;r.kind=thumbCache[id].kind;save();renderRefModal();toast('Archivo adjuntado');};inp.click();};
+  const adjuntar=()=>{const inp=document.createElement('input');inp.type='file';inp.accept='image/*,video/*';inp.onchange=async()=>{const fl=filesFrom(inp.files)[0];if(!fl)return;const id=await addMedia(fl);r.mediaId=id;r.kind=thumbCache[id].kind;save();renderRefModal();toast('Archivo adjuntado');autoExtraer(r);};inp.click();};
+  if(q('#rattach'))q('#rattach').onclick=adjuntar;
+  if(q('#rpick'))q('#rpick').onclick=adjuntar;
   if(q('#rdl'))q('#rdl').onclick=async()=>{const m=await DB.get('media',r.mediaId);if(!m?.blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(m.blob);a.download=(r.brand||'referencia').replace(/[^\w-]+/g,'_')+'.'+((m.type.split('/')[1]||'bin').split(';')[0]);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);};
   if(tab==='guion'&&ready){
     ov.querySelectorAll('.tlr').forEach(row=>{const b=ex.blocks[+row.dataset.b];row.querySelectorAll('[data-bf]').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{b[inp.dataset.bf]=inp.value;save();}));});
     q('#rcopy').onclick=async()=>{const t=ex.blocks.map(b=>`[${b.tiempo}]${b.tipo?' '+b.tipo:''}\nVoz: ${b.voz||'—'}\nTexto: ${b.texto||'—'}`).join('\n\n');toast(await copyText(t)?'Guion copiado':'No se pudo copiar');};
     q('#rtopiece').onclick=()=>pieceFromRef(r,false);
+    ov.querySelectorAll('[data-rmodo]').forEach(b=>b.onclick=()=>{UI.refModo=b.dataset.rmodo;renderRefModal();});
+    ov.querySelectorAll('[data-ileg]').forEach(b=>b.onclick=()=>{const c=ov.querySelector(`[data-ilegbox="${b.dataset.ileg}"]`);if(c)c.hidden=!c.hidden;});
+    ov.querySelectorAll('[data-usar]').forEach(b=>b.onclick=()=>{const bl=ex.blocks[+b.dataset.usar];bl.texto=bl.ilegible;bl.ilegible='';save();renderRefModal();});
+    if(q('#rclean'))q('#rclean').onclick=()=>{ex.blocks.forEach(b=>{b.ilegible='';});ex.ocr=(ex.ocr||[]).filter(o=>o.text);save();renderRefModal();toast('Se quitaron los textos ilegibles');};
   }
   if(tab==='desglose'){
     q('#rgp').onclick=()=>{UI.refPrompt=true;renderRefModal();};
@@ -832,6 +1091,16 @@ function renderRefModal(){
     ov.querySelectorAll('[data-rf]').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{
       if(inp.dataset.rf==='collection'&&inp.value==='__nueva'){const n=prompt('Nombre de la colección');if(n&&n.trim()){const c=n.trim();if(!libCollections().includes(c))S.libCollections.push(c);r.collection=c;}save();renderRefModal();return;}
       r[inp.dataset.rf]=inp.value;save();}));
+    ov.querySelectorAll('[data-rfn]').forEach(inp=>inp.addEventListener('input',()=>{r[inp.dataset.rfn]=Math.max(0,Number(inp.value)||0);save();}));
+    ov.querySelectorAll('[data-rc]').forEach(inp=>inp.addEventListener('input',()=>{r.adCopy[inp.dataset.rc]=inp.value;save();}));
+    ov.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{r.stage=r.stage===b.dataset.stage?'':b.dataset.stage;save();renderRefModal();});
+    ov.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>{r.format=r.format===b.dataset.fmt?'':b.dataset.fmt;save();renderRefModal();});
+    ov.querySelectorAll('[data-ang]').forEach(b=>b.onclick=()=>{r.angleId=r.angleId===b.dataset.ang?'':b.dataset.ang;save();renderRefModal();});
+    if(q('[data-sugstage]'))q('[data-sugstage]').onclick=e=>{r.stage=e.currentTarget.dataset.sugstage;save();renderRefModal();};
+    if(q('[data-sugcon]'))q('[data-sugcon]').onclick=e=>{aplicarConcepto(r,e.currentTarget.dataset.sugcon);save();renderRefModal();};
+    ov.querySelectorAll('[data-cop]').forEach(b=>b.onclick=async()=>{const el=q('#'+b.dataset.cop);toast(await copyText(el.value,el)?'Copiado':'No se pudo copiar');});
+    if(q('#dcopy'))q('#dcopy').onclick=async()=>{const t=[r.adText,r.adCopy.titulo&&`Título: ${r.adCopy.titulo}`,r.adCopy.descripcion&&`Descripción: ${r.adCopy.descripcion}`,r.adCopy.boton&&`Botón: ${r.adCopy.boton}`,r.adCopy.destino&&`Lleva a: ${r.adCopy.destino}`].filter(Boolean).join(String.fromCharCode(10));toast(await copyText(t)?'Copy copiado':'No se pudo copiar');};
+    if(q('#dhook'))q('#dhook').onclick=()=>{const txt=(r.adText||'').split(String.fromCharCode(10)).map(x=>x.trim()).find(Boolean)||'';if(!txt)return;S.hooks.push({id:uid('h'),productId:PID(),text:txt,type:'Primera línea del copy',conceptId:r.conceptId,angleId:r.angleId,stage:r.stage,origin:'Referencia'});save();toast('Hook guardado');};
     q('#dfav').onclick=()=>{r.fav=!r.fav;save();renderRefModal();};
     ov.querySelectorAll('#drate button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;r.rating=r.rating===n?0:n;save();renderRefModal();});
     q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
@@ -1879,8 +2148,9 @@ function openSettings(){
      <div class="field"><label for="stm">Muestra mínima</label><input id="stm" type="number" step="1" value="${S.settings.muestra}"></div>
     </div>
     <div class="field"><label for="sta">ID de la cuenta publicitaria (para abrir anuncios en Ads Manager)</label><input id="sta" value="${esc(S.settings.adAccount||'')}" placeholder="Ej. 338354625956825"></div>
+    <div class="field"><label class="ck" for="stauto"><input type="checkbox" id="stauto" ${S.settings.autoExtraer===false?'':'checked'}> Extraer el guion solo, apenas llega un video o una imagen</label></div>
     <div class="field"><label for="stw">Modelo para transcribir voz</label><select id="stw">${[['tiny','Rápido (menos preciso, ~40 MB)'],['base','Equilibrado (~80 MB)'],['small','Preciso (más lento, ~250 MB)']].map(([k,l])=>`<option value="${k}" ${k===(S.settings.whisper||'base')?'selected':''}>${l}</option>`).join('')}</select></div><div class="hint">Una pieza pasa a Resultado cuando llega a la muestra mínima de confirmados. Gana si su CPA real es igual o menor al tope.</div>`,
-    ()=>{S.settings.topeUSD=+$('#stu').value||5;S.settings.tc=+$('#stc').value||3.7;S.settings.muestra=Math.max(1,+$('#stm').value||10);S.settings.whisper=$('#stw').value;S.settings.adAccount=$('#sta').value.trim();PREP_CACHE.clear();save();render();});
+    ()=>{S.settings.topeUSD=+$('#stu').value||5;S.settings.tc=+$('#stc').value||3.7;S.settings.muestra=Math.max(1,+$('#stm').value||10);S.settings.whisper=$('#stw').value;S.settings.autoExtraer=$('#stauto').checked;S.settings.adAccount=$('#sta').value.trim();PREP_CACHE.clear();save();render();});
 }
 
 /* ============ EXPORTAR / IMPORTAR ============ */
@@ -1916,6 +2186,9 @@ $('#importpick').addEventListener('change',async e=>{
   if(pend){ try{importDatos(pend.datos,pend.label);S.settings.fatigaSync=pend.marca;save();toast('Datos de Meta actualizados');}catch(e){console.warn(e);} }
   const oldRender=render;
   setTimeout(traerBandeja,500);
+  // Lo que quedo sin guion (llego con la pestana cerrada o fallo a medias) se extrae solo.
+  const recientes=Date.now()-7*86400000;
+  setTimeout(()=>{S.refs.filter(r=>r.mediaId&&!r.extract.status&&(r.swipeId||(r.created||0)>recientes)).slice(0,5).forEach(autoExtraer);},3000);
   render=function(){ $('#body').style.overflow=''; oldRender(); };
   render();
 })();
