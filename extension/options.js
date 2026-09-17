@@ -12,7 +12,11 @@ function mensaje(tipo, texto) {
   $("#url").value = cfg?.url || "";
   $("#token").value = cfg?.token || "";
   if (cfg?.url && cfg?.token) mensaje("info", "Conexión configurada.");
+  const { botonFlotante } = await chrome.storage.local.get("botonFlotante");
+  $("#flotante").checked = botonFlotante !== false;
 })();
+
+$("#flotante").onchange = () => chrome.storage.local.set({ botonFlotante: $("#flotante").checked });
 
 $("#guardar").onclick = async () => {
   const url = $("#url").value.trim().replace(/\/+$/, "");

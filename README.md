@@ -10,7 +10,7 @@ Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes e
 
 La interfaz sigue el prototipo de [docs/prototipo/nova-studio-de-ads.html](docs/prototipo/nova-studio-de-ads.html). Barra lateral por flujo:
 
-- **Crear** · **Ideas de contenido**, **Biblioteca** (anuncios de otras marcas por fuente, colección y marca; subir, arrastrar, pegar con Ctrl+V o capturar con la extensión **Nova Swipe**; extracción de guion con transcripción y texto en pantalla; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
+- **Crear** · **Ideas de contenido**, **Biblioteca** (anuncios de otras marcas por fuente, colección y marca, con su ID; subir, arrastrar, pegar con Ctrl+V o capturar con la extensión **Nova Swipe**; extracción de guion con transcripción y lectura de texto en pantalla que aísla las letras, filtra por confianza y no inventa texto cuando no hay; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
 - **Producir** · **Pipeline** Idea → Guion → Producción → Lanzado → Testing → Resultado. Cada pieza tiene guion por bloques, creativos y copy, y resultados. El resultado (Ganador / Perdedor / TBD) lo decide el CPA real contra el tope al llegar a la muestra mínima.
 - **Lanzar** · **Embudo**: pizarra TOFU / MOFU / BOFU con objetivo y públicos por etapa.
 - **Medir** · **Análisis 80/20**, **Fatiga** (motor `MotorFatiga` del predictor) y **Tracker** de CPA real.
@@ -76,8 +76,11 @@ Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.
 
 Extensión de Chrome ([extension/](extension)) que guarda anuncios en la Biblioteca desde la Biblioteca de anuncios de Meta, TikTok, Instagram, Facebook, YouTube o cualquier web:
 
-- **Clic derecho → Guardar en Nova Studio** sobre un anuncio, video, imagen o enlace. En la Biblioteca de Meta toma además el ID del anuncio, la fecha de inicio, el anunciante y el texto.
-- **Ícono de la extensión**: elige producto, marca, fuente y colección, y marca los videos e imágenes detectados en la página (también los que se cargan por partes).
+- **Botón «Guardar» sobre el contenido**: aparece al pasar el mouse por cualquier video o imagen y lo envía con un clic (se puede desactivar en las opciones).
+- **Clic derecho → Guardar en Nova Studio** sobre un anuncio, video, imagen o enlace.
+- **Ícono de la extensión**: muestra el contenido principal de la página ya elegido, con marca e ID; producto, fuente, colección y otros archivos son opcionales.
+- **ID + marca automáticos**: Biblioteca de Meta (ID de la biblioteca, anunciante, fecha y texto), TikTok (ID del video y @cuenta), Instagram (código del post o reel y @cuenta), Facebook (ID del video o post y página) y YouTube (ID y canal).
+- **TikTok**: el video se obtiene de los datos de la página del video y se descarga con el `Referer` que exige TikTok (regla de `declarativeNetRequest` solo para las descargas de la extensión). Instagram y Facebook, que reproducen por partes, se toman del último video descargado por la página.
 
 Se descarga desde **Biblioteca → Descargar extensión** (`/api/swipe/extension.zip?config=1`), ya con la dirección del Studio y la clave. Instalación: `chrome://extensions` → Modo de desarrollador → Cargar descomprimida. Para Chrome Web Store hay una versión sin clave.
 

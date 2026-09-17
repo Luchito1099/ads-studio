@@ -251,13 +251,17 @@ async function loadWhisper(model,onProgress){
 async function loadOCR(){
   if(LIBS.ocr)return LIBS.ocr;
   await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
-  LIBS.ocr=await Tesseract.createWorker('spa+eng'); return LIBS.ocr;
+  const w=await Tesseract.createWorker('spa+eng');
+  await w.setParameters({tessedit_pageseg_mode:'11',preserve_interword_spaces:'1'});
+  LIBS.ocr=w; return w;
 }
 function seekTo(v,t){return new Promise(res=>{const on=()=>{v.removeEventListener('seeked',on);res();};v.addEventListener('seeked',on);v.currentTime=Math.min(t,Math.max(0,(v.duration||t)-0.05));});}
 async function captureFrames(blob,onStep){
   const url=URL.createObjectURL(blob); const v=document.createElement('video'); v.muted=true; v.playsInline=true; v.preload='auto'; v.src=url;
   await new Promise((res,rej)=>{v.onloadedmetadata=res;v.onerror=()=>rej(new Error('El navegador no pudo abrir este video'));});
-  const dur=v.duration||0; const step=Math.min(3,Math.max(1,dur/30)); const out=[];
+  // Algunos webm no traen la duración hasta leerse completos: se fuerza su cálculo.
+  if(!isFinite(v.duration)){ await new Promise(res=>{const on=()=>{if(isFinite(v.duration)){v.removeEventListener('durationchange',on);res();}};v.addEventListener('durationchange',on);v.currentTime=1e7;setTimeout(res,4000);}); }
+  const dur=isFinite(v.duration)?v.duration:0; const step=Math.min(3,Math.max(1,dur/30)); const out=[];
   const small=document.createElement('canvas'), big=document.createElement('canvas');
   for(let t=Math.min(.3,dur/2); t<dur && out.length<40; t+=step){
     await seekTo(v,t);
@@ -279,6 +283,64 @@ async function audioMono16k(blob){
 }
 const normTxt=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9ñ ]+/g,' ').replace(/\s+/g,' ').trim();
 function similar(a,b){const A=new Set(normTxt(a).split(' ')),B=new Set(normTxt(b).split(' '));if(!A.size||!B.size)return 0;let i=0;A.forEach(w=>{if(B.has(w))i++;});return i/Math.max(A.size,B.size);}
+/* ---- texto en pantalla (OCR) ----
+ * Tesseract lee mal el fotograma tal cual: texto chico sobre fondos con mucho
+ * detalle. Se agranda el fotograma, se aíslan las letras claras (blancas o
+ * amarillas, lo típico en TikTok y Reels) y las oscuras, y solo se aceptan
+ * líneas con buena confianza y que parecen palabras. Si no hay texto, no se
+ * inventa: el tramo queda vacío.
+ */
+function prepararOCR(src){
+  const escala=Math.min(2.2,1280/src.width);
+  const W=Math.round(src.width*escala),H=Math.round(src.height*escala);
+  const base=document.createElement('canvas');base.width=W;base.height=H;
+  const cx=base.getContext('2d',{willReadFrequently:true});cx.imageSmoothingQuality='high';cx.drawImage(src,0,0,W,H);
+  const d=cx.getImageData(0,0,W,H).data;
+  const claro=new ImageData(W,H),oscuro=new ImageData(W,H);
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),lum=0.299*r+0.587*g+0.114*b;
+    const letraClara=(lum>200&&mx-mn<45)||(r>200&&g>170&&b<110);
+    const letraOscura=lum<55&&mx-mn<40;
+    claro.data[i]=claro.data[i+1]=claro.data[i+2]=letraClara?0:255;claro.data[i+3]=255;
+    oscuro.data[i]=oscuro.data[i+1]=oscuro.data[i+2]=letraOscura?0:255;oscuro.data[i+3]=255;
+  }
+  return [claro,oscuro].map(img=>{const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').putImageData(img,0,0);return c;});
+}
+const OCR_PALABRA=/^[¿¡"“'(]*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9$][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9%$.,'’\/-]*[?!.,:;"”')]*$/;
+const OCR_VOCAL=/[aeiouáéíóúüAEIOUÁÉÍÓÚÜ]/;
+const soloLetras=t=>t.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g,'');
+function palabraOCR(t){
+  t=t.trim(); if(!OCR_PALABRA.test(t))return false;
+  const nucleo=t.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9%$]/g,''); if(!nucleo)return false;
+  if(/^(S\/|\$)?\d+([.,]\d+)?%?$/.test(t.replace(/[¿¡"“”'()?!.,:;]+$/,'')))return true; // precios, porcentajes, cantidades
+  const letras=soloLetras(nucleo);
+  if(letras.length<=1)return /^[aeoyuAEOYUóÓ]$/.test(letras)&&nucleo.length===1;
+  if(!OCR_VOCAL.test(letras)||/(.)\1\1/i.test(letras))return false;
+  if(/[a-záéíóúñ][A-ZÁÉÍÓÚÑ]/.test(letras))return false; // mezcla rara de mayúsculas
+  if(letras.length>=5&&!/[aeiouáéíóú][^aeiouáéíóú]|[^aeiouáéíóú][aeiouáéíóú]/i.test(letras))return false;
+  return true;
+}
+async function leerTextoPantalla(worker,fuente){
+  const hallado=[];
+  for(const lienzo of prepararOCR(fuente)){
+    const {data}=await worker.recognize(lienzo);
+    const lineas=data.lines||(data.blocks||[]).flatMap(b=>(b.paragraphs||[]).flatMap(p=>p.lines||[]));
+    for(const l of lineas){
+      const todas=(l.words||[]).filter(w=>w.text.trim());
+      if(!todas.length||l.confidence<70)continue;
+      const buenas=todas.filter(w=>w.confidence>=65&&palabraOCR(w.text));
+      // Se toleran palabras dudosas sueltas (fotogramas de transición) si queda una frase clara.
+      if(buenas.length/todas.length<0.6||(buenas.length<2&&soloLetras(buenas[0]?.text||'').length<5))continue;
+      if(!buenas.some(w=>soloLetras(w.text).length>=3))continue;
+      if(buenas.filter(w=>soloLetras(w.text).length<=2).length>buenas.length/2)continue;
+      if(buenas.reduce((s,w)=>s+soloLetras(w.text).length,0)<4)continue;
+      hallado.push({texto:buenas.map(w=>w.text.trim()).join(' '),y:l.bbox?.y0??0});
+    }
+  }
+  const unico=[];
+  hallado.sort((a,b)=>a.y-b.y).forEach(h=>{if(!unico.some(u=>similar(u.texto,h.texto)>.6))unico.push(h);});
+  return unico.map(u=>u.texto).join(' / ');
+}
 function cleanOCR(text){ return String(text||'').split('\n').map(l=>l.trim()).filter(l=>{const w=l.split(/\s+/).filter(x=>/[A-Za-zÁÉÍÓÚÑáéíóúñ]{2,}/.test(x));return w.length>=1&&l.length>=3&&w.join('').length/l.replace(/\s/g,'').length>.6;}).join(' ').trim(); }
 function buildBlocks(ref){
   const ex=ref.extract, dur=ex.duration||0; const tr=ex.transcript||[], oc=ex.ocr||[];
@@ -300,7 +362,7 @@ async function runExtract(ref,{voz=true,texto=true}={}){
       setJob(ref.id,'ocr',10,'Leyendo texto de la imagen…');
       const img=await createImageBitmap(m.blob); const c=document.createElement('canvas'); c.width=Math.min(1200,img.width); c.height=Math.round(img.height*c.width/img.width); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
       const w=await loadOCR(); setJob(ref.id,'ocr',50,'Leyendo texto de la imagen…');
-      const {data}=await w.recognize(c); const txt=cleanOCR(data.text);
+      const txt=await leerTextoPantalla(w,c);
       ex.frames=[{t:0,thumb:thumbCache[ref.mediaId]?.thumb||''}]; ex.ocr=txt?[{t:0,text:txt}]:[]; ex.transcript=[]; ex.duration=0;
       ex.blocks=[{id:uid('b'),tipo:'Hook',tiempo:'',start:0,voz:'',texto:txt,visual:'',frame:0}];
     }else{
@@ -320,11 +382,17 @@ async function runExtract(ref,{voz=true,texto=true}={}){
       }
       ex.ocr=[];
       if(texto){
-        const w=await loadOCR(); let prev='';
+        const w=await loadOCR(); let prev='', ultimoOCR=-9;
         for(let i=0;i<frames.length;i++){
           setJob(ref.id,'ocr',62+36*(i/frames.length),`Leyendo texto en pantalla… ${i+1}/${frames.length}`);
-          const {data}=await w.recognize(frames[i].canvas); const txt=cleanOCR(data.text);
-          if(txt&&similar(txt,prev)<.7){ex.ocr.push({t:frames[i].t,text:txt});prev=txt;} else if(!txt) prev='';
+          if(duration>60&&i>0&&frames[i].t-ultimoOCR<1.5)continue; ultimoOCR=frames[i].t;
+          const txt=await leerTextoPantalla(w,frames[i].canvas);
+          if(!txt){prev='';continue;}
+          const ult=ex.ocr[ex.ocr.length-1];
+          // Mismo texto que el fotograma anterior: se queda la lectura más completa.
+          if(prev&&ult&&similar(txt,ult.text)>=.5){ if(txt.length>ult.text.length)ult.text=txt; }
+          else ex.ocr.push({t:frames[i].t,text:txt});
+          prev=txt;
         }
       }
       setJob(ref.id,'build',99,'Armando el guion…');
@@ -333,7 +401,7 @@ async function runExtract(ref,{voz=true,texto=true}={}){
     ex.status='listo'; ex.at=Date.now(); if(!ref.format)ref.format=m.kind==='image'?'imagen':(ex.transcript.length?'video':'video_texto');
     save(); toast('Guion extraído');
   }catch(err){ console.error(err); ex.status='error'; ex.error=err.message; save(); toast('No se pudo extraer: '+err.message); }
-  finally{ endJob(ref.id); if(UI.view==='referencias')render(); if(UI.refOpen===ref.id)renderRefModal(); }
+  finally{ endJob(ref.id); if(UI.view==='referencias')render(); if(UI.refOpen===ref.id){ if(ex.status==='listo')UI.refTab='guion'; renderRefModal(); } }
 }
 
 /* ---- fuentes, colecciones y marcas ---- */
@@ -356,7 +424,7 @@ function libFiltered(){
     (f.tab==='todas'||(f.tab==='clasificar'&&porClasificar(r))||(f.tab==='favoritas'&&r.fav)||(f.tab==='guion'&&r.extract.status==='listo'))
     &&(!f.fuente||r.source===f.fuente)&&(!f.coleccion||r.collection===f.coleccion)&&(!f.marca||r.brand===f.marca)
     &&(!f.formato||(f.formato==='link'?r.kind==='link':r.format===f.formato))&&(!f.etapa||r.stage===f.etapa)&&(!f.concepto||r.conceptId===f.concepto)&&(!f.angulo||r.angleId===f.angulo)
-    &&(!q||normTxt([r.brand,r.notes,r.collection,r.link,r.source,r.adText,...(r.extract.transcript||[]).map(t=>t.text),...(r.extract.ocr||[]).map(o=>o.text),r.extract.analysis?JSON.stringify(r.extract.analysis):''].join(' ')).includes(q)));
+    &&(!q||normTxt([r.brand,r.adId,r.notes,r.collection,r.link,r.source,r.adText,...(r.extract.transcript||[]).map(t=>t.text),...(r.extract.ocr||[]).map(o=>o.text),r.extract.analysis?JSON.stringify(r.extract.analysis):''].join(' ')).includes(q)));
   const cmp={recientes:(a,b)=>(b.created||0)-(a.created||0),antiguas:(a,b)=>(a.created||0)-(b.created||0),calificadas:(a,b)=>(b.rating||0)-(a.rating||0)||(b.fav?1:0)-(a.fav?1:0),
     marca:(a,b)=>(a.brand||'~').localeCompare(b.brand||'~','es'),duracion:(a,b)=>(a.extract.duration||thumbCache[a.mediaId]?.duration||9999)-(b.extract.duration||thumbCache[b.mediaId]?.duration||9999)}[f.orden];
   return list.sort(cmp);
@@ -475,6 +543,7 @@ function libCard(r){
     <div class="lb">
       <div style="display:flex;align-items:center;gap:6px"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.brand||'Sin marca')}</b>${r.rating?`<span class="muted" style="margin-left:auto;font-size:12px" aria-label="${r.rating} de 5">${'★'.repeat(r.rating)}</span>`:''}</div>
       <span class="muted" style="font-size:12px;display:flex;gap:5px;align-items:center">${srcIcon(r.source)}${esc(r.source)}${dur?' · '+tstr(dur):''}</span>
+      ${r.adId?`<span class="muted" style="font-size:11px;font-family:ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}
       ${hook?`<span class="hookline">“${esc(hook.slice(0,90))}”</span>`:''}
       <div style="display:flex;gap:5px;flex-wrap:wrap">${ex.status==='error'?'<span class="chip lose">Error al extraer</span>':''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}${r.conceptId?`<span class="chip">${esc(byId(S.concepts,r.conceptId)?.name||'')}</span>`:''}${porClasificar(r)?'<span class="chip warn">Por clasificar</span>':''}</div>
       ${progHTML(r.id)}
@@ -577,7 +646,7 @@ async function recibirSwipe(it){
       mediaId=it.mediaId;
     }
   }
-  const notas=[it.notes,it.adText?`Texto del anuncio: ${it.adText}`:'',it.adId?`ID en la biblioteca: ${it.adId}`:'',it.startedAt?`Activo desde: ${it.startedAt}`:''].filter(Boolean).join('\n');
+  const notas=[it.notes,it.startedAt?`Activo desde: ${it.startedAt}`:''].filter(Boolean).join('\n');
   S.refs.unshift(ensureRef({id:uid('r'),swipeId:it.id,productId,mediaId,kind,format,brand:it.brand||'',source:SOURCE_INFO[it.source]?it.source:linkSource(it.link||it.pageUrl||''),
     conceptId:'',angleId:'',stage:'',notes:notas,link:it.link||it.pageUrl||'',adText:it.adText||'',adId:it.adId||'',created:Date.parse(it.capturedAt)||Date.now(),rating:0,fav:false,collection:it.collection||''}));
 }
@@ -692,7 +761,9 @@ function renderRefModal(){
     right=`<div style="display:flex;flex-direction:column;gap:12px">
       <div class="grid2"><div class="field"><label for="db">Marca</label><input id="db" data-rf="brand" value="${esc(r.brand)}" placeholder="Ej. FLAIR Fútbol"></div>
       <div class="field"><label for="ds">Fuente</label><select id="ds" data-rf="source">${REF_SOURCES.map(x=>`<option ${x===r.source?'selected':''}>${x}</option>`).join('')}</select></div></div>
-      <div class="field"><label for="dl">Enlace al anuncio</label><input id="dl" data-rf="link" value="${esc(r.link)}" placeholder="https://www.facebook.com/ads/library/?id=…"></div>
+      <div class="grid2"><div class="field"><label for="dl">Enlace al anuncio</label><input id="dl" data-rf="link" value="${esc(r.link)}" placeholder="https://www.facebook.com/ads/library/?id=…"></div>
+      <div class="field"><label for="did">ID del anuncio o publicación</label><input id="did" data-rf="adId" value="${esc(r.adId||'')}" placeholder="Se completa solo con Nova Swipe"></div></div>
+      ${r.adText?`<div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Texto del anuncio</span><p class="hint" style="margin:0;white-space:pre-line">${esc(r.adText)}</p></div>`:''}
       <div class="grid3"><div class="field"><label for="df">Formato</label><select id="df" data-rf="format"><option value="">—</option>${FORMATS.map(x=>`<option value="${x[0]}" ${x[0]===r.format?'selected':''}>${x[1]}</option>`).join('')}</select></div>
       <div class="field"><label for="dc">Concepto</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
       <div class="field"><label for="de">Etapa</label><select id="de" data-rf="stage">${stageOpt(r.stage)}</select></div></div>
@@ -705,7 +776,7 @@ function renderRefModal(){
     </div>`;
   }
   ov.innerHTML=`<div class="modal" style="max-width:1180px" role="dialog" aria-modal="true" aria-labelledby="rt">
-    <div class="mh"><b id="rt">${esc(r.brand||'Referencia sin marca')}</b><span class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>${ready?'<span class="chip win">Guion extraído</span>':''}<button class="btn ghost sm" id="rx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
+    <div class="mh"><b id="rt">${esc(r.brand||'Referencia sin marca')}</b>${r.adId?`<span class="chip" style="font-family:ui-monospace,Menlo,monospace" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}<span class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>${ready?'<span class="chip win">Guion extraído</span>':''}<button class="btn ghost sm" id="rx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
     <div class="rgrid">
       <div class="rleft">
         <div class="rplayer" id="rplayer">${r.kind==='link'?`<div style="color:#cbd5e1;padding:30px;text-align:center">${ic('link')}<p>Solo enlace</p></div>`:''}</div>

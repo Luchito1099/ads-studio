@@ -21,24 +21,39 @@
 
 <main id="form" hidden>
   <div id="ultimo" class="msg" hidden></div>
-  <div class="row">
-    <div class="field"><label for="producto">Producto</label><select id="producto"></select></div>
-    <div class="field"><label for="fuente">Fuente</label><select id="fuente"></select></div>
-  </div>
-  <div class="row">
-    <div class="field"><label for="marca">Marca</label><input id="marca" placeholder="Ej. FLAIR Fútbol"></div>
-    <div class="field"><label for="coleccion">Colección</label><select id="coleccion"><option value="">Sin colección</option></select></div>
-  </div>
-  <div class="field"><label for="notas">Notas</label><textarea id="notas" placeholder="Qué te llamó la atención"></textarea></div>
 
-  <div class="sec">Archivos de esta página<small id="cuenta"></small></div>
-  <div class="grid" id="media"></div>
-  <p class="hint" id="aviso" hidden></p>
-  <label class="check"><input type="checkbox" id="soloEnlace"> Guardar también el enlace de la página</label>
+  <div class="hero" id="hero">
+    <div class="prev" id="prev"></div>
+    <div class="heroinfo">
+      <span class="tipo" id="tipo">Contenido de esta página</span>
+      <div class="field"><label for="marca">Marca</label><input id="marca" placeholder="Se detecta sola"></div>
+      <div class="field"><label for="adid">ID</label><input id="adid" placeholder="ID del anuncio o post"></div>
+    </div>
+  </div>
 
+  <button class="btn" id="enviar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+    <span id="enviarTxt">Guardar en la Biblioteca</span>
+  </button>
   <div id="estado" class="msg" hidden></div>
-  <button class="btn" id="enviar">Enviar a Nova Studio</button>
-  <p class="hint">Tip: clic derecho sobre un anuncio → <b>Guardar en Nova Studio</b>.</p>
+
+  <details id="mas">
+    <summary>Producto, fuente, colección y notas</summary>
+    <div class="row">
+      <div class="field"><label for="producto">Producto</label><select id="producto"></select></div>
+      <div class="field"><label for="fuente">Fuente</label><select id="fuente"></select></div>
+    </div>
+    <div class="field"><label for="coleccion">Colección</label><select id="coleccion"><option value="">Sin colección</option></select></div>
+    <div class="field"><label for="notas">Notas</label><textarea id="notas" placeholder="Qué te llamó la atención"></textarea></div>
+  </details>
+
+  <details id="otrosBox" hidden>
+    <summary>Otros archivos de la página <span id="cuenta"></span></summary>
+    <div class="grid" id="media"></div>
+    <button class="btn ghost" id="enviarOtros" disabled>Guardar seleccionados</button>
+  </details>
+
+  <p class="hint">Tip: pasa el mouse sobre cualquier video o imagen y pulsa <b>Guardar</b>.</p>
 </main>
 <script src="popup.js"></script>
 </body>
