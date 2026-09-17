@@ -12,10 +12,16 @@ import express from "express";
  *   POST /api/sync  ─ pendiente ─>  GET  /api/sync/agent
  *                                   POST /api/sync/agent/claim   (procesando)
  *   GET  /api/sync  <─ listo ────   POST /api/sync/agent/result  (actualiza ads)
+ *
+ * Dos tipos de solicitud comparten el mismo canal:
+ *   - "inversion": trae la inversión total de los ads de la app (por nombre).
+ *   - "fatiga": trae 90 días de métricas diarias de una cuenta para la
+ *     página Fatiga (esquema en src/fatiga/motor.js).
  */
 
 const ADKEY = "nova-ads:all:v1";
 const STATE_KEY = "meta_sync";
+export const FATIGA_KEY = "nova-fatiga:datos:v1";
 const IDLE = { status: "inactivo" };
 
 const safeEqual = (a, b) => {
@@ -35,7 +41,7 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   };
   const writeState = (state) => kv.metaSet(STATE_KEY, JSON.stringify(state));
   // Lo que ve el navegador: sin la lista completa de ads.
-  const publicState = ({ ads, ...rest }) => ({ ...rest, total: ads?.length ?? 0 });
+  const publicState = ({ ads, ...rest }) => ({ tipo: "inversion", ...rest, total: ads?.length ?? 0 });
 
   const requireAgent = (req, res, next) => {
     const expected = process.env.SYNC_TOKEN;
@@ -51,12 +57,32 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   }));
 
   router.post("/", requireAuth, wrap(async (req, res) => {
+    if (req.body?.tipo === "fatiga") {
+      const { cuenta, dias = 90, metrica = "cpa", objetivo = null, etiqueta = "Compras" } = req.body;
+      if (typeof cuenta !== "string" || !cuenta.trim()) {
+        return res.status(400).json({ error: "Indica la cuenta de Meta (ID o nombre) en la configuración" });
+      }
+      const state = {
+        id: crypto.randomUUID(),
+        tipo: "fatiga",
+        status: "pendiente",
+        requestedAt: new Date().toISOString(),
+        cuenta: cuenta.trim().slice(0, 120),
+        dias: Math.min(90, Math.max(7, Number(dias) || 90)),
+        metrica: metrica === "roas" ? "roas" : "cpa",
+        objetivo: num(objetivo),
+        etiqueta: String(etiqueta).slice(0, 40),
+      };
+      await writeState(state);
+      return res.json(publicState(state));
+    }
     const ads = (Array.isArray(req.body?.ads) ? req.body.ads : [])
       .filter((a) => a && typeof a.id === "string" && typeof a.nombre === "string")
       .map(({ id, nombre }) => ({ id, nombre }));
     if (!ads.length) return res.status(400).json({ error: "No hay ads lanzados para sincronizar" });
     const state = {
       id: crypto.randomUUID(),
+      tipo: "inversion",
       status: "pendiente",
       requestedAt: new Date().toISOString(),
       ads,
@@ -100,6 +126,31 @@ export function syncRouter({ kv, requireAuth, wrap }) {
       await writeState({ ...state, status: "error", error: String(error).slice(0, 500), finishedAt });
       return res.json({ ok: true });
     }
+    if (state.tipo === "fatiga") {
+      const datos = req.body?.datos;
+      if (!datos || !Array.isArray(datos.diario) || !datos.diario.length) {
+        return res.status(400).json({ error: "datos.diario debe ser un arreglo con filas" });
+      }
+      const bien = datos.diario.every((f) => f && typeof f.fecha === "string" && f.ad_id != null);
+      if (!bien) return res.status(400).json({ error: "Cada fila necesita fecha (AAAA-MM-DD) y ad_id" });
+      const guardado = {
+        meta: {
+          metrica_rectora: state.metrica,
+          objetivo: state.objetivo,
+          etiqueta_resultado: state.etiqueta,
+          ...(datos.meta || {}),
+          fuente: "mcp",
+          actualizado: finishedAt,
+        },
+        anuncios: Array.isArray(datos.anuncios) ? datos.anuncios : [],
+        diario: datos.diario,
+      };
+      await kv.set(FATIGA_KEY, JSON.stringify(guardado));
+      const anuncios = new Set(datos.diario.map((f) => String(f.ad_id))).size;
+      await writeState({ ...state, status: "listo", finishedAt, filas: datos.diario.length, anuncios });
+      return res.json({ ok: true, filas: datos.diario.length, anuncios });
+    }
+
     if (!Array.isArray(results)) return res.status(400).json({ error: "results debe ser un arreglo" });
 
     const byName = new Map(results.filter((r) => r && typeof r.nombre === "string").map((r) => [r.nombre, r]));

@@ -24,6 +24,8 @@ Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes e
 
 **Ganadores** — Vista filtrada de los ads que escalaron.
 
+**Fatiga** — Predictor de fatiga creativa: por anuncio dice si ya está fatigado, si se está fatigando, en cuántos días cruzaría el umbral y si hay que actuar o solo vigilar (un anuncio que rinde no se apaga). Incluye rangos de 7 a 90 días con comparación contra el periodo anterior, termómetro por etapa, tendencias, matriz fatiga vs rendimiento, detalle por anuncio y plan de acción. Los datos llegan subiendo un CSV del Administrador de anuncios o pidiéndoselos a Claude. Metodología y umbrales en [src/fatiga/motor.js](src/fatiga/motor.js) (`CONFIG_BASE`).
+
 **Sincronizar Meta** — Botón que trae la inversión de los ads lanzados desde Meta Ads, sin guardar credenciales de Meta en la app (ver abajo).
 
 **Métricas** — Tasa de acierto y ranking de los ángulos, formatos y conceptos que más ganadores producen.
@@ -63,6 +65,7 @@ La base es un almacén clave-valor (tabla `kv`, igual en Postgres y en SQLite) c
 - `nova-ads:all:v1` — ads y guiones
 - `nova-refs:list:v1` — referencias del banco
 - `nova-refimg:{id}` — miniaturas (redimensionadas a 640px y comprimidas a JPEG en el navegador)
+- `nova-fatiga:datos:v1` / `nova-fatiga:config:v1` — datos diarios y configuración de la página Fatiga
 
 ### Imágenes en S3
 
@@ -89,7 +92,9 @@ La app no se conecta a Meta. El botón **Sincronizar Meta** deja una solicitud c
 
 Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYNC_TOKEN` (y `SYNC_USD_PEN` si alguna cuenta está en dólares). Claude debe estar atendiendo: pídele `/sync-meta`, déjalo revisando con `/loop 2m /sync-meta` o prográmalo como rutina.
 
-Para que haya coincidencias, el anuncio en Meta debe llamarse igual que el nombre que genera la app (`AD_NOVAFLEX_UGC_PROBSOL_DOLOR_008_A`).
+El botón **Pedir datos a Claude** de la página Fatiga usa el mismo canal con `tipo: "fatiga"`: Claude lee 90 días de métricas diarias de toda la cuenta configurada y el servidor las guarda en `nova-fatiga:datos:v1`. Esa página no depende de los nombres de la app.
+
+Para que la inversión coincida, el anuncio en Meta debe llamarse igual que el nombre que genera la app (`AD_NOVAFLEX_UGC_PROBSOL_DOLOR_008_A`).
 
 ### API
 
@@ -180,6 +185,11 @@ src/
   Gate.jsx            Pantalla de contraseña
   storage.js          window.storage respaldado por el servidor + sesión
   sync.js             Cliente del botón Sincronizar Meta
+  fatiga/
+    motor.js          Señales, índice, predicción y matriz de decisión (lógica única)
+    normalizar.js     CSV del Administrador de anuncios -> esquema del motor
+    FatigaView.jsx    Página Fatiga (Chart.js, carga diferida)
+    demo.js           Datos de demostración
   index.css           Tailwind + fuente Inter
 server/
   index.js            Express: rutas, estáticos, SPA fallback

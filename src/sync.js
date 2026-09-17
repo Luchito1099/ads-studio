@@ -19,3 +19,7 @@ export const getSyncState = () => call("GET");
 
 /** ads: [{ id, nombre }] */
 export const requestSync = (ads) => call("POST", { ads });
+
+/** Pide a Claude 90 días de métricas diarias de una cuenta para la página Fatiga. */
+export const requestFatiga = ({ cuenta, metrica, objetivo, etiqueta }) =>
+  call("POST", { tipo: "fatiga", cuenta, metrica, objetivo, etiqueta, dias: 90 });

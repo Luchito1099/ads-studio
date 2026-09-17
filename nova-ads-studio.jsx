@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from "react";
 import {
   Plus, Copy, Check, Trophy, X, ChevronLeft, ChevronRight, Pencil,
   Trash2, Film, Tag, LayoutGrid, TrendingUp, Award, Search, RotateCcw, Package,
   Lightbulb, Video, Image as ImageIcon, Layers, Sparkles, Star, ExternalLink,
-  Upload, Link2, ArrowRight, Wand2, List, ArrowUpDown, RefreshCw
+  Upload, Link2, ArrowRight, Wand2, List, ArrowUpDown, RefreshCw, Activity
 } from "lucide-react";
-import { getSyncState, requestSync } from "./src/sync.js";
+import { getSyncState, requestSync, requestFatiga } from "./src/sync.js";
+// Carga diferida: Chart.js solo se descarga al abrir la pestaña Fatiga.
+const FatigaView = lazy(() => import("./src/fatiga/FatigaView.jsx"));
 
 /* ---------------- helpers ---------------- */
 const FONT = { fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, sans-serif" };
@@ -608,6 +610,7 @@ export default function App() {
   /* ---- sincronización con Meta: la app pide, Claude responde ---- */
   const [sync, setSync] = useState(null);
   const [syncErr, setSyncErr] = useState("");
+  const [fatigaVersion, setFatigaVersion] = useState(0);
   const syncActive = sync?.status === "pendiente" || sync?.status === "procesando";
   useEffect(() => { getSyncState().then(setSync).catch(() => {}); }, []);
   useEffect(() => {
@@ -616,8 +619,9 @@ export default function App() {
       try {
         const s = await getSyncState();
         setSync(s);
+        if (s.status === "listo" && s.tipo === "fatiga") setFatigaVersion((v) => v + 1);
         // El servidor ya escribió los ads: recargar para no pisarlos después.
-        if (s.status === "listo") {
+        else if (s.status === "listo") {
           const a = await window.storage.get(ADKEY);
           if (a && a.value) setAds(JSON.parse(a.value));
         }
@@ -631,14 +635,18 @@ export default function App() {
     if (!lanzados.length) { setSyncErr("No hay ads en Lanzado, Testing, Ganador o Muerto"); return; }
     try { setSync(await requestSync(lanzados)); } catch (e) { setSyncErr(e.message); }
   };
+  const pedirFatiga = async (cfg) => setSync(await requestFatiga(cfg));
+  // El estado de una solicitud de fatiga se muestra en su propia página.
+  const syncInv = sync?.tipo === "fatiga" ? null : sync;
   const syncText = syncErr ? syncErr
-    : sync?.status === "pendiente" ? "Esperando a Claude…"
-    : sync?.status === "procesando" ? "Claude sincronizando…"
-    : sync?.status === "listo" ? `${sync.updated}/${sync.total} ads · ${fechaHora(sync.finishedAt)}`
-    : sync?.status === "error" ? `Error: ${sync.error}`
+    : sync?.tipo === "fatiga" && syncActive ? "Claude trabajando en Fatiga…"
+    : syncInv?.status === "pendiente" ? "Esperando a Claude…"
+    : syncInv?.status === "procesando" ? "Claude sincronizando…"
+    : syncInv?.status === "listo" ? `${syncInv.updated}/${syncInv.total} ads · ${fechaHora(syncInv.finishedAt)}`
+    : syncInv?.status === "error" ? `Error: ${syncInv.error}`
     : "";
-  const syncTitle = sync?.status === "listo" && sync.notFound?.length
-    ? `No encontrados en Meta:\n${sync.notFound.join("\n")}`
+  const syncTitle = syncInv?.status === "listo" && syncInv.notFound?.length
+    ? `No encontrados en Meta:\n${syncInv.notFound.join("\n")}`
     : "Pide a Claude que traiga la inversión de Meta de los ads lanzados";
 
   const persistAds = (next) => { setAds(next); window.storage.set(ADKEY, JSON.stringify(next), false).catch(() => {}); };
@@ -770,6 +778,7 @@ export default function App() {
             {tabBtn("banco", "Banco", Lightbulb, stats.refCount)}
             {tabBtn("ganadores", "Ganadores", Trophy, stats.winners)}
             {tabBtn("metricas", "Métricas", TrendingUp)}
+            {tabBtn("fatiga", "Fatiga", Activity)}
           </div>
           <div className="ml-auto flex items-center gap-2">
             {view === "pipeline" && (
@@ -785,9 +794,9 @@ export default function App() {
               </>
             )}
             <div className="flex items-center gap-2" title={syncTitle}>
-              {syncText && <span className={`hidden max-w-[220px] truncate text-[11px] lg:inline ${syncErr || sync?.status === "error" ? "text-rose-600" : "text-slate-400"}`}>{syncText}</span>}
+              {syncText && <span className={`hidden max-w-[220px] truncate text-[11px] lg:inline ${syncErr || syncInv?.status === "error" ? "text-rose-600" : "text-slate-400"}`}>{syncText}</span>}
               <button onClick={handleSync} disabled={syncActive} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70">
-                <RefreshCw size={15} className={syncActive ? "animate-spin" : ""} /> {syncActive ? "Sincronizando" : "Sincronizar Meta"}
+                <RefreshCw size={15} className={syncActive && syncInv ? "animate-spin" : ""} /> {syncActive && syncInv ? "Sincronizando" : "Sincronizar Meta"}
               </button>
             </div>
             {view === "banco" ? (
@@ -898,6 +907,14 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {view === "fatiga" && (
+        <div className="mx-auto max-w-[1400px] px-4 pb-8">
+          <Suspense fallback={<div className="py-16 text-center text-slate-400">Cargando análisis…</div>}>
+            <FatigaView sync={sync} onPedir={pedirFatiga} version={fatigaVersion} />
+          </Suspense>
+        </div>
+      )}
 
       {openEditor && <Editor ad={editing} initial={initial} nextNum={nextNum} onSave={handleSaveAd} onDelete={handleDeleteAd} onClose={() => { setOpenEditor(false); setEditing(null); setInitial(null); setConvertRefId(null); }} />}
       {openRef && <RefEditor ref0={refEditing} thumb={refEditing ? imgCache[refEditing.id] : null} onSave={handleSaveRef} onDelete={handleDeleteRef} onClose={() => { setOpenRef(false); setRefEditing(null); }} />}
