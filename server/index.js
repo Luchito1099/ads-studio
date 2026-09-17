@@ -10,6 +10,7 @@ import { importFromSqlite } from "./migrate.js";
 import { syncRouter } from "./sync.js";
 import { mediaRouter, almacenArchivos } from "./media.js";
 import { swipeRouter } from "./swipe.js";
+import { competenciaRouter } from "./competencia.js";
 import {
   COOKIE_NAME,
   setSessionSecret,
@@ -166,6 +167,7 @@ app.use("/api", swipeRouter({ kv, almacen, requireAuth, wrap }));
 
 /* ---------------- sincronización con Meta (vía Claude) ---------------- */
 app.use("/api/sync", syncRouter({ kv, requireAuth, wrap }));
+app.use("/api/competencia", competenciaRouter({ kv, requireAuth, wrap }));
 
 // Respaldo manual: descarga todo el contenido de la base en un JSON.
 // Las imágenes que están en S3 aparecen como puntero `s3:…`; el archivo

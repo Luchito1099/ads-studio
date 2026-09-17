@@ -375,3 +375,18 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--li
 .dfoot .ok{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .dfoot .lnk{margin-left:auto}
 @media (max-width:900px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ====== competencia ====== */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.ccard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;cursor:pointer}
+.ccard:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(13,148,136,.10)}
+.ccard .ch{display:flex;align-items:center;gap:8px}
+.ccard .ch b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ccard .ch .btn{margin-left:auto}
+.cnum{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.cnum b{font-size:34px;font-weight:800;line-height:1}
+.cnum span{font-size:13px;color:var(--ink2)}
+.cnum.vacio b{color:var(--faint)}
+.cmini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid var(--line2);padding-top:10px}
+.cmini b{display:block;font-size:17px;font-weight:700}
+.cmini span{font-size:11px;color:var(--muted);line-height:1.3}
