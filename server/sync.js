@@ -40,8 +40,12 @@ export function syncRouter({ kv, requireAuth, wrap }) {
     return raw ? JSON.parse(raw) : IDLE;
   };
   const writeState = (state) => kv.metaSet(STATE_KEY, JSON.stringify(state));
-  // Lo que ve el navegador: sin la lista completa de ads.
-  const publicState = ({ ads, ...rest }) => ({ tipo: "inversion", ...rest, total: ads?.length ?? 0 });
+  // Lo que ve el navegador: sin la lista completa de ads, y si hay un agente
+  // que pueda responder (sin SYNC_TOKEN nadie puede tomar la solicitud).
+  const publicState = ({ ads, ...rest }) => ({
+    tipo: "inversion", ...rest, total: ads?.length ?? 0, agente: !!process.env.SYNC_TOKEN,
+  });
+  const SIN_TOKEN = "El servidor no tiene SYNC_TOKEN: agrégalo en las variables de entorno (Coolify) para que Claude pueda responder.";
 
   const requireAgent = (req, res, next) => {
     const expected = process.env.SYNC_TOKEN;
@@ -57,6 +61,7 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   }));
 
   router.post("/", requireAuth, wrap(async (req, res) => {
+    if (!process.env.SYNC_TOKEN) return res.status(503).json({ error: SIN_TOKEN });
     if (req.body?.tipo === "fatiga") {
       const { cuenta, dias = 90, metrica = "cpa", objetivo = null, etiqueta = "Compras" } = req.body;
       if (typeof cuenta !== "string" || !cuenta.trim()) {
@@ -89,6 +94,15 @@ export function syncRouter({ kv, requireAuth, wrap }) {
     };
     await writeState(state);
     res.json(publicState(state));
+  }));
+
+  // Cancelar una solicitud que nadie tomó (o que quedó colgada).
+  router.delete("/", requireAuth, wrap(async (_req, res) => {
+    const state = await readState();
+    if (!["pendiente", "procesando"].includes(state.status)) return res.json(publicState(state));
+    const next = { ...state, status: "cancelado", finishedAt: new Date().toISOString() };
+    await writeState(next);
+    res.json(publicState(next));
   }));
 
   /* ---------- agente ---------- */

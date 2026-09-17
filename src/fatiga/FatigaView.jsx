@@ -181,7 +181,7 @@ function Detalle({ a, prep, per, f, etiquetaRes, metrica, objetivo, onClose }) {
 }
 
 /* ---------------- página ---------------- */
-export default function FatigaView({ sync, onPedir, version }) {
+export default function FatigaView({ sync, onPedir, onCancelar, version }) {
   const [datos, setDatos] = useState(undefined);
   const [esDemo, setEsDemo] = useState(false);
   const [config, setConfig] = useState({ cuenta: "", metrica: "cpa", objetivo: "", etiqueta: "Compras" });
@@ -371,6 +371,7 @@ export default function FatigaView({ sync, onPedir, version }) {
     procesando: "Claude está leyendo la cuenta…",
     listo: `Datos recibidos: ${syncFatiga.anuncios ?? "?"} anuncios, ${syncFatiga.filas ?? "?"} filas`,
     error: `Error: ${syncFatiga.error}`,
+    cancelado: "Solicitud cancelada",
   }[syncFatiga.status];
 
   const campo = "w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
@@ -388,6 +389,7 @@ export default function FatigaView({ sync, onPedir, version }) {
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {estadoClaude && <span className={`text-[11px] ${syncFatiga.status === "error" ? "text-rose-600" : "text-slate-400"}`}>{estadoClaude}</span>}
+          {ocupado && <button onClick={onCancelar} className="text-[11px] font-semibold text-slate-500 underline hover:text-rose-600">Cancelar</button>}
           <button onClick={pedir} disabled={ocupado} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-bold text-white hover:bg-teal-700 disabled:cursor-wait disabled:opacity-70">
             <RefreshCw size={14} className={ocupado && syncFatiga ? "animate-spin" : ""} /> Pedir datos a Claude
           </button>

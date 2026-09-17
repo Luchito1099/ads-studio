@@ -17,6 +17,8 @@ async function call(method, body) {
 
 export const getSyncState = () => call("GET");
 
+export const cancelSync = () => call("DELETE");
+
 /** ads: [{ id, nombre }] */
 export const requestSync = (ads) => call("POST", { ads });
 

@@ -5,7 +5,7 @@ import {
   Lightbulb, Video, Image as ImageIcon, Layers, Sparkles, Star, ExternalLink,
   Upload, Link2, ArrowRight, Wand2, List, ArrowUpDown, RefreshCw, Activity
 } from "lucide-react";
-import { getSyncState, requestSync, requestFatiga } from "./src/sync.js";
+import { getSyncState, requestSync, requestFatiga, cancelSync } from "./src/sync.js";
 // Carga diferida: Chart.js solo se descarga al abrir la pestaña Fatiga.
 const FatigaView = lazy(() => import("./src/fatiga/FatigaView.jsx"));
 
@@ -636,11 +636,14 @@ export default function App() {
     try { setSync(await requestSync(lanzados)); } catch (e) { setSyncErr(e.message); }
   };
   const pedirFatiga = async (cfg) => setSync(await requestFatiga(cfg));
+  const cancelarSync = async () => { try { setSync(await cancelSync()); } catch (e) { setSyncErr(e.message); } };
+  // Más de 10 minutos sin que Claude la tome: probablemente nadie está atendiendo.
+  const syncDemorada = sync?.status === "pendiente" && Date.now() - Date.parse(sync.requestedAt) > 10 * 60 * 1000;
   // El estado de una solicitud de fatiga se muestra en su propia página.
   const syncInv = sync?.tipo === "fatiga" ? null : sync;
   const syncText = syncErr ? syncErr
     : sync?.tipo === "fatiga" && syncActive ? "Claude trabajando en Fatiga…"
-    : syncInv?.status === "pendiente" ? "Esperando a Claude…"
+    : syncInv?.status === "pendiente" ? (syncDemorada ? "Nadie la tomó aún: pide /sync-meta a Claude" : "Esperando a Claude…")
     : syncInv?.status === "procesando" ? "Claude sincronizando…"
     : syncInv?.status === "listo" ? `${syncInv.updated}/${syncInv.total} ads · ${fechaHora(syncInv.finishedAt)}`
     : syncInv?.status === "error" ? `Error: ${syncInv.error}`
@@ -795,6 +798,7 @@ export default function App() {
             )}
             <div className="flex items-center gap-2" title={syncTitle}>
               {syncText && <span className={`hidden max-w-[220px] truncate text-[11px] lg:inline ${syncErr || syncInv?.status === "error" ? "text-rose-600" : "text-slate-400"}`}>{syncText}</span>}
+              {syncActive && <button onClick={cancelarSync} className="text-[11px] font-semibold text-slate-500 underline hover:text-rose-600">Cancelar</button>}
               <button onClick={handleSync} disabled={syncActive} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70">
                 <RefreshCw size={15} className={syncActive && syncInv ? "animate-spin" : ""} /> {syncActive && syncInv ? "Sincronizando" : "Sincronizar Meta"}
               </button>
@@ -911,7 +915,7 @@ export default function App() {
       {view === "fatiga" && (
         <div className="mx-auto max-w-[1400px] px-4 pb-8">
           <Suspense fallback={<div className="py-16 text-center text-slate-400">Cargando análisis…</div>}>
-            <FatigaView sync={sync} onPedir={pedirFatiga} version={fatigaVersion} />
+            <FatigaView sync={sync} onPedir={pedirFatiga} onCancelar={cancelarSync} version={fatigaVersion} />
           </Suspense>
         </div>
       )}
