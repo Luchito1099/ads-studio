@@ -35,6 +35,12 @@ export async function openSqlite(file) {
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS blob (
+      id         TEXT PRIMARY KEY,
+      mime       TEXT NOT NULL,
+      data       BLOB NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `);
 
   const stmts = {
@@ -48,6 +54,9 @@ export async function openSqlite(file) {
     del: db.prepare("DELETE FROM kv WHERE key = ?"),
     metaGet: db.prepare("SELECT value FROM meta WHERE key = ?"),
     metaSet: db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)"),
+    blobGet: db.prepare("SELECT mime, data FROM blob WHERE id = ?"),
+    blobSet: db.prepare("INSERT OR REPLACE INTO blob (id, mime, data, created_at) VALUES (?, ?, ?, ?)"),
+    blobDel: db.prepare("DELETE FROM blob WHERE id = ?"),
   };
 
   return {
@@ -60,6 +69,9 @@ export async function openSqlite(file) {
     delete: async (key) => void stmts.del.run(key),
     metaGet: async (key) => stmts.metaGet.get(key)?.value ?? null,
     metaSet: async (key, value) => void stmts.metaSet.run(key, value),
+    blobGet: async (id) => stmts.blobGet.get(id) ?? null,
+    blobSet: async (id, mime, data) => void stmts.blobSet.run(id, mime, data, new Date().toISOString()),
+    blobDel: async (id) => void stmts.blobDel.run(id),
     close: async () => db.close(),
   };
 }
@@ -97,6 +109,12 @@ export async function openPostgres(url) {
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS blob (
+      id         TEXT PRIMARY KEY,
+      mime       TEXT NOT NULL,
+      data       BYTEA NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 
   const upsert = `
@@ -119,6 +137,13 @@ export async function openPostgres(url) {
         "INSERT INTO meta (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
         [key, value]
       )),
+    blobGet: async (id) => (await pool.query("SELECT mime, data FROM blob WHERE id = $1", [id])).rows[0] ?? null,
+    blobSet: async (id, mime, data) =>
+      void (await pool.query(
+        "INSERT INTO blob (id, mime, data) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data",
+        [id, mime, data]
+      )),
+    blobDel: async (id) => void (await pool.query("DELETE FROM blob WHERE id = $1", [id])),
     /** Escribe todas las filas o ninguna. */
     async setMany(rows, meta = []) {
       const client = await pool.connect();

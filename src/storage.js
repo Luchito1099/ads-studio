@@ -1,9 +1,9 @@
 /**
  * Implementación de `window.storage` respaldada por el servidor.
  *
- * nova-ads-studio.jsx habla exclusivamente con esta API (get / set / delete),
- * así que reemplazando la implementación los datos pasan a vivir en el
- * servidor (Postgres o SQLite, e imágenes en S3) sin tocar el componente.
+ * El Studio (src/studio/persistencia.js) guarda a través de esta API
+ * (get / set / delete), así que los datos viven en el servidor (Postgres o
+ * SQLite) sin que la app sepa cuál.
  *
  * Contrato que espera el componente:
  *   await storage.get(key)          -> { key, value } | null
@@ -66,8 +66,8 @@ async function request(method, key, body, retries = 0) {
 /**
  * Claves cuya lectura falló: no sabemos qué hay en el servidor.
  *
- * Importa porque el componente, si no logra leer, asume base vacía y escribe
- * los datos de ejemplo encima (nova-ads-studio.jsx:564). Con un solo parpadeo
+ * Importa porque si la app no logra leer y asume base vacía, escribiría los
+ * datos de ejemplo encima. Con un solo parpadeo
  * de red eso borraría todo el pipeline. Mientras una clave esté acá,
  * rechazamos escribirla: preferimos perder una edición a perder la base.
  * El flag se limpia solo en cuanto una lectura vuelve a funcionar.

@@ -8,27 +8,16 @@ Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes e
 
 ## Qué incluye
 
-**Pipeline** — Tablero o lista con los estados por los que pasa cada ad:
+La interfaz sigue el prototipo de [docs/prototipo/nova-studio-de-ads.html](docs/prototipo/nova-studio-de-ads.html). Barra lateral por flujo:
 
-| Estado | Significado |
-|---|---|
-| Guión | Escrito, sin aprobar |
-| Voz / VO | Aprobado y generado |
-| Edición | En corte / montaje |
-| Lanzado | En Meta / TikTok |
-| Testing | Midiendo CPA real |
-| Ganador | Escala / itera |
-| Muerto | Descartado |
+- **Crear** · **Biblioteca** (anuncios de referencia: subir, arrastrar o pegar con Ctrl+V; extracción de guion con transcripción y texto en pantalla; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
+- **Producir** · **Pipeline** Idea → Guion → Producción → Lanzado → Testing → Resultado. Cada pieza tiene guion por bloques, creativos y copy, y resultados. El resultado (Ganador / Perdedor / TBD) lo decide el CPA real contra el tope al llegar a la muestra mínima.
+- **Lanzar** · **Embudo**: pizarra TOFU / MOFU / BOFU con objetivo y públicos por etapa.
+- **Medir** · **Análisis 80/20**, **Fatiga** (motor `MotorFatiga` del predictor) y **Tracker** de CPA real.
 
-**Banco** — Referencias guardadas (con imagen o enlace) que se convierten en guiones con un clic.
+Todo se filtra por producto (NOVAFLEX, NovaFit Pro…), salvo los conceptos. Los datos de Meta llegan por **Importar datos de Meta** (CSV del Administrador de anuncios) o los envía Claude (ver abajo).
 
-**Ganadores** — Vista filtrada de los ads que escalaron.
-
-**Fatiga** — Predictor de fatiga creativa: por anuncio dice si ya está fatigado, si se está fatigando, en cuántos días cruzaría el umbral y si hay que actuar o solo vigilar (un anuncio que rinde no se apaga). Incluye rangos de 7 a 90 días con comparación contra el periodo anterior, termómetro por etapa, tendencias, matriz fatiga vs rendimiento, detalle por anuncio y plan de acción. Los datos llegan subiendo un CSV del Administrador de anuncios o pidiéndoselos a Claude. Metodología y umbrales en [src/fatiga/motor.js](src/fatiga/motor.js) (`CONFIG_BASE`).
-
-**Sincronizar Meta** — Botón que trae la inversión de los ads lanzados desde Meta Ads, sin guardar credenciales de Meta en la app (ver abajo).
-
-**Métricas** — Tasa de acierto y ranking de los ángulos, formatos y conceptos que más ganadores producen.
+Las piezas migradas que estaban marcadas a mano como Ganador o Muerto muestran la etiqueta *Histórico*; es informativa y no cambia el resultado.
 
 ## Nomenclatura automática
 
@@ -58,14 +47,16 @@ Navegador ── Gate (contraseña) ── App React
                      o SQLite (/data/nova.db)
 ```
 
-`nova-ads-studio.jsx` guarda todo a través de `window.storage`, una API async de tres métodos. [src/storage.js](src/storage.js) implementa esa misma interfaz contra el servidor, así que el componente no depende de dónde se guardan los datos.
+El Studio ([src/studio/](src/studio)) guarda a través de [persistencia.js](src/studio/persistencia.js), que usa `window.storage` ([src/storage.js](src/storage.js)) contra `/api/kv` y sube los archivos a `/api/media`.
 
-La base es un almacén clave-valor (tabla `kv`, igual en Postgres y en SQLite) con tres claves:
+La base tiene un almacén clave-valor (tabla `kv`) y una tabla `blob` para archivos cuando no hay S3. Claves del Studio:
 
-- `nova-ads:all:v1` — ads y guiones
-- `nova-refs:list:v1` — referencias del banco
-- `nova-refimg:{id}` — miniaturas (redimensionadas a 640px y comprimidas a JPEG en el navegador)
-- `nova-fatiga:datos:v1` / `nova-fatiga:config:v1` — datos diarios y configuración de la página Fatiga
+- `studio:state:v2` — productos, ángulos, conceptos, hooks, piezas, biblioteca, embudo y ajustes
+- `studio:metadata:v2` — datos diarios de Meta por producto (se reescribe solo si cambian)
+- `studio:media:{id}` — metadatos de cada archivo (miniatura, tipo, duración); los bytes van a `/api/media/{id}`
+- `nova-fatiga:datos:v1` — datos que envía Claude; el Studio los importa al abrirse
+
+Claves de la versión anterior (`nova-ads:all:v1`, `nova-refs:list:v1`, `nova-refimg:*`) se migran solas la primera vez que se abre el Studio con la base vacía y no se borran.
 
 ### Imágenes en S3
 
@@ -83,18 +74,11 @@ Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.
 
 ### Sincronización con Meta vía Claude
 
-La app no se conecta a Meta. El botón **Sincronizar Meta** deja una solicitud con los ads en Lanzado, Testing, Ganador o Muerto y su nombre; Claude (con el MCP de Meta Ads) la atiende con la skill [`/sync-meta`](.claude/skills/sync-meta/SKILL.md):
+La app no guarda credenciales de Meta. Claude (con el MCP de Meta Ads y la skill [`/sync-meta`](.claude/skills/sync-meta/SKILL.md)) lee 90 días de métricas diarias por anuncio, las convierte con [scripts/fatiga-meta.mjs](scripts/fatiga-meta.mjs) sin transcribir números y las envía a `/api/sync/agent/fatiga`. El servidor las guarda en `nova-fatiga:datos:v1` y el Studio las importa al abrirse (asigna cada anuncio al producto cuyo código aparece en la campaña).
 
-1. Lee la solicitud y la marca como *procesando*.
-2. Busca en tus cuentas de Meta los ads **con ese nombre exacto** y suma su inversión total (convertida a soles).
-3. Envía los resultados: el servidor actualiza la **inversión** de cada ad y guarda un bloque informativo (compras según Meta, impresiones, CTR). Los **pedidos confirmados no se tocan**.
-4. La app ve el estado *listo* y recarga sola; al pasar el mouse por el botón se ven los ads no encontrados.
+Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYNC_TOKEN` en el `.env`. Pídele a Claude "sincroniza la fatiga de <cuenta>".
 
-Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYNC_TOKEN` (y `SYNC_USD_PEN` si alguna cuenta está en dólares). Claude debe estar atendiendo: pídele `/sync-meta`, déjalo revisando con `/loop 2m /sync-meta` o prográmalo como rutina.
-
-Claude arma esos datos con [scripts/fatiga-meta.mjs](scripts/fatiga-meta.mjs), que convierte las respuestas del MCP sin transcribirlas; también puede enviarlos sin que nadie pulse el botón ("sincroniza la fatiga"). El botón **Pedir datos a Claude** de la página Fatiga usa el mismo canal con `tipo: "fatiga"`: Claude lee 90 días de métricas diarias de toda la cuenta configurada y el servidor las guarda en `nova-fatiga:datos:v1`. Esa página no depende de los nombres de la app.
-
-Para que la inversión coincida, el anuncio en Meta debe llamarse igual que el nombre que genera la app (`AD_NOVAFLEX_UGC_PROBSOL_DOLOR_008_A`).
+`/api/sync` conserva además el canal de solicitudes (pendiente → procesando → listo) para automatizaciones.
 
 ### API
 
@@ -128,8 +112,9 @@ Todo bajo `/api/kv`, `/api/img` y `/api/sync` exige la cookie, salvo `/api/sync/
 | `DATABASE_SSL` | No | `require` (TLS sin validar certificado, típico en RDS), `verify` o `false`. Si lo usas, no pongas `sslmode` en la URL. |
 | `DB_PATH` | No | Archivo SQLite. Por defecto `./data/nova.db`. Con Postgres, es lo que se importa la primera vez. |
 | `SQLITE_IMPORT_PATH` | No | Importar desde otro archivo SQLite en vez de `DB_PATH`. |
-| `SYNC_TOKEN` | Para sincronizar | Clave con la que Claude envía los datos de Meta. Sin ella el botón queda esperando. |
-| `S3_BUCKET` | No | Bucket para las imágenes. Si falta, van dentro de la base. |
+| `SYNC_TOKEN` | Para sincronizar | Clave con la que Claude envía los datos de Meta. Sin ella el servidor rechaza los envíos. |
+| `S3_BUCKET` | No | Bucket para videos e imágenes. Si falta, van dentro de la base. |
+| `MEDIA_MAX_MB` | No | Tamaño máximo por archivo subido. Por defecto `300`. |
 | `S3_REGION` | No | Región del bucket. Por defecto `AWS_REGION` o `us-east-1`. |
 | `S3_PREFIX` | No | Carpeta dentro del bucket (ej. `nova`). |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Con S3 | Credenciales IAM. No hacen falta si corre en AWS con un rol. |
@@ -150,7 +135,7 @@ Ver [.env.example](.env.example).
    - `DB_PATH` → `/data/nova.db`.
    - `DATABASE_URL` (y `DATABASE_SSL` si hace falta) → tu Postgres. En Coolify puedes crear uno con **New Resource → Database → PostgreSQL** y copiar su URL interna.
    - `S3_BUCKET`, `S3_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` → tu bucket de S3.
-   - `SYNC_TOKEN` → salida de `openssl rand -hex 32`, para el botón Sincronizar Meta.
+   - `SYNC_TOKEN` → salida de `openssl rand -hex 32`, para que Claude envíe los datos de Meta.
 4. **Storages → Add**: volumen persistente montado en `/data`.
 
    Sin Postgres este paso no es opcional: SQLite viviría dentro del contenedor y **se borraría en cada redeploy**. Con Postgres, mantén el volumen al menos en el primer deploy: de ahí se importan tus datos actuales.
@@ -180,29 +165,35 @@ npm run build && npm start   # todo en http://localhost:3000
 ## Estructura
 
 ```
-nova-ads-studio.jsx   Componente de la app
 index.html            Punto de entrada de Vite
+docs/
+  prototipo/          Prototipo de referencia (diseño y funciones)
+  fase-0-auditoria.md Auditoría y plan por fases
 src/
-  main.jsx            Instala window.storage, decide gate vs app
-  Gate.jsx            Pantalla de contraseña
+  main.jsx            Instala window.storage; pantalla de acceso y arranque del Studio
+  Gate.jsx            Pantalla de contraseña (Tailwind)
   storage.js          window.storage respaldado por el servidor + sesión
-  sync.js             Cliente del botón Sincronizar Meta
-  fatiga/
-    motor.js          Señales, índice, predicción y matriz de decisión (lógica única)
-    normalizar.js     CSV del Administrador de anuncios -> esquema del motor
-    FatigaView.jsx    Página Fatiga (Chart.js, carga diferida)
-    demo.js           Datos de demostración
   index.css           Tailwind + fuente Inter
+  studio/
+    app.js            Studio (portado del prototipo)
+    persistencia.js   Guardado en el servidor y migración de la versión anterior
+    motor-fatiga.js   MotorFatiga del predictor (lógica sin cambios)
+    studio.css        Estilos del Studio
+    skeleton.html     Estructura base del documento
+    sample-nova.json  Ejemplo real: nova shop, 90 días
 server/
   index.js            Express: rutas, estáticos, SPA fallback
-  db.js               Almacén kv: Postgres o SQLite, y secreto de sesión
-  blobs.js            Cliente S3
-  images.js           Imágenes del banco: data URL <-> objeto en S3
-  migrate.js          Importa el SQLite a un Postgres vacío
-  sync.js             Solicitudes de sincronización con Meta (navegador <-> Claude)
-.claude/skills/sync-meta/
-  SKILL.md            Cómo Claude atiende el botón Sincronizar Meta
   auth.js             Cookie firmada, comparación constante, rate limit
+  db.js               Almacén kv y archivos: Postgres o SQLite; secreto de sesión
+  media.js            /api/media: archivos en S3 o en la base
+  blobs.js            Cliente S3
+  images.js           Imágenes de la versión anterior: data URL <-> S3
+  migrate.js          Importa el SQLite a un Postgres vacío
+  sync.js             Canal con Claude (/api/sync)
+scripts/
+  fatiga-meta.mjs     Convierte respuestas del MCP de Meta y las envía
+.claude/skills/sync-meta/
+  SKILL.md            Cómo Claude sincroniza con Meta Ads
 Dockerfile            Build multi-etapa
 docker-compose.yml    Alternativa a Dockerfile, con volumen declarado
 ```

@@ -1,6 +1,6 @@
 ---
 name: sync-meta
-description: Sincroniza NOVA Studio con Meta Ads vía MCP. Atiende los botones "Sincronizar Meta" (inversión por nombre de ad) y "Pedir datos a Claude" (datos diarios para la página Fatiga), o envía la fatiga directo cuando el usuario lo pide. Úsalo cuando el usuario diga "sincroniza", "sincroniza la fatiga", "/sync-meta" o cuando una rutina lo invoque.
+description: Sincroniza NOVA Studio con Meta Ads vía MCP. Envía los datos diarios por anuncio que usan Análisis 80/20 y Fatiga, y atiende las solicitudes pendientes de /api/sync. Úsalo cuando el usuario diga "sincroniza", "sincroniza la fatiga", "/sync-meta" o cuando una rutina lo invoque.
 ---
 
 # Sincronizar NOVA Studio con Meta Ads
@@ -93,7 +93,7 @@ La página **Fatiga** necesita métricas diarias por anuncio de **toda la cuenta
 - Hay una solicitud `tipo: "fatiga"` pendiente: trae `cuenta`, `metrica`, `objetivo` y `etiqueta`. Reclámala como en el paso 1.
 - El usuario te pide sincronizar la fatiga sin haber pulsado el botón: usa la cuenta que diga (o pregúntala) y envía directo; no hace falta reclamar nada.
 
-El análisis lo hace la app (`src/fatiga/motor.js`). Tú traes los datos y **nunca los transcribes a mano**: `scripts/fatiga-meta.mjs` los convierte y los envía.
+El análisis lo hace la app (`src/studio/motor-fatiga.js`, el `MotorFatiga` del prototipo). Tú traes los datos y **nunca los transcribes a mano**: `scripts/fatiga-meta.mjs` los convierte y los envía.
 
 1. **Cuenta:** con `ads_get_ad_accounts`, busca la que coincida (por ID, con o sin `act_`, o por nombre). Debe tener `is_ads_mcp_enabled` y `is_queryable` en `true`; si no, avísalo (y si había solicitud, envía `error` a `/api/sync/agent/result`). Anota su `currency`.
 2. **Campos:** verifica con `ads_get_field_context`: `amount_spent`, `impressions`, `reach`, `link_click`, `omni_purchase` (o el evento que corresponda a `etiqueta`), `omni_purchase_values`, `video_play_actions`, `campaign_name`, `adset_name`, `created_time`, `frequency`.
@@ -112,4 +112,4 @@ node scripts/fatiga-meta.mjs   --diario <tanda1> <tanda2> ...   --anuncios <resp
 - Los anuncios de imagen que traen unas pocas reproducciones se marcan como imagen (el script lo resuelve).
 - Si el envío responde 503, el servidor no tiene `SYNC_TOKEN`: dile al usuario que lo agregue en Coolify.
 
-Resumen al usuario: cuántos anuncios y días enviaste, y que abra la pestaña **Fatiga** (se actualiza sola en menos de un minuto). Si quieres adelantar lo más urgente, guarda con `--salida` y evalúa ese archivo con `preparar` y `evaluarCuenta` de `src/fatiga/motor.js` (mismos números que verá en la página); no inventes cifras.
+Resumen al usuario: cuántos anuncios y días enviaste, y que recargue el Studio: al abrirse importa los datos nuevos y los muestra en **Análisis 80/20** y **Fatiga**. Si quieres adelantar lo más urgente, guarda con `--salida` y evalúa ese archivo con `preparar` y `analizar` de `src/studio/motor-fatiga.js` (mismos números que verá en la página); no inventes cifras.

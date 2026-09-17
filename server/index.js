@@ -8,6 +8,7 @@ import { openBlobs } from "./blobs.js";
 import { makeImages, isImageKey, objectKeyOf, parseDataUrl } from "./images.js";
 import { importFromSqlite } from "./migrate.js";
 import { syncRouter } from "./sync.js";
+import { mediaRouter } from "./media.js";
 import {
   COOKIE_NAME,
   setSessionSecret,
@@ -60,8 +61,8 @@ const DIST = path.join(process.cwd(), "dist");
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-// Las miniaturas del banco llegan como data URL, por eso el límite alto.
-app.use(express.json({ limit: "12mb" }));
+// El estado del Studio y las miniaturas viajan como JSON; los archivos, por /api/media.
+app.use(express.json({ limit: "25mb" }));
 app.use(cookieParser());
 
 /* ---------------- salud ---------------- */
@@ -154,6 +155,9 @@ app.get("/api/img", requireAuth, wrap(async (req, res) => {
   if (!img) return res.status(404).end();
   res.type(img.type).send(img.buffer);
 }));
+
+/* ---------------- archivos del Studio ---------------- */
+app.use("/api/media", mediaRouter({ kv, blobs, requireAuth, wrap }));
 
 /* ---------------- sincronización con Meta (vía Claude) ---------------- */
 app.use("/api/sync", syncRouter({ kv, requireAuth, wrap }));

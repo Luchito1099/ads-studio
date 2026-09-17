@@ -16,7 +16,7 @@ import express from "express";
  * Dos tipos de solicitud comparten el mismo canal:
  *   - "inversion": trae la inversión total de los ads de la app (por nombre).
  *   - "fatiga": trae 90 días de métricas diarias de una cuenta para la
- *     página Fatiga (esquema en src/fatiga/motor.js).
+ *     página Fatiga (esquema de datos de src/studio/motor-fatiga.js).
  */
 
 const ADKEY = "nova-ads:all:v1";
