@@ -8,7 +8,8 @@ import { openBlobs } from "./blobs.js";
 import { makeImages, isImageKey, objectKeyOf, parseDataUrl } from "./images.js";
 import { importFromSqlite } from "./migrate.js";
 import { syncRouter } from "./sync.js";
-import { mediaRouter } from "./media.js";
+import { mediaRouter, almacenArchivos } from "./media.js";
+import { swipeRouter } from "./swipe.js";
 import {
   COOKIE_NAME,
   setSessionSecret,
@@ -157,7 +158,11 @@ app.get("/api/img", requireAuth, wrap(async (req, res) => {
 }));
 
 /* ---------------- archivos del Studio ---------------- */
-app.use("/api/media", mediaRouter({ kv, blobs, requireAuth, wrap }));
+const almacen = almacenArchivos({ kv, blobs });
+app.use("/api/media", mediaRouter({ almacen, requireAuth, wrap }));
+
+/* ---------------- extensión Nova Swipe ---------------- */
+app.use("/api", swipeRouter({ kv, almacen, requireAuth, wrap }));
 
 /* ---------------- sincronización con Meta (vía Claude) ---------------- */
 app.use("/api/sync", syncRouter({ kv, requireAuth, wrap }));

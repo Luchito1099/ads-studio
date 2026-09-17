@@ -6,6 +6,16 @@ import { logout } from "../storage.js";
 const IC={
  ref:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
  angle:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+ ext:'<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+ book:'<path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM13 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5z"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+ insta:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/>',
+ music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+ yt:'<rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/>',
+ pin:'<path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+ store:'<path d="M4 9h16l-1-5H5zM5 9v11h14V9M9 20v-6h6v6"/>',
  spark:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3"/>',
  concept:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>',
  hook:'<path d="M4 7h16M4 12h10M4 17h7"/>',
@@ -155,7 +165,7 @@ async function ingest(files,{toPiece=null}={}){
   const ids=[];for(const f of files){ids.push(await addMedia(f));}
   if(toPiece){ toPiece.mediaIds.push(...ids); UI.modalTab='creativos'; save(); renderModal(); toast(ids.length>1?`${ids.length} archivos agregados a la pieza`:'Archivo agregado a la pieza'); }
   else{
-    for(const id of ids){ const m=thumbCache[id]; S.refs.unshift({id:uid('r'),productId:PID(),mediaId:id,kind:m.kind,brand:'',source:'Subido',conceptId:'',angleId:'',stage:'',notes:'',link:'',created:Date.now()}); }
+    for(const id of ids){ const m=thumbCache[id]; S.refs.unshift({id:uid('r'),productId:PID(),mediaId:id,kind:m.kind,format:m.kind==='image'?'imagen':'',brand:'',source:'Sin fuente',conceptId:'',angleId:'',stage:'',notes:'',link:'',created:Date.now()}); }
     save(); UI.view='referencias'; render(); if(ids.length===1)openRef(S.refs[0].id,'datos'); toast(ids.length>1?`${ids.length} referencias guardadas`:'Referencia guardada');
   }
 }
@@ -169,7 +179,15 @@ document.addEventListener('paste',e=>{
     S.refs.unshift({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(text),conceptId:'',angleId:'',stage:'',notes:'',link:text.trim(),created:Date.now()});
     UI.view='referencias';save();render();openRef(S.refs[0].id,'datos');toast('Enlace guardado en la biblioteca');}
 });
-function linkSource(u){ if(/facebook\.com\/ads\/library/.test(u))return 'Biblioteca de anuncios'; if(/instagram/.test(u))return 'Instagram'; if(/tiktok/.test(u))return 'TikTok'; return 'Enlace'; }
+function linkSource(u){ u=String(u||'');
+  if(/facebook\.com\/ads\/library/i.test(u))return 'Biblioteca de Meta';
+  if(/ads\.tiktok\.com|creativecenter/i.test(u))return 'TikTok Creative Center';
+  if(/instagram\.com/i.test(u))return 'Instagram';
+  if(/tiktok\.com/i.test(u))return 'TikTok';
+  if(/facebook\.com|fb\.watch|fb\.com/i.test(u))return 'Facebook';
+  if(/youtube\.com|youtu\.be/i.test(u))return 'YouTube';
+  if(/pinterest\.|pin\.it/i.test(u))return 'Pinterest';
+  return u?'Otro enlace':'Sin fuente'; }
 let pickTarget=null;
 $('#filepick').addEventListener('change',e=>{ingest(e.target.files,{toPiece:pickTarget});e.target.value='';});
 function pick(piece=null){pickTarget=piece;$('#filepick').click();}
@@ -212,8 +230,9 @@ const fmtIcon=f=>{const x=FORMATS.find(a=>a[0]===f)||FORMATS[0];return `<span cl
 
 /* ============ BIBLIOTECA (referencias) ============ */
 const JOBS={}; const LIBS={whisper:null,ocr:null};
-const REF_SOURCES=['Subido','Biblioteca de anuncios','Instagram','TikTok','YouTube','Enlace'];
-function ensureRef(r){ if(!r.extract)r.extract={status:'',frames:[],transcript:[],ocr:[],blocks:[],analysis:null}; if(r.rating==null)r.rating=0; if(!r.format)r.format=r.kind==='image'?'imagen':''; if(r.collection==null)r.collection=''; return r; }
+const REF_SOURCES=['Biblioteca de Meta','TikTok Creative Center','Facebook','Instagram','TikTok','YouTube','Pinterest','Tienda de la competencia','Grabación propia','Sin fuente','Otro enlace'];
+const SOURCE_LEGADO={'Subido':'Sin fuente','Biblioteca de anuncios':'Biblioteca de Meta','Enlace':'Otro enlace','Propio':'Grabación propia'};
+function ensureRef(r){ if(!r.extract)r.extract={status:'',frames:[],transcript:[],ocr:[],blocks:[],analysis:null}; if(r.rating==null)r.rating=0; if(!r.format)r.format=r.kind==='image'?'imagen':''; if(r.collection==null)r.collection=''; if(SOURCE_LEGADO[r.source])r.source=SOURCE_LEGADO[r.source]; if(!REF_SOURCES.includes(r.source))r.source=r.link?linkSource(r.link):'Sin fuente'; if(r.fav==null)r.fav=false; return r; }
 const tstr=s=>{s=Math.max(0,Math.round(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`))return res();const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('No se pudo cargar '+src.split('/npm/')[1]));document.head.appendChild(s);});}
 function setJob(id,step,pct,msg){ JOBS[id]={step,pct,msg}; document.querySelectorAll(`[data-prog="${id}"]`).forEach(el=>{el.hidden=false;el.querySelector('span').textContent=msg;el.querySelector('i').style.width=Math.round(pct)+'%';}); }
@@ -317,63 +336,254 @@ async function runExtract(ref,{voz=true,texto=true}={}){
   finally{ endJob(ref.id); if(UI.view==='referencias')render(); if(UI.refOpen===ref.id)renderRefModal(); }
 }
 
+/* ---- fuentes, colecciones y marcas ---- */
+const SOURCE_GROUPS=[
+  ['Anuncios pagados',[['Biblioteca de Meta','book','#1d4ed8'],['TikTok Creative Center','spark','#0f172a']]],
+  ['Redes sociales',[['Facebook','globe','#1d4ed8'],['Instagram','insta','#db2777'],['TikTok','music','#0f172a'],['YouTube','yt','#dc2626'],['Pinterest','pin','#dc2626']]],
+  ['Otros',[['Tienda de la competencia','store','#7c3aed'],['Grabación propia','video','#0d9488'],['Sin fuente','up','#64748b'],['Otro enlace','link','#64748b']]]
+];
+const SOURCE_INFO=Object.fromEntries(SOURCE_GROUPS.flatMap(([,l])=>l.map(([n,i,c])=>[n,{icon:i,color:c}])));
+const srcIcon=(s,cls='sm')=>{const x=SOURCE_INFO[s]||SOURCE_INFO['Otro enlace'];return `<span style="color:${x.color};display:inline-flex">${ic(x.icon,cls)}</span>`;};
+const porClasificar=r=>!r.brand||!r.conceptId||!r.stage;
+const libCollections=()=>{ if(!S.libCollections)S.libCollections=[]; const set=new Set(S.libCollections); S.refs.forEach(r=>{if(r.collection&&!set.has(r.collection)){set.add(r.collection);S.libCollections.push(r.collection);}}); return S.libCollections; };
+const SORTS=[['recientes','Más recientes'],['antiguas','Más antiguas'],['calificadas','Mejor calificadas'],['marca','Marca (A–Z)'],['duracion','Más cortos']];
+
+function libState(){ return UI.lib||(UI.lib={scope:'producto',tab:'todas',fuente:'',coleccion:'',marca:'',formato:'',etapa:'',concepto:'',angulo:'',q:'',orden:'recientes',vista:'grid'}); }
+function libScope(){ const f=libState(); return S.refs.map(ensureRef).filter(r=>f.scope==='todos'||r.productId===PID()); }
 function libFiltered(){
-  const f=UI.lib||(UI.lib={scope:'producto',tipo:'todas',estado:'todas',marca:'',etapa:'',concepto:'',q:''});
-  const q=normTxt(f.q);
-  return S.refs.map(ensureRef).filter(r=>(f.scope==='todos'||r.productId===PID())
-    &&(f.tipo==='todas'||(f.tipo==='video'?r.kind==='video':f.tipo==='imagen'?r.kind==='image':r.kind==='link'))
-    &&(f.estado==='todas'||(f.estado==='con'?r.extract.status==='listo':r.extract.status!=='listo'))
-    &&(!f.marca||r.brand===f.marca)&&(!f.etapa||r.stage===f.etapa)&&(!f.concepto||r.conceptId===f.concepto)
-    &&(!q||normTxt([r.brand,r.notes,r.collection,r.link,...(r.extract.transcript||[]).map(t=>t.text),...(r.extract.ocr||[]).map(o=>o.text),r.extract.analysis?JSON.stringify(r.extract.analysis):''].join(' ')).includes(q)));
+  const f=libState(); const q=normTxt(f.q);
+  const list=libScope().filter(r=>
+    (f.tab==='todas'||(f.tab==='clasificar'&&porClasificar(r))||(f.tab==='favoritas'&&r.fav)||(f.tab==='guion'&&r.extract.status==='listo'))
+    &&(!f.fuente||r.source===f.fuente)&&(!f.coleccion||r.collection===f.coleccion)&&(!f.marca||r.brand===f.marca)
+    &&(!f.formato||(f.formato==='link'?r.kind==='link':r.format===f.formato))&&(!f.etapa||r.stage===f.etapa)&&(!f.concepto||r.conceptId===f.concepto)&&(!f.angulo||r.angleId===f.angulo)
+    &&(!q||normTxt([r.brand,r.notes,r.collection,r.link,r.source,r.adText,...(r.extract.transcript||[]).map(t=>t.text),...(r.extract.ocr||[]).map(o=>o.text),r.extract.analysis?JSON.stringify(r.extract.analysis):''].join(' ')).includes(q)));
+  const cmp={recientes:(a,b)=>(b.created||0)-(a.created||0),antiguas:(a,b)=>(a.created||0)-(b.created||0),calificadas:(a,b)=>(b.rating||0)-(a.rating||0)||(b.fav?1:0)-(a.fav?1:0),
+    marca:(a,b)=>(a.brand||'~').localeCompare(b.brand||'~','es'),duracion:(a,b)=>(a.extract.duration||thumbCache[a.mediaId]?.duration||9999)-(b.extract.duration||thumbCache[b.mediaId]?.duration||9999)}[f.orden];
+  return list.sort(cmp);
 }
 function vRefs(){
-  const f=UI.lib||(UI.lib={scope:'producto',tipo:'todas',estado:'todas',marca:'',etapa:'',concepto:'',q:''});
-  const all=S.refs.map(ensureRef).filter(r=>f.scope==='todos'||r.productId===PID());
-  const list=libFiltered();
-  const brands=[...new Set(all.map(r=>r.brand).filter(Boolean))].sort();
+  const f=libState(); const all=libScope(); const list=libFiltered();
+  const cnt=fn=>all.filter(fn).length;
+  const fuenteN=s=>all.filter(r=>r.source===s).length;
+  const brands=Object.entries(all.reduce((o,r)=>{if(r.brand)o[r.brand]=(o[r.brand]||0)+1;return o;},{})).sort((a,b)=>b[1]-a[1]);
+  const cols=libCollections();
   const pend=all.filter(r=>r.mediaId&&r.extract.status!=='listo'&&!JOBS[r.id]).length;
-  setTop('Biblioteca',`Anuncios de referencia con su guion extraído · ${list.length} de ${all.length}`,
-    `<label class="visually-hidden" for="lq">Buscar en la biblioteca</label><input id="lq" value="${esc(f.q)}" placeholder="Buscar marca, frase, texto en pantalla…" style="height:38px;width:300px;border:1px solid var(--line);border-radius:9px;padding:0 12px">
-     ${pend?`<button class="btn ghost" id="lall">Extraer pendientes (${pend})</button>`:''}`);
-  $('#body').innerHTML=`<div style="display:flex;flex-direction:column;gap:14px">
-    ${dropZone('Agrega anuncios a la biblioteca')}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <div class="seg" data-f="scope">${[['producto',prod().name],['todos','Todos los productos']].map(([k,l])=>`<button data-k="${k}" class="${f.scope===k?'on':''}">${esc(l)}</button>`).join('')}</div>
-      <div class="seg" data-f="tipo">${[['todas','Todo'],['video','Videos'],['imagen','Imágenes'],['link','Enlaces']].map(([k,l])=>`<button data-k="${k}" class="${f.tipo===k?'on':''}">${l}</button>`).join('')}</div>
-      <div class="seg" data-f="estado">${[['todas','Cualquier estado'],['con','Con guion'],['sin','Sin extraer']].map(([k,l])=>`<button data-k="${k}" class="${f.estado===k?'on':''}">${l}</button>`).join('')}</div>
-      <label class="visually-hidden" for="lm">Marca</label><select id="lm" class="fsel"><option value="">Todas las marcas</option>${brands.map(b=>`<option ${b===f.marca?'selected':''}>${esc(b)}</option>`).join('')}</select>
-      <label class="visually-hidden" for="le">Etapa</label><select id="le" class="fsel">${stageOpt(f.etapa,'Todas las etapas')}</select>
-      <label class="visually-hidden" for="lc">Concepto</label><select id="lc" class="fsel">${opt(S.concepts,f.concepto,'Todos los conceptos')}</select>
-    </div>
-    ${list.length?`<div class="lib">${list.map(r=>libCard(r)).join('')}</div>`:`<div class="empty">${all.length?'Nada coincide con los filtros.':`La biblioteca de ${esc(prod().name)} está vacía. Descarga anuncios con Nova Swipe y arrástralos aquí, o pega una captura.`}</div>`}
-  </div>`;
-  wireDrop();
+  const hayFiltros=f.fuente||f.coleccion||f.marca||f.formato||f.etapa||f.concepto||f.angulo||f.q;
+  setTop('Biblioteca',`Anuncios de otras marcas y redes · ${f.scope==='todos'?'todos los productos':prod().name}`,
+    `<div class="lsearch">${ic('search','sm')}<label class="visually-hidden" for="lq">Buscar en la biblioteca</label><input id="lq" value="${esc(f.q)}" placeholder="Buscar marca, frase dicha o texto en pantalla…"></div>
+     ${pend?`<button class="btn ghost" id="lall" title="Extraer el guion de los anuncios que aún no lo tienen">Extraer pendientes (${pend})</button>`:''}
+     <div class="menuwrap"><button class="btn" id="ladd" aria-haspopup="true" aria-expanded="false">${ic('plus','sm')}Agregar</button>
+       <div class="menu" id="laddmenu" hidden>
+         <button data-add="subir">${ic('up','sm')}<span><b>Subir videos o imágenes</b><small>Varios a la vez</small></span></button>
+         <button data-add="enlace">${ic('link','sm')}<span><b>Pegar un enlace</b><small>Biblioteca de Meta, TikTok, Instagram…</small></span></button>
+         <button data-add="ext">${ic('ext','sm')}<span><b>Extensión Nova Swipe</b><small>Captura desde Chrome</small></span></button>
+       </div></div>`);
+  const navItem=(key,val,label,n,icon)=>`<button class="lnav ${f[key]===val?'on':''}" data-lf="${key}" data-v="${esc(val)}">${icon||''}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
+  $('#body').innerHTML=`<div class="libwrap">
+   <aside class="lside">
+     <div class="seg2">${[['producto',prod().name],['todos','Todos']].map(([k,l])=>`<button data-scope="${k}" class="${f.scope===k?'on':''}">${esc(l)}</button>`).join('')}</div>
+     <div class="lgrp">Fuentes</div>
+     ${navItem('fuente','','Todas las fuentes',all.length)}
+     ${SOURCE_GROUPS.map(([g,items])=>`<div class="lsub">${g}</div>`+items.map(([n])=>navItem('fuente',n,n,fuenteN(n),srcIcon(n))).join('')).join('')}
+     <div class="lgrp" style="display:flex;align-items:center">Colecciones<button class="iconbtn" id="lcolnew" aria-label="Nueva colección" title="Nueva colección">${ic('plus','sm')}</button></div>
+     ${cols.length?cols.map(c=>navItem('coleccion',c,c,all.filter(r=>r.collection===c).length)).join(''):'<p class="hint" style="margin:2px 10px">Agrupa anuncios por tema o campaña.</p>'}
+     <div class="lgrp">Marcas</div>
+     ${brands.length?brands.slice(0,12).map(([b,n])=>navItem('marca',b,b,n)).join(''):'<p class="hint" style="margin:2px 10px">Pon la marca al clasificar.</p>'}
+     <div class="extcard">
+       <div style="display:flex;gap:8px;align-items:center">${ic('ext','sm')}<b>Nova Swipe</b></div>
+       <p>Guarda anuncios desde Chrome directo a esta biblioteca.</p>
+       <button class="btn sm" id="lext">Descargar extensión</button>
+     </div>
+   </aside>
+   <section class="lmain">
+     <div class="ltabs">
+       ${[['todas','Todas',all.length],['clasificar','Por clasificar',cnt(porClasificar)],['favoritas','Favoritas',cnt(r=>r.fav)],['guion','Con guion',cnt(r=>r.extract.status==='listo')]].map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}">${l}<span>${n}</span></button>`).join('')}
+       <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
+         <label class="visually-hidden" for="lsort">Ordenar</label><select id="lsort" class="fsel">${SORTS.map(([k,l])=>`<option value="${k}" ${f.orden===k?'selected':''}>${l}</option>`).join('')}</select>
+         <div class="vtog" role="group" aria-label="Vista"><button data-vista="grid" class="${f.vista==='grid'?'on':''}" aria-label="Cuadrícula">${ic('ref','sm')}</button><button data-vista="lista" class="${f.vista==='lista'?'on':''}" aria-label="Lista">${ic('hook','sm')}</button></div>
+       </span>
+     </div>
+     <div class="lfilters">
+       <label class="visually-hidden" for="lff">Formato</label><select id="lff" class="fsel" data-sel="formato"><option value="">Formato</option>${FORMATS.map(x=>`<option value="${x[0]}" ${f.formato===x[0]?'selected':''}>${x[1]}</option>`).join('')}<option value="link" ${f.formato==='link'?'selected':''}>Solo enlace</option></select>
+       <label class="visually-hidden" for="lfe">Etapa</label><select id="lfe" class="fsel" data-sel="etapa">${stageOpt(f.etapa,'Etapa')}</select>
+       <label class="visually-hidden" for="lfc">Concepto</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Concepto')}</select>
+       <label class="visually-hidden" for="lfa">Ángulo</label><select id="lfa" class="fsel" data-sel="angulo">${opt(f.scope==='todos'?S.angles:mine(S.angles),f.angulo,'Ángulo')}</select>
+       ${[['fuente','Fuente'],['coleccion','Colección'],['marca','Marca']].filter(([k])=>f[k]).map(([k,l])=>`<span class="chip">${l}: ${esc(f[k])}<button class="chipx" data-clear="${k}" aria-label="Quitar filtro ${l}">×</button></span>`).join('')}
+       ${hayFiltros?'<button class="linkbtn" id="lclear">Limpiar filtros</button>':''}
+       <span class="muted" style="margin-left:auto;font-size:13px">${list.length} anuncio${list.length===1?'':'s'}</span>
+     </div>
+     ${list.length?(f.vista==='grid'?`<div class="lib">${list.map(libCard).join('')}</div>`:libTable(list))
+       :all.length?`<div class="empty">Nada coincide con estos filtros. <button class="linkbtn" id="lclear2">Limpiar filtros</button></div>`
+       :`<div class="lempty">
+          <h2>Tu biblioteca de anuncios empieza aquí</h2>
+          <p>Todo lo que te inspire, venga de donde venga, queda en un solo lugar con su guion extraído.</p>
+          <div class="lempty-cards">
+            <button data-add="ext">${ic('ext')}<b>Captura con Nova Swipe</b><span>Desde la Biblioteca de anuncios, TikTok o Instagram, con un clic.</span></button>
+            <button data-add="subir">${ic('up')}<b>Sube videos o imágenes</b><span>Varios a la vez. También puedes soltarlos en cualquier parte de esta pantalla.</span></button>
+            <button data-add="enlace">${ic('link')}<b>Pega un enlace</b><span>Queda guardado con su fuente y le adjuntas el video después.</span></button>
+          </div>
+          <p class="hint">Atajo: copia una captura y presiona <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
+        </div>`}
+   </section></div>`;
+  // búsqueda
   const lq=$('#lq'); lq.oninput=()=>{f.q=lq.value;clearTimeout(lq._t);lq._t=setTimeout(()=>{const pos=lq.selectionStart;render();const n=$('#lq');n.focus();n.setSelectionRange(pos,pos);},250);};
   if($('#lall'))$('#lall').onclick=async()=>{for(const r of all.filter(r=>r.mediaId&&r.extract.status!=='listo')){await runExtract(r,{voz:true,texto:true});}};
-  document.querySelectorAll('.seg[data-f] button').forEach(b=>b.onclick=()=>{f[b.parentElement.dataset.f]=b.dataset.k;render();});
-  $('#lm').onchange=e=>{f.marca=e.target.value;render();};$('#le').onchange=e=>{f.etapa=e.target.value;render();};$('#lc').onchange=e=>{f.concepto=e.target.value;render();};
-  document.querySelectorAll('.libcard').forEach(c=>{
+  // menú agregar
+  const menu=$('#laddmenu'),ladd=$('#ladd');
+  ladd.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;ladd.setAttribute('aria-expanded',String(!menu.hidden));};
+  document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{menu.hidden=true;const a=b.dataset.add;if(a==='subir')pick();else if(a==='enlace')addLink();else openExtension();});
+  $('#lext').onclick=openExtension;
+  // navegación lateral y filtros
+  document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{f.scope=b.dataset.scope;render();});
+  document.querySelectorAll('[data-lf]').forEach(b=>b.onclick=()=>{const k=b.dataset.lf,v=b.dataset.v;f[k]=f[k]===v&&v?'':v;render();});
+  document.querySelectorAll('.ltabs [data-tab]').forEach(b=>b.onclick=()=>{f.tab=b.dataset.tab;render();});
+  document.querySelectorAll('[data-sel]').forEach(s=>s.onchange=()=>{f[s.dataset.sel]=s.value;render();});
+  document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{f[b.dataset.clear]='';render();});
+  const limpiar=()=>{Object.assign(f,{fuente:'',coleccion:'',marca:'',formato:'',etapa:'',concepto:'',angulo:'',q:''});render();};
+  if($('#lclear'))$('#lclear').onclick=limpiar; if($('#lclear2'))$('#lclear2').onclick=limpiar;
+  $('#lsort').onchange=e=>{f.orden=e.target.value;render();};
+  document.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{f.vista=b.dataset.vista;render();});
+  $('#lcolnew').onclick=()=>{const n=prompt('Nombre de la colección');if(n&&n.trim()){const c=n.trim();if(!libCollections().includes(c))S.libCollections.push(c);save();f.coleccion=c;render();}};
+  // tarjetas
+  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();const r=byId(S.refs,b.dataset.fav);r.fav=!r.fav;save();render();});
+  document.querySelectorAll('.libcard,.lrow').forEach(c=>{
     c.onclick=()=>openRef(c.dataset.id);
-    const r=byId(S.refs,c.dataset.id); if(r.kind!=='video'||!r.mediaId)return;
+    c.onkeydown=e=>{if(e.key==='Enter')openRef(c.dataset.id);};
+    const r=byId(S.refs,c.dataset.id); if(r.kind!=='video'||!r.mediaId||!c.classList.contains('libcard'))return;
     let url=null,vid=null,tm=null;
     c.addEventListener('mouseenter',()=>{tm=setTimeout(async()=>{const m=await DB.get('media',r.mediaId);if(!m?.blob)return;url=URL.createObjectURL(m.blob);vid=document.createElement('video');vid.src=url;vid.muted=true;vid.loop=true;vid.playsInline=true;vid.className='hoverv';c.querySelector('.thumb').appendChild(vid);vid.play().catch(()=>{});},350);});
     c.addEventListener('mouseleave',()=>{clearTimeout(tm);if(vid){vid.remove();vid=null;}if(url){URL.revokeObjectURL(url);url=null;}});
   });
 }
+function addLink(){
+  const u=prompt('Pega el enlace del anuncio (Biblioteca de Meta, TikTok, Instagram…)');
+  if(!u||!/^https?:\/\//.test(u.trim())){if(u)toast('Eso no parece un enlace');return;}
+  S.refs.unshift({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(u),conceptId:'',angleId:'',stage:'',notes:'',link:u.trim(),created:Date.now()});
+  save();render();openRef(S.refs[0].id,'datos');toast('Enlace guardado');
+}
 function libCard(r){
   const ex=r.extract; const ready=ex.status==='listo';
   const hook=ready?(ex.analysis?.hook?.texto||ex.blocks[0]?.voz||ex.blocks[0]?.texto||''):'';
-  return `<button class="libcard" data-id="${r.id}">
-    ${r.kind==='link'?`<div class="thumb" style="aspect-ratio:9/16;background:#f1f5f9;color:#334155;flex-direction:column;gap:6px">${ic('link')}<span>${esc(r.source)}</span><span style="font-size:11px;padding:0 10px;text-align:center">Adjunta el video para extraer</span></div>`:
+  const dur=ex.duration||thumbCache[r.mediaId]?.duration;
+  return `<div class="libcard" data-id="${r.id}" tabindex="0" role="button" aria-label="Abrir ${esc(r.brand||'referencia')}">
+    <div style="position:relative">
+    ${r.kind==='link'?`<div class="thumb" style="aspect-ratio:9/16;background:#f1f5f9;color:#334155;flex-direction:column;gap:8px">${srcIcon(r.source,'')}<span style="font-weight:600">${esc(r.source)}</span><span style="font-size:11px;padding:0 14px;text-align:center;color:#64748b">Solo enlace · adjunta el video para extraer su guion</span></div>`:
       `<div class="thumb" style="aspect-ratio:9/16" data-thumb="${r.mediaId}"></div>`}
+      <button class="favbtn ${r.fav?'on':''}" data-fav="${r.id}" aria-label="${r.fav?'Quitar de favoritas':'Marcar como favorita'}" aria-pressed="${!!r.fav}">${ic('star','sm')}</button>
+      ${ready?'<span class="readybadge">Guion</span>':''}
+    </div>
     <div class="lb">
-      <div style="display:flex;align-items:center;gap:6px"><b>${esc(r.brand||'Sin marca')}</b>${r.rating?`<span class="muted" style="margin-left:auto;font-size:12px" aria-label="${r.rating} de 5">${'★'.repeat(r.rating)}</span>`:''}</div>
-      <span class="muted" style="font-size:12px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>
+      <div style="display:flex;align-items:center;gap:6px"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.brand||'Sin marca')}</b>${r.rating?`<span class="muted" style="margin-left:auto;font-size:12px" aria-label="${r.rating} de 5">${'★'.repeat(r.rating)}</span>`:''}</div>
+      <span class="muted" style="font-size:12px;display:flex;gap:5px;align-items:center">${srcIcon(r.source)}${esc(r.source)}${dur?' · '+tstr(dur):''}</span>
       ${hook?`<span class="hookline">“${esc(hook.slice(0,90))}”</span>`:''}
-      <div style="display:flex;gap:5px;flex-wrap:wrap">${ready?'<span class="chip win">Guion</span>':ex.status==='error'?'<span class="chip lose">Error</span>':r.mediaId?'<span class="chip">Sin extraer</span>':''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}${r.conceptId?`<span class="chip">${esc(byId(S.concepts,r.conceptId)?.name||'')}</span>`:''}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">${ex.status==='error'?'<span class="chip lose">Error al extraer</span>':''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}${r.conceptId?`<span class="chip">${esc(byId(S.concepts,r.conceptId)?.name||'')}</span>`:''}${porClasificar(r)?'<span class="chip warn">Por clasificar</span>':''}</div>
       ${progHTML(r.id)}
-    </div></button>`;
+    </div></div>`;
 }
+function libTable(list){
+  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Formato</th><th>Etapa</th><th>Concepto</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
+  ${list.map(r=>`<tr class="lrow" data-id="${r.id}" tabindex="0" style="cursor:pointer">
+    <td style="width:52px"><div style="width:40px;height:52px">${r.mediaId?thumbHTML(r.mediaId):`<div class="thumb" style="height:52px;background:#f1f5f9">${srcIcon(r.source)}</div>`}</div></td>
+    <td><b>${esc(r.brand||'Sin marca')}</b>${r.notes?`<div class="muted" style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.notes)}</div>`:''}</td>
+    <td><span style="display:inline-flex;gap:5px;align-items:center">${srcIcon(r.source)}${esc(r.source)}</span></td>
+    <td>${esc(FORMATS.find(x=>x[0]===r.format)?.[1]||(r.kind==='link'?'Enlace':'—'))}</td>
+    <td>${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:'—'}</td>
+    <td>${esc(byId(S.concepts,r.conceptId)?.name||'—')}</td>
+    <td>${esc(r.collection||'—')}</td>
+    <td>${r.extract.status==='listo'?'<span class="chip win">Listo</span>':r.extract.status==='error'?'<span class="chip lose">Error</span>':'—'}</td>
+    <td class="muted">${r.created?new Date(r.created).toLocaleDateString('es-PE',{day:'2-digit',month:'short'}):''}</td>
+    <td><button class="favbtn inline ${r.fav?'on':''}" data-fav="${r.id}" aria-label="${r.fav?'Quitar de favoritas':'Marcar como favorita'}" aria-pressed="${!!r.fav}">${ic('star','sm')}</button></td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+document.addEventListener('click',e=>{const m=document.getElementById('laddmenu');if(m&&!m.hidden&&!e.target.closest('.menuwrap')){m.hidden=true;document.getElementById('ladd')?.setAttribute('aria-expanded','false');}});
+document.addEventListener('keydown',e=>{const m=document.getElementById('laddmenu');if(e.key==='Escape'&&m&&!m.hidden){m.hidden=true;document.getElementById('ladd')?.focus();}});
+
+/* ---- extensión Nova Swipe ---- */
+async function openExtension(){
+  let st={};
+  try{const r=await fetch('/api/swipe/status',{credentials:'same-origin'});st=r.ok?await r.json():{};}catch{}
+  const ov=document.createElement('div');ov.className='ov';
+  const cuando=st.ultimoUso?new Date(st.ultimoUso).toLocaleString('es-PE',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):null;
+  ov.innerHTML=`<div class="modal" style="max-width:720px" role="dialog" aria-modal="true" aria-labelledby="xt">
+    <div class="mh">${ic('ext')}<b id="xt">Extensión Nova Swipe</b>${cuando?`<span class="chip win">Conectada · último envío ${cuando}</span>`:'<span class="chip">Sin envíos todavía</span>'}<button class="btn ghost sm" data-c style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:14px">
+      <p style="margin:0;line-height:1.5">Guarda anuncios de la <b>Biblioteca de anuncios de Meta</b>, TikTok, Instagram, Facebook, YouTube o cualquier web directo a esta biblioteca, con su video o imagen, la marca y el enlace.</p>
+      <div class="grid2">
+        <div class="panel" style="padding:12px;display:flex;flex-direction:column;gap:8px"><b>1. Descárgala</b><span class="hint">Viene lista para usar: ya trae la dirección de tu Studio y tu clave.</span><button class="btn sm" id="xdl" style="align-self:flex-start">${ic('up','sm')}Descargar extensión (.zip)</button></div>
+        <div class="panel" style="padding:12px;display:flex;flex-direction:column;gap:8px"><b>2. Instálala en Chrome</b><ol class="hint" style="margin:0;padding-left:18px;line-height:1.6"><li>Descomprime el .zip en una carpeta que no vayas a borrar.</li><li>Abre <code>chrome://extensions</code> y activa <b>Modo de desarrollador</b>.</li><li>Pulsa <b>Cargar descomprimida</b> y elige la carpeta.</li><li>Fíjala en la barra con el ícono de la pieza de rompecabezas.</li></ol></div>
+      </div>
+      <div class="panel" style="padding:12px;display:flex;flex-direction:column;gap:6px"><b>3. Úsala</b>
+        <ul class="hint" style="margin:0;padding-left:18px;line-height:1.6;list-style:disc">
+          <li><b>Clic derecho</b> sobre un video, imagen o enlace → <i>Guardar en Nova Studio</i>.</li>
+          <li><b>Ícono de la extensión</b> → elige el producto, la marca y los videos o imágenes detectados en la página, y pulsa <i>Enviar</i>.</li>
+          <li>Lo enviado aparece en esta biblioteca en unos segundos, en <b>Por clasificar</b>.</li>
+        </ul></div>
+      <div class="panel" style="padding:12px;display:flex;flex-direction:column;gap:8px;background:#f8fafc">
+        <b>Clave de conexión</b>
+        <div style="display:flex;gap:6px"><label class="visually-hidden" for="xkey">Clave</label><input id="xkey" readonly value="${esc(st.clave||'')}" type="password" style="flex-grow:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"><button class="btn ghost sm" id="xshow">Mostrar</button><button class="btn ghost sm" id="xcopy">Copiar</button><button class="btn ghost sm" id="xnew">Regenerar</button></div>
+        <span class="hint">Si instalaste la extensión desde otro lado o regeneras la clave, pégala en las opciones de la extensión junto con esta dirección: <code>${esc(location.origin)}</code></span>
+      </div>
+      <details class="hint"><summary style="cursor:pointer">Publicarla en Chrome Web Store</summary>
+        <p style="margin:6px 0">Descarga la versión sin clave, crea una cuenta de desarrollador en Chrome Web Store (pago único de USD 5) y sube el .zip. Después de la revisión de Google se instala como cualquier extensión y cada persona pega su dirección y clave en las opciones.</p>
+        <button class="btn ghost sm" id="xdlstore">Descargar versión para Chrome Web Store</button></details>
+    </div></div>`;
+  document.body.appendChild(ov);
+  const q=s=>ov.querySelector(s); const close=()=>ov.remove();
+  ov.querySelectorAll('[data-c]').forEach(b=>b.onclick=close); ov.addEventListener('mousedown',e=>{if(e.target===ov)close();});
+  const bajar=async(conClave)=>{
+    try{const r=await fetch(`/api/swipe/extension.zip${conClave?'?config=1':''}`,{credentials:'same-origin'});if(!r.ok)throw new Error(`Error ${r.status}`);
+      const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());a.download=conClave?'nova-swipe.zip':'nova-swipe-webstore.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+      toast('Extensión descargada');}catch(e){toast('No se pudo descargar: '+e.message);}
+  };
+  q('#xdl').onclick=()=>bajar(true); q('#xdlstore').onclick=()=>bajar(false);
+  q('#xshow').onclick=()=>{const k=q('#xkey');k.type=k.type==='password'?'text':'password';q('#xshow').textContent=k.type==='password'?'Mostrar':'Ocultar';};
+  q('#xcopy').onclick=async()=>{toast(await copyText(q('#xkey').value)?'Clave copiada':'No se pudo copiar');};
+  q('#xnew').onclick=async()=>{if(!confirm('La extensión instalada dejará de funcionar hasta que pegues la clave nueva o la vuelvas a descargar. ¿Regenerar?'))return;
+    const r=await fetch('/api/swipe/token',{method:'POST',credentials:'same-origin'});if(!r.ok)return toast('No se pudo regenerar');
+    const d=await r.json();q('#xkey').value=d.clave;toast('Clave nueva generada');};
+}
+
+/* ---- bandeja: lo que envía la extensión ---- */
+let bandejaActiva=false;
+async function traerBandeja(){
+  if(bandejaActiva||!S)return; bandejaActiva=true;
+  try{
+    const r=await fetch('/api/inbox',{credentials:'same-origin'}); if(!r.ok)return;
+    const {items=[]}=await r.json(); if(!items.length)return;
+    const listos=[];
+    for(const it of items){ try{await recibirSwipe(it);listos.push(it.id);}catch(e){console.warn('Nova Swipe',e);} }
+    if(!listos.length)return;
+    save();
+    await fetch('/api/inbox/ack',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:listos})});
+    if(UI.view==='referencias'&&!UI.refOpen)render(); else renderSide();
+    toast(listos.length===1?'Llegó 1 anuncio desde Nova Swipe':`Llegaron ${listos.length} anuncios desde Nova Swipe`);
+  }catch(e){console.warn(e);}finally{bandejaActiva=false;}
+}
+async function recibirSwipe(it){
+  if(S.refs.some(r=>r.swipeId===it.id))return;
+  const productId=(it.productId&&byId(S.products,it.productId)?.id)||S.products.find(p=>p.code===it.productCode)?.id||PID();
+  let mediaId=null,kind='link',format='';
+  if(it.mediaId){
+    const res=await fetch(`/api/media/${encodeURIComponent(it.mediaId)}`,{credentials:'same-origin'});
+    if(res.ok){
+      const blob=await res.blob();
+      const type=it.mime||blob.type||'';
+      const file=new File([blob],it.fileName||'nova-swipe',{type});
+      const t=await makeThumb(file);
+      kind=type.startsWith('video/')?'video':'image'; format=kind==='image'?'imagen':'';
+      await DB.put('media',{id:it.mediaId,type,kind,name:file.name,thumb:t.thumb,w:t.w,h:t.h,duration:t.duration,size:blob.size,hasBlob:true});
+      thumbCache[it.mediaId]={thumb:t.thumb,kind,duration:t.duration};
+      mediaId=it.mediaId;
+    }
+  }
+  const notas=[it.notes,it.adText?`Texto del anuncio: ${it.adText}`:'',it.adId?`ID en la biblioteca: ${it.adId}`:'',it.startedAt?`Activo desde: ${it.startedAt}`:''].filter(Boolean).join('\n');
+  S.refs.unshift(ensureRef({id:uid('r'),swipeId:it.id,productId,mediaId,kind,format,brand:it.brand||'',source:SOURCE_INFO[it.source]?it.source:linkSource(it.link||it.pageUrl||''),
+    conceptId:'',angleId:'',stage:'',notes:notas,link:it.link||it.pageUrl||'',adText:it.adText||'',adId:it.adId||'',created:Date.parse(it.capturedAt)||Date.now(),rating:0,fav:false,collection:it.collection||''}));
+}
+setInterval(traerBandeja,15000);
+window.addEventListener('focus',()=>traerBandeja());
+
 function openRef(id,tab){UI.refOpen=id;UI.refTab=tab||(byId(S.refs,id).extract?.status==='listo'?'guion':'datos');UI.refPrompt=false;renderRefModal();}
 function closeRef(){UI.refOpen=null;$('#rov')?.remove();render();}
 function buildRefPrompt(r){
@@ -487,7 +697,8 @@ function renderRefModal(){
       <div class="field"><label for="dc">Concepto</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
       <div class="field"><label for="de">Etapa</label><select id="de" data-rf="stage">${stageOpt(r.stage)}</select></div></div>
       <div class="grid2"><div class="field"><label for="da">Ángulo de ${esc(byId(S.products,r.productId)?.name||'')}</label><select id="da" data-rf="angleId">${opt(S.angles.filter(a=>a.productId===r.productId),r.angleId)}</select></div>
-      <div class="field"><label for="dco">Colección</label><input id="dco" data-rf="collection" value="${esc(r.collection)}" placeholder="Ej. Competencia tobilleras"></div></div>
+      <div class="field"><label for="dco">Colección</label><select id="dco" data-rf="collection"><option value="">Sin colección</option>${libCollections().map(c=>`<option ${c===r.collection?'selected':''}>${esc(c)}</option>`).join('')}<option value="__nueva">+ Nueva colección…</option></select></div></div>
+      <div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Favorita</span><button class="btn ghost sm" id="dfav" style="align-self:flex-start">${ic('star','sm')}${r.fav?'Quitar de favoritas':'Marcar como favorita'}</button></div>
       <div class="field"><span style="font-size:12px;font-weight:600;color:var(--ink2)">Qué tan buena es</span><div class="seg" id="drate">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${r.rating>=n?'on':''}" aria-label="${n} de 5">★</button>`).join('')}</div></div>
       <div class="field"><label for="dn">Notas</label><textarea id="dn" data-rf="notes" placeholder="Qué te llamó la atención">${esc(r.notes)}</textarea></div>
       <button class="btn danger sm" id="ddel" style="align-self:flex-start">Eliminar de la biblioteca</button>
@@ -547,7 +758,10 @@ function renderRefModal(){
     if(q('#rahook'))q('#rahook').onclick=()=>{S.hooks.push({id:uid('h'),productId:PID(),text:a.adaptacion.hook,type:a.hook?.tipo||'Hablado',conceptId:r.conceptId,angleId:r.angleId,stage:r.stage,origin:'Referencia'});save();toast('Hook guardado');};
   }
   if(tab==='datos'){
-    ov.querySelectorAll('[data-rf]').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{r[inp.dataset.rf]=inp.value;save();}));
+    ov.querySelectorAll('[data-rf]').forEach(inp=>inp.addEventListener(inp.tagName==='SELECT'?'change':'input',()=>{
+      if(inp.dataset.rf==='collection'&&inp.value==='__nueva'){const n=prompt('Nombre de la colección');if(n&&n.trim()){const c=n.trim();if(!libCollections().includes(c))S.libCollections.push(c);r.collection=c;}save();renderRefModal();return;}
+      r[inp.dataset.rf]=inp.value;save();}));
+    q('#dfav').onclick=()=>{r.fav=!r.fav;save();renderRefModal();};
     ov.querySelectorAll('#drate button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;r.rating=r.rating===n?0:n;save();renderRefModal();});
     q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
   }
@@ -1630,6 +1844,7 @@ $('#importpick').addEventListener('change',async e=>{
   const pend=lecturaFallida?null:await fatigaPendiente(S);
   if(pend){ try{importDatos(pend.datos,pend.label);S.settings.fatigaSync=pend.marca;save();toast('Datos de Meta actualizados');}catch(e){console.warn(e);} }
   const oldRender=render;
+  setTimeout(traerBandeja,500);
   render=function(){ $('#body').style.overflow=''; oldRender(); };
   render();
 })();

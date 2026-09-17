@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nova Swipe</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body class="popup">
+<header>
+  <div class="mk" aria-hidden="true">N</div>
+  <div><b>Nova Swipe</b><br><span id="sitio">Guardar en la Biblioteca</span></div>
+  <button class="gear" id="opciones" title="Opciones" aria-label="Opciones">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
+
+<main id="sinconfig" hidden>
+  <p class="msg info">Conecta la extensión con tu Studio: pega la dirección y la clave en las opciones.</p>
+  <button class="btn" id="irOpciones">Abrir opciones</button>
+</main>
+
+<main id="form" hidden>
+  <div id="ultimo" class="msg" hidden></div>
+  <div class="row">
+    <div class="field"><label for="producto">Producto</label><select id="producto"></select></div>
+    <div class="field"><label for="fuente">Fuente</label><select id="fuente"></select></div>
+  </div>
+  <div class="row">
+    <div class="field"><label for="marca">Marca</label><input id="marca" placeholder="Ej. FLAIR Fútbol"></div>
+    <div class="field"><label for="coleccion">Colección</label><select id="coleccion"><option value="">Sin colección</option></select></div>
+  </div>
+  <div class="field"><label for="notas">Notas</label><textarea id="notas" placeholder="Qué te llamó la atención"></textarea></div>
+
+  <div class="sec">Archivos de esta página<small id="cuenta"></small></div>
+  <div class="grid" id="media"></div>
+  <p class="hint" id="aviso" hidden></p>
+  <label class="check"><input type="checkbox" id="soloEnlace"> Guardar también el enlace de la página</label>
+
+  <div id="estado" class="msg" hidden></div>
+  <button class="btn" id="enviar">Enviar a Nova Studio</button>
+  <p class="hint">Tip: clic derecho sobre un anuncio → <b>Guardar en Nova Studio</b>.</p>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

@@ -10,7 +10,7 @@ Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes e
 
 La interfaz sigue el prototipo de [docs/prototipo/nova-studio-de-ads.html](docs/prototipo/nova-studio-de-ads.html). Barra lateral por flujo:
 
-- **Crear** · **Biblioteca** (anuncios de referencia: subir, arrastrar o pegar con Ctrl+V; extracción de guion con transcripción y texto en pantalla; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
+- **Crear** · **Ideas de contenido**, **Biblioteca** (anuncios de otras marcas por fuente, colección y marca; subir, arrastrar, pegar con Ctrl+V o capturar con la extensión **Nova Swipe**; extracción de guion con transcripción y texto en pantalla; desglose con IA), **Ángulos de venta**, **Conceptos** y **Hooks**.
 - **Producir** · **Pipeline** Idea → Guion → Producción → Lanzado → Testing → Resultado. Cada pieza tiene guion por bloques, creativos y copy, y resultados. El resultado (Ganador / Perdedor / TBD) lo decide el CPA real contra el tope al llegar a la muestra mínima.
 - **Lanzar** · **Embudo**: pizarra TOFU / MOFU / BOFU con objetivo y públicos por etapa.
 - **Medir** · **Análisis 80/20**, **Fatiga** (motor `MotorFatiga` del predictor) y **Tracker** de CPA real.
@@ -72,6 +72,17 @@ Al arrancar con un Postgres **vacío**, el servidor copia todo lo que haya en el
 
 Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.
 
+### Extensión Nova Swipe
+
+Extensión de Chrome ([extension/](extension)) que guarda anuncios en la Biblioteca desde la Biblioteca de anuncios de Meta, TikTok, Instagram, Facebook, YouTube o cualquier web:
+
+- **Clic derecho → Guardar en Nova Studio** sobre un anuncio, video, imagen o enlace. En la Biblioteca de Meta toma además el ID del anuncio, la fecha de inicio, el anunciante y el texto.
+- **Ícono de la extensión**: elige producto, marca, fuente y colección, y marca los videos e imágenes detectados en la página (también los que se cargan por partes).
+
+Se descarga desde **Biblioteca → Descargar extensión** (`/api/swipe/extension.zip?config=1`), ya con la dirección del Studio y la clave. Instalación: `chrome://extensions` → Modo de desarrollador → Cargar descomprimida. Para Chrome Web Store hay una versión sin clave.
+
+Flujo: la extensión sube el archivo a `/api/swipe/media/{id}` y el anuncio a `/api/swipe/items` con `Authorization: Bearer <clave>`. Todo queda en una bandeja (`studio:inbox:v1`); el Studio abierto la revisa cada 15 s, genera las miniaturas, agrega los anuncios en **Por clasificar** y la vacía. Así el servidor nunca reescribe el estado que el navegador está editando. La clave vive en la base (`meta.swipe_token`) y se regenera desde la misma ventana.
+
 ### Sincronización con Meta vía Claude
 
 La app no guarda credenciales de Meta. Claude (con el MCP de Meta Ads y la skill [`/sync-meta`](.claude/skills/sync-meta/SKILL.md)) lee 90 días de métricas diarias por anuncio, las convierte con [scripts/fatiga-meta.mjs](scripts/fatiga-meta.mjs) sin transcribir números y las envía a `/api/sync/agent/fatiga`. El servidor las guarda en `nova-fatiga:datos:v1` y el Studio las importa al abrirse (asigna cada anuncio al producto cuyo código aparece en la campaña).
@@ -98,6 +109,13 @@ Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYN
 | `POST` | `/api/sync/agent/result` | Envía resultados o error (token) |
 | `POST` | `/api/sync/agent/fatiga` | Envía datos de fatiga sin solicitud previa (token) |
 | `DELETE` | `/api/sync` | Cancela la solicitud abierta |
+| `PUT` / `GET` / `DELETE` | `/api/media/{id}` | Archivos del Studio (S3 o base) |
+| `GET` | `/api/swipe/status` | Clave de Nova Swipe, último envío y pendientes |
+| `POST` | `/api/swipe/token` | Regenera la clave |
+| `GET` | `/api/swipe/extension.zip` | Descarga la extensión (`?config=1` con dirección y clave) |
+| `GET` / `POST` | `/api/inbox`, `/api/inbox/ack` | Bandeja de lo que envió la extensión |
+| `GET` | `/api/swipe/ping`, `/api/swipe/products` | Para la extensión (clave) |
+| `PUT` / `POST` | `/api/swipe/media/{id}`, `/api/swipe/items` | Envíos de la extensión (clave) |
 | `GET` | `/api/export` | Descarga toda la base en JSON (las imágenes en S3 salen como puntero) |
 
 Todo bajo `/api/kv`, `/api/img` y `/api/sync` exige la cookie, salvo `/api/sync/agent*`, que exige `Authorization: Bearer $SYNC_TOKEN`. El login compara en tiempo constante y corta a los 10 intentos fallidos por IP en 15 minutos.
@@ -190,6 +208,11 @@ server/
   images.js           Imágenes de la versión anterior: data URL <-> S3
   migrate.js          Importa el SQLite a un Postgres vacío
   sync.js             Canal con Claude (/api/sync)
+extension/            Nova Swipe (Chrome, Manifest V3)
+  background.js       Menú contextual y envío al Studio
+  content.js          Detecta videos, imágenes y datos del anuncio
+  popup.*, options.*  Ventana de la extensión y conexión
+server/swipe.js y zip.js: clave, bandeja y descarga de la extensión
 scripts/
   fatiga-meta.mjs     Convierte respuestas del MCP de Meta y las envía
 .claude/skills/sync-meta/

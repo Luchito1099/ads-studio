@@ -34,6 +34,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/server ./server
+COPY --from=build /app/extension ./extension
 
 # SQLite (o el archivo a importar a Postgres) vive en el volumen persistente;
 # el usuario `node` debe poder escribir.
