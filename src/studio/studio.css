@@ -229,3 +229,11 @@ kbd{font:600 12px Inter;background:var(--line2);border:1px solid var(--line);bor
 /* Tailwind (usado por la pantalla de acceso) resetea las listas y los medios. */
 .whys{list-style:disc}
 .thumb img{max-width:none}
+
+/* ideas de contenido */
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.icard{padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+.icard h3{margin:0;font-size:15px;line-height:1.35}
+.icard .hookline{font-size:13px}
+.iact{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:auto;border-top:1px solid var(--line2);padding-top:10px}
+.icard h3,.acard h3{font-weight:700}
