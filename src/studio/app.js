@@ -516,6 +516,7 @@ function vRefs(){
      <div class="lgrp">Fuentes</div>
      ${navItem('fuente','','Todas las fuentes',all.length)}
      ${SOURCE_GROUPS.map(([g,items])=>`<div class="lsub">${g}</div>`+items.map(([n])=>navItem('fuente',n,n,fuenteN(n),srcIcon(n))).join('')).join('')}
+     <button class="lnav lgo" id="lcomp">${ic('store','sm')}<span class="lbl">Vigilar competencia</span><span class="n">${(S.competidores||[]).length||''}</span></button>
      <div class="lgrp" style="display:flex;align-items:center">Colecciones<button class="iconbtn" id="lcolnew" aria-label="Nueva colección" title="Nueva colección">${ic('plus','sm')}</button></div>
      ${cols.length?cols.map(c=>navItem('coleccion',c,c,all.filter(r=>r.collection===c).length)).join(''):'<p class="hint" style="margin:2px 10px">Agrupa anuncios por tema o campaña.</p>'}
      <div class="lgrp">Marcas</div>
@@ -563,6 +564,7 @@ function vRefs(){
   const menu=$('#laddmenu'),ladd=$('#ladd');
   ladd.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;ladd.setAttribute('aria-expanded',String(!menu.hidden));};
   document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{menu.hidden=true;const a=b.dataset.add;if(a==='subir')pick();else if(a==='enlace')addLink();else openExtension();});
+  $('#lcomp').onclick=()=>{UI.view='competencia';render();};
   $('#lext').onclick=openExtension;
   // navegación lateral y filtros
   document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{f.scope=b.dataset.scope;render();});
