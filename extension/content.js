@@ -194,10 +194,23 @@
       ...datos,
       mediaUrl,
       tipo,
-      poster: esVideo ? abs(media.poster || "") : mediaUrl,
+      poster: esVideo ? (media.poster ? abs(media.poster) : fotograma(media)) : mediaUrl,
       pageUrl: location.href,
       plataforma: plataforma(),
     };
+  }
+
+  // Miniatura del video para el panel (solo si el sitio lo permite).
+  function fotograma(v) {
+    try {
+      const c = document.createElement("canvas");
+      c.width = 60;
+      c.height = 80;
+      c.getContext("2d").drawImage(v, 0, 0, 60, 80);
+      return c.toDataURL("image/jpeg", 0.6);
+    } catch {
+      return "";
+    }
   }
 
   /* ---------- qué hay bajo el puntero ---------- */
@@ -206,11 +219,11 @@
       if (e.closest?.("#nova-swipe-host")) continue;
       if (e.tagName === "VIDEO") {
         const r = e.getBoundingClientRect();
-        if (r.width >= 140 && r.height >= 140) return e;
+        if (r.width >= 110 && r.height >= 110) return e;
       }
       if (e.tagName === "IMG") {
         const r = e.getBoundingClientRect();
-        if (r.width >= 160 && r.height >= 160 && http(e.currentSrc || e.src)) return e;
+        if (r.width >= 110 && r.height >= 110 && http(e.currentSrc || e.src)) return e;
       }
     }
     return null;
@@ -240,54 +253,85 @@
     return out.slice(0, 30);
   }
 
-  /* ---------- botón Guardar sobre el contenido ---------- */
+  /* ---------- botón Guardar sobre el contenido ----------
+   * Cada clic lanza su guardado en segundo plano: el botón queda libre de
+   * inmediato para el siguiente video o imagen. El progreso se ve en un
+   * panel abajo a la derecha, y cada elemento recuerda si ya se guardó.
+   */
   let activo = true;
   chrome.storage?.local.get("botonFlotante").then((c) => { activo = c.botonFlotante !== false; }).catch(() => {});
   chrome.storage?.onChanged.addListener((ch) => { if (ch.botonFlotante) activo = ch.botonFlotante.newValue !== false; });
 
+  const ICONO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>';
+  const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+
   const host = document.createElement("div");
   host.id = "nova-swipe-host";
-  host.style.cssText = "position:fixed;z-index:2147483647;top:0;left:0;display:none";
+  host.style.cssText = "position:fixed;z-index:2147483647;top:0;left:0;width:0;height:0;overflow:visible";
   const raiz = host.attachShadow({ mode: "closed" });
   raiz.innerHTML = `<style>
-    button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:6px;height:34px;padding:0 12px 0 10px;border-radius:10px;
+    *{box-sizing:border-box}
+    #btn{all:unset;box-sizing:border-box;position:fixed;display:none;align-items:center;gap:6px;height:34px;padding:0 12px 0 10px;border-radius:10px;
       background:#0d9488;color:#fff;font:600 13px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer;
       box-shadow:0 4px 14px rgba(15,23,42,.35);white-space:nowrap}
-    button:hover{background:#0f766e}
-    button:focus-visible{outline:2px solid #fff;outline-offset:2px}
-    button.ok{background:#059669}button.err{background:#dc2626}button.wait{background:#334155;cursor:progress}
+    #btn:hover{background:#0f766e}
+    #btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+    #btn.guardando{background:#334155;cursor:progress}
+    #btn.ok{background:#059669}
+    #btn.err{background:#dc2626}
     svg{width:16px;height:16px;flex-shrink:0}
-  </style><button type="button" aria-label="Guardar en Nova Studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>Guardar</span></button>`;
-  const boton = raiz.querySelector("button");
-  const etiqueta = raiz.querySelector("span");
+    #cola{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;width:300px;pointer-events:none}
+    .it{display:flex;gap:8px;align-items:center;background:#0f172a;color:#fff;border-radius:10px;padding:8px 10px;
+      font:500 12px/1.35 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;box-shadow:0 6px 18px rgba(15,23,42,.35);pointer-events:auto}
+    .it img{width:30px;height:40px;object-fit:cover;border-radius:5px;background:#334155;flex-shrink:0}
+    .it b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .it span{display:block;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .it .txt{min-width:0;flex-grow:1}
+    .it.ok b{color:#6ee7b7}.it.err b{color:#fca5a5}
+    .spin{width:14px;height:14px;border:2px solid #475569;border-top-color:#5eead4;border-radius:50%;animation:g .8s linear infinite;flex-shrink:0}
+    @keyframes g{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  </style>
+  <button id="btn" type="button" aria-label="Guardar en Nova Studio"></button>
+  <div id="cola" role="status" aria-live="polite"></div>`;
+  const boton = raiz.getElementById("btn");
+  const cola = raiz.getElementById("cola");
   (document.body || document.documentElement).appendChild(host);
 
+  const estados = new WeakMap(); // elemento -> "guardando" | "ok" | "err"
   let actual = null;
-  let ocupado = false;
   let ocultarT = null;
+
+  function pintarBoton() {
+    const e = actual ? estados.get(actual) : null;
+    boton.className = e || "";
+    boton.innerHTML = e === "guardando" ? `${ICONO}<span>Guardando…</span>`
+      : e === "ok" ? `${CHECK}<span>Guardado</span>`
+      : e === "err" ? `${ICONO}<span>Reintentar</span>`
+      : `${ICONO}<span>Guardar</span>`;
+  }
 
   function ubicar() {
     if (!actual || !actual.isConnected) return ocultar();
     const r = actual.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > innerHeight) return ocultar();
-    host.style.display = "block";
-    const ancho = host.getBoundingClientRect().width || 110;
-    host.style.top = `${Math.max(8, r.top + 10)}px`;
-    host.style.left = `${Math.min(innerWidth - ancho - 8, Math.max(8, r.right - ancho - 10))}px`;
+    if (r.bottom < 40 || r.top > innerHeight - 40) return ocultar();
+    boton.style.display = "flex";
+    const ancho = boton.getBoundingClientRect().width || 110;
+    const top = Math.min(Math.max(8, r.top + 10), r.bottom - 44);
+    const left = Math.min(innerWidth - ancho - 8, Math.max(8, r.right - ancho - 10));
+    boton.style.top = `${top}px`;
+    boton.style.left = `${left}px`;
+    host.dataset.boton = `${Math.round(left)},${Math.round(top)},${Math.round(ancho)}`;
   }
   function ocultar() {
-    if (ocupado) return;
-    host.style.display = "none";
+    boton.style.display = "none";
+    host.dataset.boton = "";
     actual = null;
-  }
-  function estado(clase, texto) {
-    boton.className = clase;
-    etiqueta.textContent = texto;
   }
 
   let rafPendiente = false;
   document.addEventListener("mousemove", (e) => {
-    if (!activo || rafPendiente || ocupado) return;
+    if (!activo || rafPendiente) return;
     rafPendiente = true;
     requestAnimationFrame(() => {
       rafPendiente = false;
@@ -295,7 +339,7 @@
       const m = mediaEn(e.clientX, e.clientY);
       if (m) {
         clearTimeout(ocultarT);
-        if (m !== actual) { actual = m; estado("", "Guardar"); }
+        if (m !== actual) { actual = m; pintarBoton(); }
         ubicar();
       } else if (actual) {
         clearTimeout(ocultarT);
@@ -306,23 +350,65 @@
   addEventListener("scroll", () => actual && ubicar(), { passive: true, capture: true });
   addEventListener("resize", () => actual && ubicar(), { passive: true });
 
-  boton.addEventListener("click", async (e) => {
+  function tarjetaCola(p) {
+    const it = document.createElement("div");
+    it.className = "it";
+    const miniatura = http(p.poster) || (p.poster || "").startsWith("data:image") ? p.poster : p.tipo === "image" ? p.mediaUrl : "";
+    it.innerHTML = `${miniatura ? `<img alt="">` : ""}<div class="txt"><b></b><span></span></div><div class="spin" aria-hidden="true"></div>`;
+    if (miniatura) it.querySelector("img").src = miniatura;
+    const b = it.querySelector("b");
+    const s = it.querySelector("span");
+    const detalle = [p.brand, p.adId ? `ID ${p.adId}` : ""].filter(Boolean).join(" · ");
+    b.textContent = "Guardando…";
+    s.textContent = detalle || (p.tipo === "video" ? "Video" : "Imagen");
+    cola.prepend(it);
+    while (cola.children.length > 6) cola.lastElementChild.remove();
+    return {
+      listo(r) {
+        it.classList.add("ok");
+        it.querySelector(".spin")?.remove();
+        b.textContent = r.sinArchivo ? "Enlace guardado" : "Guardado en la Biblioteca";
+        s.textContent = [r.brand || p.brand, (r.adId || p.adId) ? `ID ${r.adId || p.adId}` : ""].filter(Boolean).join(" · ") || s.textContent;
+        setTimeout(() => it.remove(), 5000);
+      },
+      fallo(msg) {
+        it.classList.add("err");
+        it.querySelector(".spin")?.remove();
+        b.textContent = "No se pudo guardar";
+        s.textContent = msg;
+        s.title = msg;
+        setTimeout(() => it.remove(), 12000);
+      },
+    };
+  }
+
+  async function guardar(el) {
+    const p = paquete(el);
+    estados.set(el, "guardando");
+    if (el === actual) pintarBoton();
+    const t = tarjetaCola(p);
+    try {
+      const r = await chrome.runtime.sendMessage({ type: "enviar", payload: p });
+      if (!r?.ok) throw new Error(r?.error || "No se pudo guardar");
+      estados.set(el, "ok");
+      t.listo(r);
+    } catch (err) {
+      estados.set(el, "err");
+      t.fallo(err.message);
+    }
+    if (el === actual) { pintarBoton(); ubicar(); }
+  }
+
+  boton.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!actual || ocupado) return;
-    ocupado = true;
-    estado("wait", "Guardando…");
-    try {
-      const r = await chrome.runtime.sendMessage({ type: "enviar", payload: paquete(actual) });
-      if (!r?.ok) throw new Error(r?.error || "No se pudo guardar");
-      estado("ok", r.sinArchivo ? "Guardado (solo enlace)" : "Guardado");
-    } catch (err) {
-      estado("err", "Error");
-      boton.title = err.message;
-      console.warn("[Nova Swipe]", err.message);
-    }
+    const el = actual;
+    if (!el) return;
+    const est = estados.get(el);
+    if (est === "guardando" || est === "ok") return; // ya enviado: no se duplica
+    guardar(el);
+    pintarBoton();
     ubicar();
-    setTimeout(() => { ocupado = false; boton.title = ""; }, 1800);
   }, true);
   ["mousedown", "mouseup", "pointerdown", "pointerup"].forEach((t) => boton.addEventListener(t, (e) => e.stopPropagation(), true));
 

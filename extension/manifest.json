@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Nova Swipe",
   "short_name": "Nova Swipe",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Guarda anuncios de la Biblioteca de Meta, TikTok, Instagram y cualquier web en la Biblioteca de NOVA Studio de Ads.",
   "permissions": [
     "contextMenus",
