@@ -612,21 +612,28 @@ export default function App() {
   const [syncErr, setSyncErr] = useState("");
   const [fatigaVersion, setFatigaVersion] = useState(0);
   const syncActive = sync?.status === "pendiente" || sync?.status === "procesando";
-  useEffect(() => { getSyncState().then(setSync).catch(() => {}); }, []);
+  // Última entrega ya aplicada, para no recargar dos veces lo mismo.
+  const syncVisto = useRef(null);
   useEffect(() => {
-    if (!syncActive) return;
+    getSyncState().then((s) => { syncVisto.current = s.finishedAt ?? null; setSync(s); }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    // Rápido mientras hay una solicitud abierta; lento en reposo, para enterarse
+    // también de los envíos directos de Claude.
     const t = setInterval(async () => {
       try {
         const s = await getSyncState();
         setSync(s);
-        if (s.status === "listo" && s.tipo === "fatiga") setFatigaVersion((v) => v + 1);
-        // El servidor ya escribió los ads: recargar para no pisarlos después.
-        else if (s.status === "listo") {
+        if (s.status !== "listo" || !s.finishedAt || s.finishedAt === syncVisto.current) return;
+        syncVisto.current = s.finishedAt;
+        if (s.tipo === "fatiga") setFatigaVersion((v) => v + 1);
+        else {
+          // El servidor ya escribió los ads: recargar para no pisarlos después.
           const a = await window.storage.get(ADKEY);
           if (a && a.value) setAds(JSON.parse(a.value));
         }
       } catch {}
-    }, 4000);
+    }, syncActive ? 4000 : 30000);
     return () => clearInterval(t);
   }, [syncActive]);
   const handleSync = async () => {

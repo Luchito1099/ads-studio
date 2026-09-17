@@ -47,6 +47,22 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   });
   const SIN_TOKEN = "El servidor no tiene SYNC_TOKEN: agrégalo en las variables de entorno (Coolify) para que Claude pueda responder.";
 
+  /** Valida y guarda los datos diarios de la página Fatiga. Devuelve un error o el resumen. */
+  const guardarFatiga = async (datos, metaBase, finishedAt) => {
+    if (!datos || !Array.isArray(datos.diario) || !datos.diario.length) {
+      return { error: "datos.diario debe ser un arreglo con filas" };
+    }
+    const bien = datos.diario.every((f) => f && typeof f.fecha === "string" && f.ad_id != null);
+    if (!bien) return { error: "Cada fila necesita fecha (AAAA-MM-DD) y ad_id" };
+    const guardado = {
+      meta: { ...metaBase, ...(datos.meta || {}), fuente: "mcp", actualizado: finishedAt },
+      anuncios: Array.isArray(datos.anuncios) ? datos.anuncios : [],
+      diario: datos.diario,
+    };
+    await kv.set(FATIGA_KEY, JSON.stringify(guardado));
+    return { filas: datos.diario.length, anuncios: new Set(datos.diario.map((f) => String(f.ad_id))).size };
+  };
+
   const requireAgent = (req, res, next) => {
     const expected = process.env.SYNC_TOKEN;
     if (!expected) return res.status(503).json({ error: "SYNC_TOKEN no está configurado en el servidor" });
@@ -121,6 +137,30 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   }));
 
   /**
+   * Envío directo de datos de fatiga, sin que nadie haya pulsado el botón
+   * (por ejemplo cuando el usuario le dice a Claude "sincroniza").
+   * Si hay una solicitud de fatiga abierta, la da por resuelta; si hay una de
+   * inversión en curso, no la toca. body: { datos }
+   */
+  router.post("/agent/fatiga", requireAgent, wrap(async (req, res) => {
+    const finishedAt = new Date().toISOString();
+    const state = await readState();
+    const abierta = ["pendiente", "procesando"].includes(state.status);
+    const base = state.tipo === "fatiga" && abierta
+      ? { metrica_rectora: state.metrica, objetivo: state.objetivo, etiqueta_resultado: state.etiqueta }
+      : {};
+    const r = await guardarFatiga(req.body?.datos, base, finishedAt);
+    if (r.error) return res.status(400).json({ error: r.error });
+    if (!(abierta && state.tipo !== "fatiga")) {
+      const next = state.tipo === "fatiga" && abierta
+        ? { ...state, status: "listo", finishedAt, ...r }
+        : { id: crypto.randomUUID(), tipo: "fatiga", status: "listo", requestedAt: finishedAt, finishedAt, directo: true, ...r };
+      await writeState(next);
+    }
+    res.json({ ok: true, ...r });
+  }));
+
+  /**
    * body: {
    *   id, periodo: "last_30d" | "2026-09-01..2026-09-17",
    *   results: [{ nombre, spend, compras?, impresiones?, clics?, ctr?, cuentas? }],
@@ -141,28 +181,14 @@ export function syncRouter({ kv, requireAuth, wrap }) {
       return res.json({ ok: true });
     }
     if (state.tipo === "fatiga") {
-      const datos = req.body?.datos;
-      if (!datos || !Array.isArray(datos.diario) || !datos.diario.length) {
-        return res.status(400).json({ error: "datos.diario debe ser un arreglo con filas" });
-      }
-      const bien = datos.diario.every((f) => f && typeof f.fecha === "string" && f.ad_id != null);
-      if (!bien) return res.status(400).json({ error: "Cada fila necesita fecha (AAAA-MM-DD) y ad_id" });
-      const guardado = {
-        meta: {
-          metrica_rectora: state.metrica,
-          objetivo: state.objetivo,
-          etiqueta_resultado: state.etiqueta,
-          ...(datos.meta || {}),
-          fuente: "mcp",
-          actualizado: finishedAt,
-        },
-        anuncios: Array.isArray(datos.anuncios) ? datos.anuncios : [],
-        diario: datos.diario,
-      };
-      await kv.set(FATIGA_KEY, JSON.stringify(guardado));
-      const anuncios = new Set(datos.diario.map((f) => String(f.ad_id))).size;
-      await writeState({ ...state, status: "listo", finishedAt, filas: datos.diario.length, anuncios });
-      return res.json({ ok: true, filas: datos.diario.length, anuncios });
+      const r = await guardarFatiga(
+        req.body?.datos,
+        { metrica_rectora: state.metrica, objetivo: state.objetivo, etiqueta_resultado: state.etiqueta },
+        finishedAt
+      );
+      if (r.error) return res.status(400).json({ error: r.error });
+      await writeState({ ...state, status: "listo", finishedAt, ...r });
+      return res.json({ ok: true, ...r });
     }
 
     if (!Array.isArray(results)) return res.status(400).json({ error: "results debe ser un arreglo" });

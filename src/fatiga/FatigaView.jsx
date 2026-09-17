@@ -418,6 +418,12 @@ export default function FatigaView({ sync, onPedir, onCancelar, version }) {
           </label>
         </div>
       )}
+      {sync && sync.agente === false && (
+        <div className="mt-3 flex gap-2 rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <span>El servidor no tiene <b>SYNC_TOKEN</b>, así que Claude no puede enviar datos. Agrégalo en las variables de entorno de Coolify y vuelve a desplegar.</span>
+        </div>
+      )}
       {mensaje && (
         <div className={`mt-3 rounded-lg px-3 py-2 text-[12px] ${mensaje.error ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-800"}`}>
           {mensaje.textos.map((t) => <div key={t}>{t}</div>)}

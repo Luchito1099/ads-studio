@@ -1,6 +1,6 @@
 ---
 name: sync-meta
-description: Atiende los botones "Sincronizar Meta" y "Pedir datos a Claude" (página Fatiga) de NOVA Studio. Toma la solicitud pendiente del servidor, consulta en Meta Ads (MCP) la inversión de cada ad por su nombre y devuelve los resultados para que la app se actualice. Úsalo cuando el usuario diga "sincroniza", "/sync-meta" o cuando una rutina lo invoque.
+description: Sincroniza NOVA Studio con Meta Ads vía MCP. Atiende los botones "Sincronizar Meta" (inversión por nombre de ad) y "Pedir datos a Claude" (datos diarios para la página Fatiga), o envía la fatiga directo cuando el usuario lo pide. Úsalo cuando el usuario diga "sincroniza", "sincroniza la fatiga", "/sync-meta" o cuando una rutina lo invoque.
 ---
 
 # Sincronizar NOVA Studio con Meta Ads
@@ -86,36 +86,30 @@ Una o dos líneas: cuántos ads se actualizaron, cuáles no se encontraron en Me
 
 ---
 
-## Solicitud de fatiga (`tipo: "fatiga"`)
+## Solicitud de fatiga (`tipo: "fatiga"`) o "sincroniza la fatiga"
 
-La página **Fatiga** necesita métricas diarias por anuncio de **toda la cuenta** (no solo de los ads de la app). La solicitud trae `cuenta` (ID o nombre), `dias` (90), `metrica`, `objetivo` y `etiqueta`. El análisis lo hace la app con `src/fatiga/motor.js`; tú solo traes los datos.
+La página **Fatiga** necesita métricas diarias por anuncio de **toda la cuenta**. Se usa en dos casos:
 
-1. **Cuenta:** con `ads_get_ad_accounts`, busca la que coincida con `cuenta` (por ID, con o sin `act_`, o por nombre). Debe tener `is_ads_mcp_enabled` y `is_queryable` en `true`; si no, envía un `error` explicándolo. Anota su `currency`.
-2. **Campos:** verifica con `ads_get_field_context` a nivel `ad`: `id`, `name`, `campaign_name`, `adset_name`, `amount_spent`, `impressions`, `reach`, `frequency`, clics en el enlace, resultados, valor de conversión y reproducciones de video de 3 segundos. Usa los nombres canónicos que devuelva.
-3. **Datos diarios:** `ads_get_ad_entities` con `level: "ad"`, `date_preset: "last_90d"`, `time_increment: "1"` (texto), los campos métricos verificados y, si el campo es filtrable, un filtro de inversión mayor a 0. Pagina con `next_cursor` reenviando todo igual. Cada fila trae su fecha (`date_start`).
-4. **Metadatos:** otra llamada sin `time_increment`, con `date_preset: "maximum"`, pidiendo `id, name, campaign_name, adset_name, created_time, frequency`. Ahí sale la frecuencia acumulada.
-5. **Arma el JSON** en el scratchpad y envíalo a `/api/sync/agent/result`:
+- Hay una solicitud `tipo: "fatiga"` pendiente: trae `cuenta`, `metrica`, `objetivo` y `etiqueta`. Reclámala como en el paso 1.
+- El usuario te pide sincronizar la fatiga sin haber pulsado el botón: usa la cuenta que diga (o pregúntala) y envía directo; no hace falta reclamar nada.
 
-```json
-{
-  "id": "<id de la solicitud>",
-  "datos": {
-    "meta": { "cuenta": "novashop_soles", "moneda": "PEN" },
-    "anuncios": [
-      { "id": "1202…", "nombre": "AD_…", "campana": "…", "conjunto": "…",
-        "fecha_inicio": "2026-06-20", "frecuencia_acumulada": 2.8 }
-    ],
-    "diario": [
-      { "fecha": "2026-09-01", "ad_id": "1202…", "gasto": 85.2, "impresiones": 7600,
-        "alcance": 6900, "clics": 120, "resultados": 3, "valor": 357, "vistas_3s": 2400 }
-    ]
-  }
-}
+El análisis lo hace la app (`src/fatiga/motor.js`). Tú traes los datos y **nunca los transcribes a mano**: `scripts/fatiga-meta.mjs` los convierte y los envía.
+
+1. **Cuenta:** con `ads_get_ad_accounts`, busca la que coincida (por ID, con o sin `act_`, o por nombre). Debe tener `is_ads_mcp_enabled` y `is_queryable` en `true`; si no, avísalo (y si había solicitud, envía `error` a `/api/sync/agent/result`). Anota su `currency`.
+2. **Campos:** verifica con `ads_get_field_context`: `amount_spent`, `impressions`, `reach`, `link_click`, `omni_purchase` (o el evento que corresponda a `etiqueta`), `omni_purchase_values`, `video_play_actions`, `campaign_name`, `adset_name`, `created_time`, `frequency`.
+3. **Anuncios con entrega:** `ads_get_ad_entities` con `level: "ad"`, `date_preset: "last_90d"`, campos `id, name, campaign_name, adset_name, created_time, frequency, impressions`, filtro `ad.impressions GREATER_THAN 0` y `limit: 1000`. Esta respuesta también sirve de metadatos.
+4. **Datos diarios, por tandas:** Meta corta cada respuesta en 1.000 filas, así que pide de a **10 anuncios** por llamada: `level: "ad"`, `date_preset: "last_90d"`, `time_increment: "1"`, los campos métricos y filtro `ad.id IN [...]` con `limit: 1000`. Si una tanda devuelve exactamente 1.000 filas, pártela en dos. Si la cuenta tiene muchos anuncios, prioriza los que tuvieron entrega en los últimos 14 días y dilo en el resumen.
+5. **Guarda cada respuesta en un archivo** del scratchpad. Las grandes ya quedan guardadas (la herramienta te da la ruta); las pequeñas escríbelas tal cual con Write como `{"ad_entities": "<el texto recibido>"}` o como arreglo JSON de filas.
+6. **Convierte y envía:**
+
+```bash
+node scripts/fatiga-meta.mjs   --diario <tanda1> <tanda2> ...   --anuncios <respuesta del paso 3>   --cuenta "<nombre de la cuenta>" --moneda <currency>   [--objetivo <n>] [--metrica cpa|roas] [--etiqueta Compras]   --enviar
 ```
 
-- Obligatorios por fila: `fecha` (AAAA-MM-DD), `ad_id`, `gasto`, `impresiones`, `alcance`, `clics`. Omite `valor` o `vistas_3s` si no vienen.
-- `gasto` va en la moneda de la cuenta (indícala en `meta.moneda`); aquí no se convierte.
-- Si `results` viene como objeto o lista, suma sus `value`. Si la cuenta mezcla tipos de resultado, usa el evento que corresponde a `etiqueta` (por ejemplo compras).
-- Si la cuenta es muy grande para traerla completa, avísalo con `error` y sugiere subir un CSV desde la página.
+   El script lee `NOVA_URL` y `SYNC_TOKEN` del `.env`, envía a `/api/sync/agent/fatiga` y, si había una solicitud de fatiga abierta, la marca como lista. Imprime un resumen (`anuncios`, `filas`, `desde`, `hasta`, `sinMetadatos`): revísalo antes de contestar. Sin `--enviar` y con `--salida datos.json` solo arma el archivo.
 
-Resumen al usuario: cuántos anuncios y días enviaste, y que abra la pestaña **Fatiga** (se actualiza sola).
+- `gasto` queda en la moneda de la cuenta (`--moneda`); aquí no se convierte.
+- Los anuncios de imagen que traen unas pocas reproducciones se marcan como imagen (el script lo resuelve).
+- Si el envío responde 503, el servidor no tiene `SYNC_TOKEN`: dile al usuario que lo agregue en Coolify.
+
+Resumen al usuario: cuántos anuncios y días enviaste, y que abra la pestaña **Fatiga** (se actualiza sola en menos de un minuto). Si quieres adelantar lo más urgente, guarda con `--salida` y evalúa ese archivo con `preparar` y `evaluarCuenta` de `src/fatiga/motor.js` (mismos números que verá en la página); no inventes cifras.

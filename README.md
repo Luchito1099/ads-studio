@@ -92,7 +92,7 @@ La app no se conecta a Meta. El botón **Sincronizar Meta** deja una solicitud c
 
 Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYNC_TOKEN` (y `SYNC_USD_PEN` si alguna cuenta está en dólares). Claude debe estar atendiendo: pídele `/sync-meta`, déjalo revisando con `/loop 2m /sync-meta` o prográmalo como rutina.
 
-El botón **Pedir datos a Claude** de la página Fatiga usa el mismo canal con `tipo: "fatiga"`: Claude lee 90 días de métricas diarias de toda la cuenta configurada y el servidor las guarda en `nova-fatiga:datos:v1`. Esa página no depende de los nombres de la app.
+Claude arma esos datos con [scripts/fatiga-meta.mjs](scripts/fatiga-meta.mjs), que convierte las respuestas del MCP sin transcribirlas; también puede enviarlos sin que nadie pulse el botón ("sincroniza la fatiga"). El botón **Pedir datos a Claude** de la página Fatiga usa el mismo canal con `tipo: "fatiga"`: Claude lee 90 días de métricas diarias de toda la cuenta configurada y el servidor las guarda en `nova-fatiga:datos:v1`. Esa página no depende de los nombres de la app.
 
 Para que la inversión coincida, el anuncio en Meta debe llamarse igual que el nombre que genera la app (`AD_NOVAFLEX_UGC_PROBSOL_DOLOR_008_A`).
 
@@ -112,6 +112,8 @@ Para que la inversión coincida, el anuncio en Meta debe llamarse igual que el n
 | `GET` | `/api/sync/agent` | Solicitud actual con la lista de ads (token) |
 | `POST` | `/api/sync/agent/claim` | Marca la solicitud como en proceso (token) |
 | `POST` | `/api/sync/agent/result` | Envía resultados o error (token) |
+| `POST` | `/api/sync/agent/fatiga` | Envía datos de fatiga sin solicitud previa (token) |
+| `DELETE` | `/api/sync` | Cancela la solicitud abierta |
 | `GET` | `/api/export` | Descarga toda la base en JSON (las imágenes en S3 salen como puntero) |
 
 Todo bajo `/api/kv`, `/api/img` y `/api/sync` exige la cookie, salvo `/api/sync/agent*`, que exige `Authorization: Bearer $SYNC_TOKEN`. El login compara en tiempo constante y corta a los 10 intentos fallidos por IP en 15 minutos.
