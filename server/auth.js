@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
-import { getSessionSecret } from "./db.js";
 
-const SECRET = getSessionSecret();
+// Lo fija index.js al arrancar, cuando ya hay conexión con la base.
+let SECRET = null;
+export const setSessionSecret = (secret) => { SECRET = secret; };
 export const COOKIE_NAME = "nova_session";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
 

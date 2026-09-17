@@ -35,7 +35,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/server ./server
 
-# La base vive en el volumen persistente; el usuario `node` debe poder escribir.
+# SQLite (o el archivo a importar a Postgres) vive en el volumen persistente;
+# el usuario `node` debe poder escribir.
 RUN mkdir -p /data && chown -R node:node /data /app
 USER node
 

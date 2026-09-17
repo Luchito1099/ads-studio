@@ -15,8 +15,20 @@ services:
       - SESSION_SECRET=${SESSION_SECRET}
       - DB_PATH=/data/nova.db
       - PORT=3000
+      # Opcionales: sincronización con Meta, Postgres y S3 (ver .env.example).
+      - SYNC_TOKEN=${SYNC_TOKEN:-}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DATABASE_SSL=${DATABASE_SSL:-}
+      - S3_BUCKET=${S3_BUCKET:-}
+      - S3_REGION=${S3_REGION:-}
+      - S3_PREFIX=${S3_PREFIX:-}
+      - S3_ENDPOINT=${S3_ENDPOINT:-}
+      - S3_FORCE_PATH_STYLE=${S3_FORCE_PATH_STYLE:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
     volumes:
-      # Volumen persistente: sin esto se pierde la base en cada redeploy.
+      # Volumen persistente: sin esto se pierde la base SQLite en cada redeploy.
+      # Con Postgres sigue sirviendo para la importación inicial.
       - nova-data:/data
     ports:
       - "3000:3000"

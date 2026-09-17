@@ -2,8 +2,8 @@
  * Implementación de `window.storage` respaldada por el servidor.
  *
  * nova-ads-studio.jsx habla exclusivamente con esta API (get / set / delete),
- * así que reemplazando la implementación los datos pasan a vivir en SQLite
- * en el servidor sin tocar ni una línea del componente.
+ * así que reemplazando la implementación los datos pasan a vivir en el
+ * servidor (Postgres o SQLite, e imágenes en S3) sin tocar el componente.
  *
  * Contrato que espera el componente:
  *   await storage.get(key)          -> { key, value } | null

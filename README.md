@@ -4,7 +4,7 @@ Aplicación autoalojada para gestionar la producción de anuncios: banco de refe
 
 Pensada para equipos que iteran creativos en Meta / TikTok y necesitan una nomenclatura consistente y datos sobre qué ángulos, formatos y conceptos realmente funcionan.
 
-Los datos viven en **SQLite en tu servidor** y el acceso está protegido por **una contraseña que defines por variable de entorno**.
+Los datos viven en **Postgres** (o SQLite si no configuras uno), las imágenes en **AWS S3** (opcional) y el acceso está protegido por **una contraseña que defines por variable de entorno**.
 
 ## Qué incluye
 
@@ -23,6 +23,8 @@ Los datos viven en **SQLite en tu servidor** y el acceso está protegido por **u
 **Banco** — Referencias guardadas (con imagen o enlace) que se convierten en guiones con un clic.
 
 **Ganadores** — Vista filtrada de los ads que escalaron.
+
+**Sincronizar Meta** — Botón que trae la inversión de los ads lanzados desde Meta Ads, sin guardar credenciales de Meta en la app (ver abajo).
 
 **Métricas** — Tasa de acierto y ranking de los ángulos, formatos y conceptos que más ganadores producen.
 
@@ -50,16 +52,44 @@ Navegador ── Gate (contraseña) ── App React
             POST /api/login    GET/PUT/DELETE /api/kv
                   └──────── cookie firmada ────────┘
                                      │
-                                  SQLite  (/data/nova.db)
+                     Postgres (DATABASE_URL) ─┴─ S3 (imágenes)
+                     o SQLite (/data/nova.db)
 ```
 
-`nova-ads-studio.jsx` guarda todo a través de `window.storage`, una API async de tres métodos. [src/storage.js](src/storage.js) implementa esa misma interfaz contra el servidor, así que **el componente no tuvo que modificarse** y la interfaz quedó idéntica.
+`nova-ads-studio.jsx` guarda todo a través de `window.storage`, una API async de tres métodos. [src/storage.js](src/storage.js) implementa esa misma interfaz contra el servidor, así que el componente no depende de dónde se guardan los datos.
 
-La base es un almacén clave-valor (tabla `kv`) con tres claves:
+La base es un almacén clave-valor (tabla `kv`, igual en Postgres y en SQLite) con tres claves:
 
 - `nova-ads:all:v1` — ads y guiones
 - `nova-refs:list:v1` — referencias del banco
-- `nova-refimg:{id}` — miniaturas (redimensionadas a 640px y comprimidas a JPEG antes de guardar)
+- `nova-refimg:{id}` — miniaturas (redimensionadas a 640px y comprimidas a JPEG en el navegador)
+
+### Imágenes en S3
+
+Con `S3_BUCKET` definido, el servidor sube cada miniatura al bucket (`{S3_PREFIX}/refimg/{id}/{timestamp}.jpg`) y en la base guarda solo el puntero `s3:…`. Al leerla, el navegador recibe `/api/img?key=…`, que el servidor sirve desde S3 tras validar la sesión: **el bucket puede (y debe) quedar privado**. Al reemplazar o borrar una imagen se borra también el objeto anterior.
+
+Sin S3 las imágenes se guardan dentro de la base como antes, y las que ya estaban así se siguen mostrando aunque luego actives S3.
+
+Permisos IAM mínimos sobre el bucket: `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` (y `s3:ListBucket` si quieres que el chequeo de arranque no muestre aviso).
+
+### Datos por defecto al pasar a Postgres
+
+Al arrancar con un Postgres **vacío**, el servidor copia todo lo que haya en el SQLite de `DB_PATH` (o `SQLITE_IMPORT_PATH`): guiones, banco, imágenes (que suben a S3 si está configurado) y el secreto de sesión, así nadie tiene que volver a entrar. Es una sola transacción y nunca corre si la base ya tiene datos.
+
+Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.
+
+### Sincronización con Meta vía Claude
+
+La app no se conecta a Meta. El botón **Sincronizar Meta** deja una solicitud con los ads en Lanzado, Testing, Ganador o Muerto y su nombre; Claude (con el MCP de Meta Ads) la atiende con la skill [`/sync-meta`](.claude/skills/sync-meta/SKILL.md):
+
+1. Lee la solicitud y la marca como *procesando*.
+2. Busca en tus cuentas de Meta los ads **con ese nombre exacto** y suma su inversión total (convertida a soles).
+3. Envía los resultados: el servidor actualiza la **inversión** de cada ad y guarda un bloque informativo (compras según Meta, impresiones, CTR). Los **pedidos confirmados no se tocan**.
+4. La app ve el estado *listo* y recarga sola; al pasar el mouse por el botón se ven los ads no encontrados.
+
+Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYNC_TOKEN` (y `SYNC_USD_PEN` si alguna cuenta está en dólares). Claude debe estar atendiendo: pídele `/sync-meta`, déjalo revisando con `/loop 2m /sync-meta` o prográmalo como rutina.
+
+Para que haya coincidencias, el anuncio en Meta debe llamarse igual que el nombre que genera la app (`AD_NOVAFLEX_UGC_PROBSOL_DOLOR_008_A`).
 
 ### API
 
@@ -72,9 +102,14 @@ La base es un almacén clave-valor (tabla `kv`) con tres claves:
 | `GET` | `/api/kv?key=…` | Lee una clave |
 | `PUT` | `/api/kv?key=…` | Escribe `{ value }` |
 | `DELETE` | `/api/kv?key=…` | Borra una clave |
-| `GET` | `/api/export` | Descarga toda la base en JSON |
+| `GET` | `/api/img?key=…` | Sirve una imagen del banco (desde S3 o la base) |
+| `GET` / `POST` | `/api/sync` | Estado de la sincronización / pedir una nueva |
+| `GET` | `/api/sync/agent` | Solicitud actual con la lista de ads (token) |
+| `POST` | `/api/sync/agent/claim` | Marca la solicitud como en proceso (token) |
+| `POST` | `/api/sync/agent/result` | Envía resultados o error (token) |
+| `GET` | `/api/export` | Descarga toda la base en JSON (las imágenes en S3 salen como puntero) |
 
-Todo bajo `/api/kv` exige la cookie. El login compara en tiempo constante y corta a los 10 intentos fallidos por IP en 15 minutos.
+Todo bajo `/api/kv`, `/api/img` y `/api/sync` exige la cookie, salvo `/api/sync/agent*`, que exige `Authorization: Bearer $SYNC_TOKEN`. El login compara en tiempo constante y corta a los 10 intentos fallidos por IP en 15 minutos.
 
 ## Variables de entorno
 
@@ -82,7 +117,16 @@ Todo bajo `/api/kv` exige la cookie. El login compara en tiempo constante y cort
 |---|---|---|
 | `APP_PASSWORD` | **Sí** | Contraseña de acceso. El servidor no arranca sin ella. |
 | `SESSION_SECRET` | No | Firma la cookie. Si falta se genera y se guarda en la base. Cambiarlo cierra la sesión en todos los dispositivos. |
-| `DB_PATH` | No | Ruta del archivo SQLite. Por defecto `./data/nova.db`. |
+| `DATABASE_URL` | No | Conexión a Postgres (`postgres://usuario:clave@host:5432/db`). Si falta se usa SQLite. |
+| `DATABASE_SSL` | No | `require` (TLS sin validar certificado, típico en RDS), `verify` o `false`. Si lo usas, no pongas `sslmode` en la URL. |
+| `DB_PATH` | No | Archivo SQLite. Por defecto `./data/nova.db`. Con Postgres, es lo que se importa la primera vez. |
+| `SQLITE_IMPORT_PATH` | No | Importar desde otro archivo SQLite en vez de `DB_PATH`. |
+| `SYNC_TOKEN` | Para sincronizar | Clave con la que Claude envía los datos de Meta. Sin ella el botón queda esperando. |
+| `S3_BUCKET` | No | Bucket para las imágenes. Si falta, van dentro de la base. |
+| `S3_REGION` | No | Región del bucket. Por defecto `AWS_REGION` o `us-east-1`. |
+| `S3_PREFIX` | No | Carpeta dentro del bucket (ej. `nova`). |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Con S3 | Credenciales IAM. No hacen falta si corre en AWS con un rol. |
+| `S3_ENDPOINT` / `S3_FORCE_PATH_STYLE` | No | Para servicios compatibles con S3 (MinIO, R2, Spaces). |
 | `PORT` | No | Puerto del servidor. Por defecto `3000`. |
 | `COOKIE_SECURE` | No | Fuerza la cookie `secure`. Normalmente se detecta solo tras el proxy. |
 
@@ -97,13 +141,16 @@ Ver [.env.example](.env.example).
    - `APP_PASSWORD` → tu contraseña.
    - `SESSION_SECRET` → salida de `openssl rand -hex 32`.
    - `DB_PATH` → `/data/nova.db`.
+   - `DATABASE_URL` (y `DATABASE_SSL` si hace falta) → tu Postgres. En Coolify puedes crear uno con **New Resource → Database → PostgreSQL** y copiar su URL interna.
+   - `S3_BUCKET`, `S3_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` → tu bucket de S3.
+   - `SYNC_TOKEN` → salida de `openssl rand -hex 32`, para el botón Sincronizar Meta.
 4. **Storages → Add**: volumen persistente montado en `/data`.
 
-   Este paso no es opcional: sin el volumen, SQLite vive dentro del contenedor y **se borra en cada redeploy**.
+   Sin Postgres este paso no es opcional: SQLite viviría dentro del contenedor y **se borraría en cada redeploy**. Con Postgres, mantén el volumen al menos en el primer deploy: de ahí se importan tus datos actuales.
 5. Puerto expuesto: `3000`. Asigna el dominio y activa HTTPS.
-6. Deploy.
+6. Deploy. En los logs verás qué base y qué almacenamiento de imágenes quedaron activos, y si se importó el SQLite.
 
-Para respaldar, entra a la app y descarga `/api/export`, o copia `/data/nova.db` desde el volumen.
+Para respaldar: `pg_dump` (o los backups de Coolify / RDS) para la base y el versionado del bucket para las imágenes. `/api/export` sigue disponible como respaldo rápido de los datos.
 
 ## Desarrollo local
 
@@ -115,7 +162,7 @@ cp .env.example .env      # define al menos APP_PASSWORD
 npm run dev
 ```
 
-Levanta el API en `:3000` y Vite en `:5173` con proxy de `/api`. La base queda en `./data/nova.db`.
+Levanta el API en `:3000` y Vite en `:5173` con proxy de `/api`. Sin `DATABASE_URL` la base queda en `./data/nova.db`.
 
 Para probar el build de producción:
 
@@ -126,16 +173,23 @@ npm run build && npm start   # todo en http://localhost:3000
 ## Estructura
 
 ```
-nova-ads-studio.jsx   Componente de la app (sin modificar)
+nova-ads-studio.jsx   Componente de la app
 index.html            Punto de entrada de Vite
 src/
   main.jsx            Instala window.storage, decide gate vs app
   Gate.jsx            Pantalla de contraseña
   storage.js          window.storage respaldado por el servidor + sesión
+  sync.js             Cliente del botón Sincronizar Meta
   index.css           Tailwind + fuente Inter
 server/
   index.js            Express: rutas, estáticos, SPA fallback
-  db.js               SQLite (tabla kv) y secreto de sesión
+  db.js               Almacén kv: Postgres o SQLite, y secreto de sesión
+  blobs.js            Cliente S3
+  images.js           Imágenes del banco: data URL <-> objeto en S3
+  migrate.js          Importa el SQLite a un Postgres vacío
+  sync.js             Solicitudes de sincronización con Meta (navegador <-> Claude)
+.claude/skills/sync-meta/
+  SKILL.md            Cómo Claude atiende el botón Sincronizar Meta
   auth.js             Cookie firmada, comparación constante, rate limit
 Dockerfile            Build multi-etapa
 docker-compose.yml    Alternativa a Dockerfile, con volumen declarado

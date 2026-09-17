@@ -3,8 +3,9 @@ import {
   Plus, Copy, Check, Trophy, X, ChevronLeft, ChevronRight, Pencil,
   Trash2, Film, Tag, LayoutGrid, TrendingUp, Award, Search, RotateCcw, Package,
   Lightbulb, Video, Image as ImageIcon, Layers, Sparkles, Star, ExternalLink,
-  Upload, Link2, ArrowRight, Wand2, List, ArrowUpDown
+  Upload, Link2, ArrowRight, Wand2, List, ArrowUpDown, RefreshCw
 } from "lucide-react";
+import { getSyncState, requestSync } from "./src/sync.js";
 
 /* ---------------- helpers ---------------- */
 const FONT = { fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, sans-serif" };
@@ -89,7 +90,13 @@ const todayStr = () => { const d = new Date(); return `${String(d.getDate()).pad
 const buildAdName = (a, seq) =>
   `AD_${token(a.producto) || "NA"}_${a.formato || "NA"}_${a.ccr || "NA"}_${token(a.angulo) || "NA"}_${String(seq).padStart(3, "0")}_${a.variant || "A"}`;
 const scriptCompleto = (a) => [a.hook, a.body, a.cta].filter(Boolean).join("\n\n");
+const copyText = async (txt) => {
+  try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} document.body.removeChild(ta); }
+};
 const uid = () => Math.random().toString(36).slice(2, 9);
+const fechaHora = (iso) => new Date(iso).toLocaleString("es-PE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+// Estados en los que el ad ya existe en Meta y tiene sentido traer su inversión.
+const SYNC_STAGES = ["lanzado", "testing", "ganador", "muerto"];
 
 function fileToDataUrl(file, max = 640, quality = 0.72) {
   return new Promise((res, rej) => {
@@ -206,12 +213,18 @@ function Editor({ ad, initial, nextNum, onSave, onDelete, onClose }) {
   const [f, setF] = useState(base);
   const [otro, setOtro] = useState(!!(base.angulo && !ANGULOS.some((a) => a.code === base.angulo)));
   const [nameCopied, setNameCopied] = useState(false);
+  const [scriptCopied, setScriptCopied] = useState(false);
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const nombre = buildAdName(f, f.num);
+  const guion = scriptCompleto(f);
 
   const copyName = async () => {
-    try { await navigator.clipboard.writeText(nombre); } catch { const ta = document.createElement("textarea"); ta.value = nombre; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} document.body.removeChild(ta); }
+    await copyText(nombre);
     setNameCopied(true); setTimeout(() => setNameCopied(false), 1400);
+  };
+  const copyScript = async () => {
+    await copyText(guion);
+    setScriptCopied(true); setTimeout(() => setScriptCopied(false), 1400);
   };
 
   const field = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-800 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
@@ -256,6 +269,10 @@ function Editor({ ad, initial, nextNum, onSave, onDelete, onClose }) {
           </div>
 
           <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Guión</div>
+              <button onClick={copyScript} disabled={!guion} className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-teal-700 ring-1 ring-slate-200 hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-40">{scriptCopied ? <Check size={12} /> : <Copy size={12} />} {scriptCopied ? "Copiado" : "Copiar guión"}</button>
+            </div>
             <div className="mb-3"><label className={lbl}>Hook · 0–3s</label><textarea rows={2} className={field} value={f.hook} onChange={(e) => set("hook", e.target.value)} placeholder="Lo primero que detiene el scroll" /></div>
             <div className="mb-3"><label className={lbl}>Body · 3–12s</label><textarea rows={4} className={field} value={f.body} onChange={(e) => set("body", e.target.value)} placeholder="Desarrollo, prueba, cómo se siente" /></div>
             <div><label className={lbl}>CTA · 12–15s</label><textarea rows={2} className={field} value={f.cta} onChange={(e) => set("cta", e.target.value)} placeholder="La llamada a la acción" /></div>
@@ -266,6 +283,16 @@ function Editor({ ad, initial, nextNum, onSave, onDelete, onClose }) {
             <div><label className={lbl}>Pedidos confirmados</label><input type="number" className={field} value={f.pedidos} onChange={(e) => set("pedidos", +e.target.value || 0)} /></div>
           </div>
           <p className="-mt-2 text-[11px] text-slate-400">CPA real = inversión ÷ pedidos confirmados (no “pagos iniciados” ni CPA de Meta).</p>
+          {f.meta && (
+            <div className="-mt-1 rounded-lg bg-sky-50 px-3 py-2 text-[11px] text-sky-800">
+              <span className="font-bold">Meta ({f.meta.periodo || "sin periodo"}):</span>{" "}
+              inversión S/ {Number(f.spend).toFixed(2)}
+              {f.meta.compras != null && <> · {f.meta.compras} compras según Meta</>}
+              {f.meta.impresiones != null && <> · {f.meta.impresiones.toLocaleString("es-PE")} impresiones</>}
+              {f.meta.ctr != null && <> · CTR {f.meta.ctr}%</>}
+              <span className="text-sky-600"> · sincronizado {fechaHora(f.meta.syncedAt)}</span>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div><label className={lbl}>Clips usados</label><input className={field} value={f.clips} onChange={(e) => set("clips", e.target.value)} placeholder="Opcional" /></div>
@@ -578,6 +605,42 @@ export default function App() {
     })();
   }, []);
 
+  /* ---- sincronización con Meta: la app pide, Claude responde ---- */
+  const [sync, setSync] = useState(null);
+  const [syncErr, setSyncErr] = useState("");
+  const syncActive = sync?.status === "pendiente" || sync?.status === "procesando";
+  useEffect(() => { getSyncState().then(setSync).catch(() => {}); }, []);
+  useEffect(() => {
+    if (!syncActive) return;
+    const t = setInterval(async () => {
+      try {
+        const s = await getSyncState();
+        setSync(s);
+        // El servidor ya escribió los ads: recargar para no pisarlos después.
+        if (s.status === "listo") {
+          const a = await window.storage.get(ADKEY);
+          if (a && a.value) setAds(JSON.parse(a.value));
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(t);
+  }, [syncActive]);
+  const handleSync = async () => {
+    setSyncErr("");
+    const lanzados = ads.filter((a) => SYNC_STAGES.includes(a.estado)).map((a) => ({ id: a.id, nombre: buildAdName(a, a.num) }));
+    if (!lanzados.length) { setSyncErr("No hay ads en Lanzado, Testing, Ganador o Muerto"); return; }
+    try { setSync(await requestSync(lanzados)); } catch (e) { setSyncErr(e.message); }
+  };
+  const syncText = syncErr ? syncErr
+    : sync?.status === "pendiente" ? "Esperando a Claude…"
+    : sync?.status === "procesando" ? "Claude sincronizando…"
+    : sync?.status === "listo" ? `${sync.updated}/${sync.total} ads · ${fechaHora(sync.finishedAt)}`
+    : sync?.status === "error" ? `Error: ${sync.error}`
+    : "";
+  const syncTitle = sync?.status === "listo" && sync.notFound?.length
+    ? `No encontrados en Meta:\n${sync.notFound.join("\n")}`
+    : "Pide a Claude que traiga la inversión de Meta de los ads lanzados";
+
   const persistAds = (next) => { setAds(next); window.storage.set(ADKEY, JSON.stringify(next), false).catch(() => {}); };
   const persistRefs = (next) => { setRefs(next); window.storage.set(REFKEY, JSON.stringify(next), false).catch(() => {}); };
   const nextNum = useMemo(() => (ads.length ? Math.max(...ads.map((a) => a.num || 0)) + 1 : 1), [ads]);
@@ -619,7 +682,7 @@ export default function App() {
   const handleDup = (ad) => persistAds([...ads, { ...ad, id: uid(), num: nextNum, fecha: todayStr(), estado: "guion", concepto: ad.concepto + " (v2)", variant: "B", spend: 0, pedidos: 0 }]);
   const handleCopy = async (ad) => {
     const txt = `${buildAdName(ad, ad.num)}\n\n${ad.concepto}\nFormato: ${labelF(ad.formato)} · Concepto: ${labelC(ad.ccr)} · Ángulo: ${labelA(ad.angulo)}\n\n${scriptCompleto(ad)}`;
-    try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} document.body.removeChild(ta); }
+    await copyText(txt);
     setCopiedId(ad.id); setTimeout(() => setCopiedId(null), 1400);
   };
 
@@ -721,6 +784,12 @@ export default function App() {
                 <select value={prodFilter} onChange={(e) => setProdFilter(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[13px] outline-none focus:border-teal-500"><option>Todos</option>{PRODUCTOS.map((p) => <option key={p}>{p}</option>)}</select>
               </>
             )}
+            <div className="flex items-center gap-2" title={syncTitle}>
+              {syncText && <span className={`hidden max-w-[220px] truncate text-[11px] lg:inline ${syncErr || sync?.status === "error" ? "text-rose-600" : "text-slate-400"}`}>{syncText}</span>}
+              <button onClick={handleSync} disabled={syncActive} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-70">
+                <RefreshCw size={15} className={syncActive ? "animate-spin" : ""} /> {syncActive ? "Sincronizando" : "Sincronizar Meta"}
+              </button>
+            </div>
             {view === "banco" ? (
               <button onClick={() => { setRefEditing(null); setOpenRef(true); }} className="flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-[13px] font-bold text-white hover:bg-teal-700"><Plus size={16} /> Nueva referencia</button>
             ) : (
