@@ -71,6 +71,8 @@ Permisos IAM mínimos sobre el bucket: `s3:PutObject`, `s3:GetObject`, `s3:Delet
 
 ### Datos por defecto al pasar a Postgres
 
+En **Ajustes** se ve dónde viven los datos (SQLite o Postgres, imágenes en la base o en S3) y desde cuándo existe la base. Si arranca vacía, la app avisa: es la señal de que el servidor no tiene disco persistente y cada despliegue empieza de cero. Se arregla montando un volumen en `/data` o usando `DATABASE_URL`.
+
 Al arrancar con un Postgres **vacío**, el servidor copia todo lo que haya en el SQLite de `DB_PATH` (o `SQLITE_IMPORT_PATH`): guiones, banco, imágenes (que suben a S3 si está configurado) y el secreto de sesión, así nadie tiene que volver a entrar. Es una sola transacción y nunca corre si la base ya tiene datos.
 
 Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.

@@ -70,6 +70,33 @@ app.use(cookieParser());
 /* ---------------- salud ---------------- */
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
+/* Dónde viven los datos y desde cuándo. Sirve para detectar el caso peligroso:
+ * SQLite sin volumen persistente, donde cada despliegue empieza de cero. */
+const ARRANQUE = new Date().toISOString();
+let creado = null;
+let baseNueva = false;
+try {
+  creado = await kv.metaGet("creado");
+  // Base vacía al arrancar: o es la primera instalación, o el despliegue anterior se perdió.
+  baseNueva = !creado;
+  if (!creado) { creado = ARRANQUE; await kv.metaSet("creado", creado); }
+  const previos = Number(await kv.metaGet("arranques")) || 0;
+  await kv.metaSet("arranques", String(previos + 1));
+} catch (err) {
+  console.warn("[nova] No se pudo registrar el arranque:", err.message);
+}
+app.get("/api/estado", requireAuth, wrap(async (_req, res) => {
+  res.json({
+    base: kv.label,
+    postgres: kv.label.startsWith("Postgres"),
+    imagenes: blobs ? blobs.label : "dentro de la base",
+    creado,
+    nueva: baseNueva,
+    arranques: Number(await kv.metaGet("arranques")) || 1,
+    arranque: ARRANQUE,
+  });
+}));
+
 /* ---------------- sesión ---------------- */
 app.get("/api/session", (req, res) => {
   res.json({ authenticated: tokenIsValid(req.cookies?.[COOKIE_NAME]) });

@@ -2142,8 +2142,30 @@ function formModal(title,inner,onSave,onDelete){
   if(onDelete)ov.querySelector('[data-d]').onclick=()=>{if(onDelete()!==false)close();};
   ov.querySelector('input,textarea,select')?.focus();
 }
-function openSettings(){
+/* Aviso de persistencia: si la base nace en cada arranque, cada despliegue
+ * borra lo guardado (SQLite sin volumen). Mejor decirlo que dejar que el
+ * usuario descubra que perdió sus anuncios. */
+function bloqueAlmacen(e){
+  if(!e)return '';
+  const nacio=Date.parse(e.creado||'');
+  const efimera=!e.postgres&&e.nueva;
+  const fecha=isFinite(nacio)?new Date(nacio).toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'}):'—';
+  return `<div class="panel" style="padding:12px 14px;background:${efimera?'#fff7ed':'#f8fafc'};border-color:${efimera?'#fed7aa':'var(--line)'}">
+    <div class="section-t">Dónde se guardan tus datos</div>
+    <p class="hint" style="margin:6px 0 0">${esc(e.base)} · imágenes: ${esc(e.imagenes)}</p>
+    ${efimera?`<p style="margin:8px 0 0;color:var(--amber);line-height:1.45;font-size:13px">
+        <b>Ojo:</b> esta base se creó en el arranque de ahora (${esc(fecha)}), no antes. Es la señal de que el servidor
+        no tiene disco persistente: cada vez que se actualiza la app, todo lo guardado vuelve a cero.
+        En Coolify agrega un volumen que apunte a <code>/data</code>, o una base Postgres con <code>DATABASE_URL</code>.
+        Mientras tanto, usa <b>Exportar datos</b> antes de cada actualización.</p>`
+      :`<p class="hint" style="margin:6px 0 0">Base creada el ${esc(fecha)} · ${e.arranques} arranques del servidor: tus datos sobreviven a las actualizaciones.</p>`}
+  </div>`;
+}
+async function openSettings(){
+  let estado=null;
+  try{ const r=await fetch('/api/estado',{credentials:'same-origin'}); if(r.ok)estado=await r.json(); }catch(e){}
   formModal('Ajustes',`
+    ${bloqueAlmacen(estado)}
     <div class="grid3">
      <div class="field"><label for="stu">Tope CPA (USD)</label><input id="stu" type="number" step="0.1" value="${S.settings.topeUSD}"></div>
      <div class="field"><label for="stc">Tipo de cambio</label><input id="stc" type="number" step="0.01" value="${S.settings.tc}"></div>
