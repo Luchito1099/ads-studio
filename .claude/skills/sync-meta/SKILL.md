@@ -13,6 +13,8 @@ Lee de las variables de entorno o, si no están, del archivo `.env` en la raíz 
 
 - `NOVA_URL`: URL pública de la app, sin `/` final (ej. `https://ads.midominio.com`).
 - `SYNC_TOKEN`: el mismo valor configurado en el servidor.
+
+Si el usuario no la tiene, puede generarla en la app: **Ajustes → Conexión con Claude → Generar clave**, y pegarla en el `.env`.
 - `SYNC_USD_PEN`: tipo de cambio para cuentas en USD (ej. `3.75`). Opcional.
 
 Si falta `NOVA_URL` o `SYNC_TOKEN`, detente y dile al usuario qué falta. Nunca muestres el token en la respuesta.

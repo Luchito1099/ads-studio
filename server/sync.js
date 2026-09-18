@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import express from "express";
+import { crearAgente } from "./agente.js";
 
 /**
  * Sincronización con Meta Ads sin guardar credenciales de Meta en la app.
@@ -34,6 +35,7 @@ const round2 = (v) => Math.round(v * 100) / 100;
 
 export function syncRouter({ kv, requireAuth, wrap }) {
   const router = express.Router();
+  const agente = crearAgente(kv);
 
   const readState = async () => {
     const raw = await kv.metaGet(STATE_KEY);
@@ -42,10 +44,10 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   const writeState = (state) => kv.metaSet(STATE_KEY, JSON.stringify(state));
   // Lo que ve el navegador: sin la lista completa de ads, y si hay un agente
   // que pueda responder (sin SYNC_TOKEN nadie puede tomar la solicitud).
-  const publicState = ({ ads, ...rest }) => ({
-    tipo: "inversion", ...rest, total: ads?.length ?? 0, agente: !!process.env.SYNC_TOKEN,
+  const publicState = ({ ads, ...rest }, hayAgente) => ({
+    tipo: "inversion", ...rest, total: ads?.length ?? 0, agente: hayAgente,
   });
-  const SIN_TOKEN = "El servidor no tiene SYNC_TOKEN: agrégalo en las variables de entorno (Coolify) para que Claude pueda responder.";
+  const SIN_TOKEN = "Todavía no hay clave para Claude: genérala en Ajustes → Conexión con Claude.";
 
   /** Valida y guarda los datos diarios de la página Fatiga. Devuelve un error o el resumen. */
   const guardarFatiga = async (datos, metaBase, finishedAt) => {
@@ -63,21 +65,29 @@ export function syncRouter({ kv, requireAuth, wrap }) {
     return { filas: datos.diario.length, anuncios: new Set(datos.diario.map((f) => String(f.ad_id))).size };
   };
 
-  const requireAgent = (req, res, next) => {
-    const expected = process.env.SYNC_TOKEN;
-    if (!expected) return res.status(503).json({ error: "SYNC_TOKEN no está configurado en el servidor" });
-    const given = (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!given || !safeEqual(given, expected)) return res.status(401).json({ error: "Token inválido" });
-    next();
-  };
+  const requireAgent = agente.requireAgente;
+
+  /* ---------- clave del canal (se ve y se genera desde Ajustes) ---------- */
+  router.get("/clave", requireAuth, wrap(async (_req, res) => {
+    const { clave, origen } = await agente.leer();
+    res.json({ hay: !!clave, origen, clave: origen === "app" ? clave : "" });
+  }));
+
+  router.post("/clave", requireAuth, wrap(async (_req, res) => {
+    try {
+      res.json({ hay: true, origen: "app", clave: await agente.generar() });
+    } catch (err) {
+      res.status(err.status || 500).json({ error: err.message });
+    }
+  }));
 
   /* ---------- navegador ---------- */
   router.get("/", requireAuth, wrap(async (_req, res) => {
-    res.json(publicState(await readState()));
+    res.json(publicState(await readState(), await agente.hay()));
   }));
 
   router.post("/", requireAuth, wrap(async (req, res) => {
-    if (!process.env.SYNC_TOKEN) return res.status(503).json({ error: SIN_TOKEN });
+    if (!(await agente.hay())) return res.status(503).json({ error: SIN_TOKEN });
     if (req.body?.tipo === "fatiga") {
       const { cuenta, dias = 90, metrica = "cpa", objetivo = null, etiqueta = "Compras" } = req.body;
       if (typeof cuenta !== "string" || !cuenta.trim()) {
@@ -95,7 +105,7 @@ export function syncRouter({ kv, requireAuth, wrap }) {
         etiqueta: String(etiqueta).slice(0, 40),
       };
       await writeState(state);
-      return res.json(publicState(state));
+      return res.json(publicState(state, true));
     }
     const ads = (Array.isArray(req.body?.ads) ? req.body.ads : [])
       .filter((a) => a && typeof a.id === "string" && typeof a.nombre === "string")
@@ -109,16 +119,16 @@ export function syncRouter({ kv, requireAuth, wrap }) {
       ads,
     };
     await writeState(state);
-    res.json(publicState(state));
+    res.json(publicState(state, true));
   }));
 
   // Cancelar una solicitud que nadie tomó (o que quedó colgada).
   router.delete("/", requireAuth, wrap(async (_req, res) => {
     const state = await readState();
-    if (!["pendiente", "procesando"].includes(state.status)) return res.json(publicState(state));
+    if (!["pendiente", "procesando"].includes(state.status)) return res.json(publicState(state, await agente.hay()));
     const next = { ...state, status: "cancelado", finishedAt: new Date().toISOString() };
     await writeState(next);
-    res.json(publicState(next));
+    res.json(publicState(next, await agente.hay()));
   }));
 
   /* ---------- agente ---------- */
@@ -129,7 +139,7 @@ export function syncRouter({ kv, requireAuth, wrap }) {
   router.post("/agent/claim", requireAgent, wrap(async (req, res) => {
     const state = await readState();
     if (state.id !== req.body?.id || state.status !== "pendiente") {
-      return res.status(409).json({ error: "La solicitud ya no está pendiente", state: publicState(state) });
+      return res.status(409).json({ error: "La solicitud ya no está pendiente", state: publicState(state, true) });
     }
     const next = { ...state, status: "procesando", claimedAt: new Date().toISOString() };
     await writeState(next);
@@ -172,7 +182,7 @@ export function syncRouter({ kv, requireAuth, wrap }) {
     const state = await readState();
     const { id, periodo = "", results = [], error } = req.body ?? {};
     if (state.id !== id || !["pendiente", "procesando"].includes(state.status)) {
-      return res.status(409).json({ error: "La solicitud no coincide o ya terminó", state: publicState(state) });
+      return res.status(409).json({ error: "La solicitud no coincide o ya terminó", state: publicState(state, true) });
     }
     const finishedAt = new Date().toISOString();
 

@@ -1,5 +1,5 @@
-import crypto from "node:crypto";
 import express from "express";
+import { crearAgente } from "./agente.js";
 
 /**
  * Vigilancia de la competencia.
@@ -21,11 +21,6 @@ const STATE_KEY = "studio:state:v2";
 const MAX_ADS = 400;
 const MAX_HIST = 120;
 
-const safeEqual = (a, b) => {
-  const ha = crypto.createHash("sha256").update(String(a)).digest();
-  const hb = crypto.createHash("sha256").update(String(b)).digest();
-  return crypto.timingSafeEqual(ha, hb);
-};
 const texto = (v, max) => String(v ?? "").trim().slice(0, max);
 const hoyISO = () => new Date().toISOString().slice(0, 10);
 const fechaISO = (v) => {
@@ -49,17 +44,11 @@ export function competenciaRouter({ kv, requireAuth, wrap }) {
   };
   const guardar = (todo) => kv.set(CLAVE, JSON.stringify(todo));
 
-  const requireAgente = (req, res, next) => {
-    const esperado = process.env.SYNC_TOKEN;
-    if (!esperado) return res.status(503).json({ error: "SYNC_TOKEN no está configurado en el servidor" });
-    const dado = (req.get("authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!dado || !safeEqual(dado, esperado)) return res.status(401).json({ error: "Token inválido" });
-    next();
-  };
+  const { requireAgente, hay } = crearAgente(kv);
 
   /* ---------- navegador ---------- */
   router.get("/", requireAuth, wrap(async (_req, res) => {
-    res.json({ agente: !!process.env.SYNC_TOKEN, competencia: await leer() });
+    res.json({ agente: await hay(), competencia: await leer() });
   }));
 
   // Al borrar un competidor en el Studio, se borra también su historial.

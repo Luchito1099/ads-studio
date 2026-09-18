@@ -2161,11 +2161,27 @@ function bloqueAlmacen(e){
       :`<p class="hint" style="margin:6px 0 0">Base creada el ${esc(fecha)} · ${e.arranques} arranques del servidor: tus datos sobreviven a las actualizaciones.</p>`}
   </div>`;
 }
+/* Clave del canal de Claude: se puede generar desde aqui cuando no hay forma
+ * comoda de tocar las variables de entorno del servidor. */
+function bloqueClave(c){
+  const enEntorno=c&&c.origen==='entorno';
+  return `<div class="panel" style="padding:12px 14px">
+    <div class="section-t">Conexión con Claude</div>
+    <p class="hint" style="margin:6px 0 8px">Con esta clave Claude deja en la app los datos de Meta y los anuncios activos de la competencia. No es una credencial de Meta.</p>
+    ${c&&c.hay?`<p class="hint" style="margin:0;color:var(--accent-ink)">${ic('check','sm')}${enEntorno?'Configurada en el servidor (SYNC_TOKEN).':'Lista: generada desde aquí y guardada en la base.'}</p>`
+      :`<p class="hint" style="margin:0;color:var(--amber)">Todavía no hay clave: sin ella Claude no puede dejarte datos.</p>`}
+    ${c&&c.clave?`<div class="withbtn" style="margin-top:8px"><input id="stkey" readonly value="${esc(c.clave)}" style="font-family:ui-monospace,Menlo,monospace;font-size:12px"><button class="btn ghost sm" id="stkeycopy">Copiar</button></div>
+      <p class="hint" style="margin:6px 0 0">Pégala en el archivo <code>.env</code> de tu carpeta del proyecto, en la línea <code>SYNC_TOKEN=</code>. Después dile a Claude: <b>revisa la competencia</b>.</p>`:''}
+    ${enEntorno?'':`<button class="btn sm" id="stkeynew" style="margin-top:8px">${c&&c.hay?'Generar una clave nueva':'Generar clave'}</button>`}
+  </div>`;
+}
 async function openSettings(){
-  let estado=null;
+  let estado=null,clave=null;
   try{ const r=await fetch('/api/estado',{credentials:'same-origin'}); if(r.ok)estado=await r.json(); }catch(e){}
+  try{ const r=await fetch('/api/sync/clave',{credentials:'same-origin'}); if(r.ok)clave=await r.json(); }catch(e){}
   formModal('Ajustes',`
     ${bloqueAlmacen(estado)}
+    ${bloqueClave(clave)}
     <div class="grid3">
      <div class="field"><label for="stu">Tope CPA (USD)</label><input id="stu" type="number" step="0.1" value="${S.settings.topeUSD}"></div>
      <div class="field"><label for="stc">Tipo de cambio</label><input id="stc" type="number" step="0.01" value="${S.settings.tc}"></div>
@@ -2175,6 +2191,20 @@ async function openSettings(){
     <div class="field"><label class="ck" for="stauto"><input type="checkbox" id="stauto" ${S.settings.autoExtraer===false?'':'checked'}> Extraer el guion solo, apenas llega un video o una imagen</label></div>
     <div class="field"><label for="stw">Modelo para transcribir voz</label><select id="stw">${[['tiny','Rápido (menos preciso, ~40 MB)'],['base','Equilibrado (~80 MB)'],['small','Preciso (más lento, ~250 MB)']].map(([k,l])=>`<option value="${k}" ${k===(S.settings.whisper||'base')?'selected':''}>${l}</option>`).join('')}</select></div><div class="hint">Una pieza pasa a Resultado cuando llega a la muestra mínima de confirmados. Gana si su CPA real es igual o menor al tope.</div>`,
     ()=>{S.settings.topeUSD=+$('#stu').value||5;S.settings.tc=+$('#stc').value||3.7;S.settings.muestra=Math.max(1,+$('#stm').value||10);S.settings.whisper=$('#stw').value;S.settings.autoExtraer=$('#stauto').checked;S.settings.adAccount=$('#sta').value.trim();PREP_CACHE.clear();save();render();});
+  const modal=[...document.querySelectorAll('.ov')].pop();
+  const gen=modal?.querySelector('#stkeynew');
+  if(gen)gen.onclick=async()=>{
+    if(clave?.hay&&!confirm('La clave anterior dejará de servir. ¿Generar una nueva?'))return;
+    gen.disabled=true;
+    try{
+      const r=await fetch('/api/sync/clave',{method:'POST',credentials:'same-origin'});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||'No se pudo generar');
+      COMP=null; modal.remove(); openSettings(); toast('Clave generada: pégala en tu archivo .env');
+    }catch(e){ gen.disabled=false; toast(e.message); }
+  };
+  const cop=modal?.querySelector('#stkeycopy');
+  if(cop)cop.onclick=async()=>{const el=modal.querySelector('#stkey');toast(await copyText(el.value,el)?'Clave copiada':'Selecciona y copia el texto');};
 }
 
 /* ============ EXPORTAR / IMPORTAR ============ */
@@ -2214,7 +2244,7 @@ function haceTexto(iso){
 }
 async function traerCompetencia(){
   if(compCargando)return COMP; compCargando=true;
-  try{ const r=await fetch('/api/competencia',{credentials:'same-origin'}); if(r.ok)COMP=await r.json(); }
+  try{ const r=await fetch('/api/competencia',{credentials:'same-origin'}); if(r.ok){COMP=await r.json();COMP.t=Date.now();} }
   catch(e){ console.warn('competencia',e); }
   finally{ compCargando=false; }
   return COMP;
@@ -2262,7 +2292,8 @@ function vCompetencia(){
   const sinAgente=COMP&&COMP.agente===false;
   $('#body').innerHTML=`
     ${sinAgente?`<div class="panel" style="padding:14px 16px;margin-bottom:14px;background:var(--amber-bg);border-color:#fde68a;color:var(--amber)">
-      Falta <b>SYNC_TOKEN</b> en el servidor: sin esa clave Claude no puede dejar aquí los anuncios activos.</div>`:''}
+      Falta la clave para que Claude pueda dejar aquí los anuncios activos.
+      <button class="lnk" id="cclave" style="margin-left:6px">Generarla en Ajustes</button></div>`:''}
     ${lista.length?`<div class="cgrid">${lista.map(compCard).join('')}</div>
       ${COMP?'':'<div class="hint" style="margin-top:12px">Cargando la última revisión…</div>'}
       <div class="panel" style="padding:16px;margin-top:16px">
@@ -2276,13 +2307,15 @@ function vCompetencia(){
         <span class="hint">Necesitas el ID de la página o el enlace de su Biblioteca de anuncios. Si no lo tienes, con el nombre de la marca y una palabra clave del producto también funciona.</span>
         <button class="btn" id="cadd2" style="align-self:flex-start">${ic('plus','sm')}Agregar competidor</button>
       </div>`}`;
+  if($('#cclave'))$('#cclave').onclick=openSettings;
   $('#cadd').onclick=()=>compForm();
   if($('#cadd2'))$('#cadd2').onclick=()=>compForm();
   $('#crefresh').onclick=async()=>{await traerCompetencia();render();toast(COMP?.competencia&&Object.keys(COMP.competencia).length?'Datos actualizados':'Todavía no hay revisiones');};
   if($('#ccopy'))$('#ccopy').onclick=async()=>{toast(await copyText('Revisa la competencia en NOVA Studio: trae los anuncios activos de cada marca configurada y envíalos con la skill /competencia.')?'Instrucción copiada':'No se pudo copiar');};
   document.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>openComp(b.dataset.comp));
   document.querySelectorAll('[data-compedit]').forEach(b=>b.onclick=e=>{e.stopPropagation();compForm(byId(compLista(),b.dataset.compedit));});
-  if(!COMP)traerCompetencia().then(()=>{if(UI.view==='competencia')render();});
+  // Se refresca al entrar si no hay datos, si faltaba la clave o si ya está viejo.
+  if(!COMP||COMP.agente===false||Date.now()-(COMP.t||0)>60000)traerCompetencia().then(()=>{if(UI.view==='competencia')render();});
 }
 function compCard(c){
   const d=compDatos(c),r=compResumen(d);

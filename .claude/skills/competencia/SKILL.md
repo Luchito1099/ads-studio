@@ -14,6 +14,8 @@ Lee de las variables de entorno o, si no están, del `.env` en la raíz del repo
 - `NOVA_URL`: URL pública de la app, sin `/` final.
 - `SYNC_TOKEN`: el mismo valor configurado en el servidor.
 
+Si el usuario no la tiene, puede generarla en la app: **Ajustes → Conexión con Claude → Generar clave**, y pegarla en el `.env`.
+
 Si falta alguna, detente y dile al usuario qué falta. Nunca muestres el token.
 
 ## 1. A quién vigilar
