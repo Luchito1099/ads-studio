@@ -270,6 +270,15 @@
     return imgs[0]?.e || null;
   }
 
+  // En una pestaña que no está a la vista, nada entra en el "viewport": se
+  // busca por tamaño real del elemento.
+  function amplio() {
+    const grande = (e) => (e.tagName === "VIDEO" ? e.videoWidth || e.clientWidth : e.naturalWidth || e.clientWidth) >= 200;
+    return [...document.querySelectorAll("video")].find(grande)
+      || [...document.querySelectorAll("img")].filter((i) => http(i.currentSrc || i.src)).find(grande)
+      || null;
+  }
+
   function otros() {
     const vistos = new Set();
     const out = [];
@@ -448,6 +457,22 @@
   document.addEventListener("contextmenu", (e) => { ultimoClic = mediaEn(e.clientX, e.clientY) || e.target; }, true);
 
   chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
+    // La extensión abrió esta página para guardar el anuncio: se le da un
+    // momento al video para que empiece y se devuelve lo que haya.
+    if (msg?.type === "nova:capturar") {
+      (async () => {
+        const v = document.querySelector("video");
+        if (v) { try { v.muted = true; v.play().catch(() => {}); } catch {} await new Promise((r) => setTimeout(r, 1200)); }
+        const m = principal() || amplio();
+        responder(m ? paquete(m) : { vacio: true, pageUrl: location.href, ...(({ contenedor, ...d }) => d)(infoDe(null)) });
+      })();
+      return true;
+    }
+    if (msg?.type === "nova:progreso") {
+      window.postMessage({ tipo: "nova:traer:estado", ...msg.estado }, location.origin);
+      responder({ ok: true });
+      return;
+    }
     if (msg?.type === "nova:contexto") {
       const el = ultimoClic;
       responder(el && (el.tagName === "VIDEO" || el.tagName === "IMG") ? paquete(el) : { ...infoDe(el), contenedor: undefined, pageUrl: location.href });
@@ -462,5 +487,24 @@
         titulo: document.title,
       });
     }
+  });
+
+  /* ---------- puente con el Studio ----------
+   * La página del Studio pide traer una lista de anuncios; la extensión los
+   * abre de a uno y los guarda. El service worker comprueba que la página sea
+   * la del Studio configurado antes de hacer nada. */
+  window.addEventListener("message", (e) => {
+    const d = e.data;
+    if (e.source !== window || !d || d.tipo !== "nova:traer" || !Array.isArray(d.anuncios)) return;
+    chrome.runtime.sendMessage({
+      type: "traer",
+      payload: { marca: d.marca || "", productId: d.productId || "", anuncios: d.anuncios.slice(0, 20) },
+    }).then((r) => {
+      // Aviso inmediato: la página necesita saber que la extensión está viva.
+      if (r && r.ok === false) window.postMessage({ tipo: "nova:traer:estado", error: r.error }, location.origin);
+      else window.postMessage({ tipo: "nova:traer:estado", inicio: true, total: r?.total || 0, hechos: 0 }, location.origin);
+    }).catch((err) => {
+      window.postMessage({ tipo: "nova:traer:estado", error: err?.message || "no respondió" }, location.origin);
+    });
   });
 })();

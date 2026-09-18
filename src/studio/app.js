@@ -679,9 +679,15 @@ async function openExtension(){
 }
 
 /* ---- bandeja: lo que envía la extensión ---- */
-let bandejaActiva=false;
-async function traerBandeja(){
-  if(bandejaActiva||!S)return; bandejaActiva=true;
+let bandejaTarea=null;
+// Si ya hay una lectura en curso se devuelve esa misma: quien la espera sabe
+// cuándo terminó de verdad (lo usa "Traer creativos").
+function traerBandeja(){
+  if(!S)return Promise.resolve();
+  if(!bandejaTarea)bandejaTarea=leerBandeja().finally(()=>{bandejaTarea=null;});
+  return bandejaTarea;
+}
+async function leerBandeja(){
   try{
     const r=await fetch('/api/inbox',{credentials:'same-origin'}); if(!r.ok)return;
     const {items=[]}=await r.json(); if(!items.length)return;
@@ -692,7 +698,7 @@ async function traerBandeja(){
     await fetch('/api/inbox/ack',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:listos})});
     if(UI.view==='referencias'&&!UI.refOpen)render(); else renderSide();
     toast(listos.length===1?'Llegó 1 anuncio desde Nova Swipe':`Llegaron ${listos.length} anuncios desde Nova Swipe`);
-  }catch(e){console.warn(e);}finally{bandejaActiva=false;}
+  }catch(e){console.warn(e);}
 }
 async function recibirSwipe(it){
   if(S.refs.some(r=>r.swipeId===it.id))return;
@@ -2368,32 +2374,73 @@ function compForm(c){
       save();render();toast('Competidor eliminado');
     });
 }
+/* Detalle del competidor: sus anuncios activos con la previsualización de los
+ * que ya están en la Biblioteca. Meta no entrega el creativo ni el copy por la
+ * Biblioteca de anuncios: eso lo trae Nova Swipe, así que desde aquí se puede
+ * pedir que los vaya a buscar. */
+const compRefDe=adId=>adId?S.refs.map(ensureRef).find(r=>r.adId===adId):null;
+function compAnuncioCard(a,c){
+  const n=dias(a.inicio), ref=compRefDe(a.adId);
+  const ex=ref?.extract;
+  const hook=ex?.status==='listo'?((ex.blocks||[])[0]?.voz||(ex.blocks||[])[0]?.texto||''):'';
+  const copy=(ref?.adText||'').split(String.fromCharCode(10)).map(x=>x.trim()).find(Boolean)||'';
+  const tono=n>=60?'win':n>=30?'warn':'';
+  return `<article class="acomp ${ref?'tiene':''}" data-ad="${esc(a.adId)}">
+    <div class="ath">${ref?.mediaId?thumbHTML(ref.mediaId):`<div class="thumb sinmedia">${ic(ref?'image':'ext')}<span>${ref?'Sin archivo':'Falta el creativo'}</span></div>`}
+      <span class="adias ${tono}">${n!=null?n:'—'} d</span></div>
+    <div class="acuerpo">
+      <div class="atop"><b>${esc(a.titulo||ref?.adCopy?.boton||'Sin título de botón')}</b>
+        <span class="muted">${a.inicio?`desde ${esc(a.inicio)}`:'sin fecha'}${a.pagina&&normTxt(a.pagina)!==normTxt(c.nombre)?' · '+esc(a.pagina):''}</span></div>
+      ${hook?`<p class="ahook">“${esc(hook.slice(0,150))}”</p>`:''}
+      ${copy?`<p class="acopy">${esc(copy.slice(0,180))}</p>`:''}
+      ${!ref?`<p class="hint" style="margin:0">Guárdalo con Nova Swipe y aquí verás el video, el copy y su guion.</p>`:
+        !hook?`<p class="hint" style="margin:0">${ex?.status==='procesando'?'Guardado: extrayendo el guion…':'Guardado en la Biblioteca, sin guion todavía.'}</p>`:''}
+      <div class="aacc">
+        ${ref?`<button class="btn ghost sm" data-verref="${ref.id}">${ic('ref','sm')}Ver ficha</button>`:''}
+        <a class="btn ghost sm" href="${esc(a.enlace)}" target="_blank" rel="noopener">${ic('ext','sm')}${ref?'Ver en Meta':'Abrir y guardar'}</a>
+        <span class="amono">${esc(a.adId)}</span>
+      </div>
+    </div></article>`;
+}
 function openComp(id){
   const c=byId(compLista(),id); if(!c)return;
+  UI.compOpen=id;
   const d=compDatos(c),perfil=perfilMarca(c.nombre);
   const ads=[...(d?.ads||[])].sort((a,b)=>(dias(b.inicio)??-1)-(dias(a.inicio)??-1));
-  const guardados=new Set(S.refs.map(r=>r.adId).filter(Boolean));
-  const fila=a=>{const n=dias(a.inicio),ya=guardados.has(a.adId);
-    return `<tr><td><b style="font-size:15px">${n!=null?n:'—'}</b> <span class="muted">días</span></td>
-      <td>${a.inicio?esc(a.inicio):'<span class="muted">sin fecha</span>'}</td>
-      <td style="min-width:200px;white-space:normal">${esc(a.titulo||'—')}${a.pagina&&normTxt(a.pagina)!==normTxt(c.nombre)?`<div class="muted" style="font-size:12px">${esc(a.pagina)}</div>`:''}</td>
-      <td style="font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(a.adId)}</td>
-      <td>${ya?'<span class="chip win">Ya guardado</span>':''}</td>
-      <td style="text-align:right"><a class="btn ghost sm" href="${esc(a.enlace)}" target="_blank" rel="noopener">${ya?'Abrir':'Abrir y guardar'}</a></td></tr>`;};
+  const guardados=ads.filter(a=>compRefDe(a.adId)).length;
+  const r=compResumen(d);
+  // Tandas: cuántos lanzaron el mismo día. Muestra su ritmo de prueba.
+  const porDia=new Map();
+  ads.forEach(a=>{ if(a.inicio)porDia.set(a.inicio,(porDia.get(a.inicio)||0)+1); });
+  const tandas=[...porDia.entries()].filter(([,n])=>n>1).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,4);
+  const pagina=(c.pageIds||[])[0]||(d?.pageIds||[])[0]||'';
   const chips=arr=>arr.slice(0,6).map(x=>`<span class="chip">${esc(x.k)} · ${x.n}</span>`).join('')||'<span class="muted">—</span>';
   const ov=document.createElement('div');ov.className='ov';ov.id='cov';
-  ov.innerHTML=`<div class="modal" style="max-width:1080px" role="dialog" aria-modal="true" aria-label="${esc(c.nombre)}">
+  ov.innerHTML=`<div class="modal" style="max-width:1120px" role="dialog" aria-modal="true" aria-label="${esc(c.nombre)}">
     <div class="mh"><div style="min-width:0"><b>${esc(c.nombre)}</b>
       <div class="muted" style="font-size:13px">${d?`${ads.length} anuncios activos · revisado ${haceTexto(d.revisado)}`:'Sin revisar todavía'}${c.pais?' · '+esc(c.pais):''}</div></div>
-      <button class="btn ghost sm" id="cx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
-    <div style="padding:16px 18px;max-height:76vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
-      ${ads.length?`<div class="panel" style="padding:14px 16px">
-        <div class="section-t">Sus ganadores: los que llevan más tiempo sin apagarse</div>
-        <p class="hint" style="margin:6px 0 0">Un anuncio que lleva semanas activo casi siempre es el que les está vendiendo. Ábrelo y guárdalo con Nova Swipe para extraerle el guion.</p>
-        <div style="overflow:auto;margin-top:10px"><table><thead><tr><th>Activo</th><th>Desde</th><th>Título del botón</th><th>ID</th><th></th><th></th></tr></thead>
-          <tbody>${ads.map(fila).join('')}</tbody></table></div></div>`
+      <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+        ${ads.length&&guardados<ads.length?`<button class="btn sm" id="ctraer">${ic('down','sm')}Traer creativos</button>`:''}
+        ${pagina?`<a class="btn ghost sm" href="https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=${esc(c.pais||'PE')}&view_all_page_id=${esc(pagina)}" target="_blank" rel="noopener">${ic('ext','sm')}Su biblioteca</a>`:''}
+        <button class="btn ghost sm" id="cx" aria-label="Cerrar">${ic('x','sm')}</button></span></div>
+    <div class="ccont">
+      ${r?`<div class="cstats">
+        <div><b>${r.activos}</b><span>activos</span></div>
+        <div><b>${r.prom??'—'}</b><span>días de antigüedad media</span></div>
+        <div><b>${r.viejo??'—'}</b><span>días el más viejo</span></div>
+        <div><b>${guardados}/${ads.length}</b><span>con creativo guardado</span></div>
+      </div>`:''}
+      ${guardados<ads.length?`<div class="cavisa">${ic('ext','sm')}<div><b>Faltan ${ads.length-guardados} creativos.</b>
+        <span>Meta no entrega el video ni el copy en esta consulta: los trae Nova Swipe. Toca <b>Traer creativos</b> y la extensión los abre y los guarda sola, o ábrelos uno por uno.</span></div></div>`:''}
+      ${ads.length?`<div class="section-t">Sus ganadores: los que llevan más tiempo sin apagarse</div>
+        <p class="hint" style="margin:4px 0 10px">Un anuncio que lleva semanas activo casi siempre es el que les está vendiendo.</p>
+        <div class="agrid">${ads.map(a=>compAnuncioCard(a,c)).join('')}</div>`
       :`<div class="empty" style="text-align:left"><b style="color:var(--ink)">Todavía no hay anuncios</b><br><span>Pídele a Claude: <b>revisa la competencia</b>.</span></div>`}
-      <div class="panel" style="padding:14px 16px">
+      ${tandas.length?`<div class="panel" style="padding:14px 16px;margin-top:14px">
+        <div class="section-t">Cómo prueban</div>
+        <p class="hint" style="margin:6px 0 8px">Días en que lanzaron varios anuncios de golpe: ese es su ritmo de prueba.</p>
+        <div class="chips">${tandas.map(([f,n])=>`<span class="chip">${esc(f)} · ${n} anuncios</span>`).join('')}</div></div>`:''}
+      <div class="panel" style="padding:14px 16px;margin-top:14px">
         <div class="section-t">Ángulos, formatos y ofertas que usan</div>
         ${perfil.refs.length?`<div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
           <div><span class="lbl">Formatos</span><div class="chips">${chips(perfil.formatos)}</div></div>
@@ -2401,15 +2448,65 @@ function openComp(id){
           <div><span class="lbl">Etapas del embudo</span><div class="chips">${chips(perfil.etapas)}</div></div>
           <div><span class="lbl">Ofertas que repiten</span><div class="chips">${perfil.ofertas.map(o=>`<span class="chip ang">${esc(o)}</span>`).join('')||'<span class="muted">—</span>'}</div></div>
           ${perfil.hooks.length?`<div><span class="lbl">Sus hooks</span><ul class="whys" style="margin:6px 0 0;padding-left:18px">${perfil.hooks.map(h=>`<li>“${esc(h)}”</li>`).join('')}</ul></div>`:''}
-        </div>`:`<p class="hint" style="margin:8px 0 0">Esto se arma con los anuncios de ${esc(c.nombre)} que tengas en la Biblioteca. Guarda dos o tres con Nova Swipe y aquí verás qué ángulos, formatos y ofertas repiten.</p>`}
+        </div>`:`<p class="hint" style="margin:8px 0 0">Se arma con los anuncios de ${esc(c.nombre)} que tengas en la Biblioteca. Guarda dos o tres y aquí verás qué repiten.</p>`}
       </div>
-      ${c.notas?`<div class="panel" style="padding:14px 16px"><div class="section-t">Tus notas</div><p class="hint" style="margin:6px 0 0;white-space:pre-line">${esc(c.notas)}</p></div>`:''}
+      ${c.notas?`<div class="panel" style="padding:14px 16px;margin-top:14px"><div class="section-t">Tus notas</div><p class="hint" style="margin:6px 0 0;white-space:pre-line">${esc(c.notas)}</p></div>`:''}
     </div></div>`;
   document.body.appendChild(ov);
-  const cerrar=()=>ov.remove();
+  hydrateThumbs(ov);
+  const cerrar=()=>{UI.compOpen=null;ov.remove();};
   ov.querySelector('#cx').onclick=cerrar;
   ov.addEventListener('mousedown',e=>{if(e.target===ov)cerrar();});
+  ov.querySelectorAll('[data-verref]').forEach(b=>b.onclick=()=>{cerrar();UI.view='referencias';render();openRef(b.dataset.verref,'guion');});
+  const traer=ov.querySelector('#ctraer');
+  if(traer)traer.onclick=()=>pedirCreativos(c,ads.filter(a=>!compRefDe(a.adId)),traer);
 }
+/* Le pide a Nova Swipe que abra los anuncios que faltan y los guarde.
+ * El puente es el propio script de la extensión, que escucha en esta página. */
+/* La extensión ya guardó: ahora hay que esperar a que la bandeja los traiga
+ * a la Biblioteca para poder mostrar la previsualización. */
+async function esperarCreativos(adIds,ms=15000){
+  const hasta=Date.now()+ms;
+  while(Date.now()<hasta){
+    await traerBandeja();
+    if(adIds.every(id=>S.refs.some(r=>r.adId===id)))return true;
+    await new Promise(r=>setTimeout(r,800));
+  }
+  return false;
+}
+function pedirCreativos(c,faltan,boton){
+  if(!faltan.length)return toast('Ya tienes todos los creativos');
+  const lote=faltan.slice(0,12);
+  let respondio=false;
+  const alOir=e=>{
+    if(e.source!==window||e.data?.tipo!=='nova:traer:estado')return;
+    respondio=true;
+    const d=e.data;
+    if(d.error){toast('Nova Swipe: '+d.error);boton.disabled=false;boton.innerHTML=`${ic('down','sm')}Traer creativos`;return;}
+    if(d.fin){
+      window.removeEventListener('message',alOir);
+      boton.innerHTML=`${ic('down','sm')}Guardando en la Biblioteca…`;
+      toast(`Nova Swipe guardó ${d.listos} de ${lote.length}`);
+      esperarCreativos(lote.map(a=>a.adId)).then(()=>{
+        boton.disabled=false;boton.innerHTML=`${ic('down','sm')}Traer creativos`;
+        if(UI.compOpen===c.id){ $('#cov')?.remove(); openComp(c.id); }
+      });
+      return;
+    }
+    boton.innerHTML=d.inicio?`${ic('down','sm')}Abriendo anuncios…`:`${ic('down','sm')}Trayendo ${d.hechos||0}/${lote.length}…`;
+  };
+  window.addEventListener('message',alOir);
+  boton.disabled=true;boton.innerHTML=`${ic('down','sm')}Abriendo Nova Swipe…`;
+  window.postMessage({tipo:'nova:traer',marca:c.nombre,productId:c.productId||PID(),
+    anuncios:lote.map(a=>({adId:a.adId,enlace:a.enlace}))},location.origin);
+  setTimeout(()=>{
+    if(respondio)return;
+    window.removeEventListener('message',alOir);
+    boton.disabled=false;boton.innerHTML=`${ic('down','sm')}Traer creativos`;
+    toast('No encontré Nova Swipe en este navegador: descárgala desde Biblioteca e instálala.');
+  },2500);
+}
+
 /* ============ ARRANQUE ============ */
 (async()=>{
   let lecturaFallida=false;

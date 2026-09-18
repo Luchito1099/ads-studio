@@ -188,6 +188,52 @@ async function enviar(p) {
   return { ...r, sinArchivo: !mediaId, brand: p.brand, adId: p.adId };
 }
 
+/* ---------- traer anuncios pedidos desde el Studio ----------
+ * Abre cada anuncio en una pestaña de fondo, espera a que cargue el creativo,
+ * lo guarda y cierra la pestaña. Es lo que llena la página Competencia con
+ * los videos y el copy que la Biblioteca de anuncios no entrega por API.
+ */
+const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function capturarAnuncio(url) {
+  const tab = await chrome.tabs.create({ url, active: false });
+  try {
+    for (let i = 0; i < 24; i++) {
+      await espera(800);
+      const info = await chrome.tabs.sendMessage(tab.id, { type: "nova:capturar" }).catch(() => null);
+      if (info && !info.vacio && (info.mediaUrl || info.tiktok)) return info;
+    }
+    throw new Error("el anuncio no cargó a tiempo");
+  } finally {
+    chrome.tabs.remove(tab.id).catch(() => {});
+  }
+}
+
+async function traerAnuncios(p, tabId) {
+  const avisar = (estado) => chrome.tabs.sendMessage(tabId, { type: "nova:progreso", estado }).catch(() => {});
+  const total = p.anuncios.length;
+  let listos = 0;
+  for (const [i, a] of p.anuncios.entries()) {
+    try {
+      const info = await capturarAnuncio(a.enlace);
+      const { contenedor, ...datos } = info;
+      await enviar({
+        ...datos,
+        brand: datos.brand || p.marca,
+        adId: datos.adId || a.adId,
+        productId: p.productId || undefined,
+        source: "Biblioteca de Meta",
+        link: a.enlace,
+      });
+      listos++;
+    } catch (err) {
+      console.warn("[Nova Swipe] no se pudo traer", a.adId, err.message);
+    }
+    await avisar({ hechos: i + 1, listos, total });
+  }
+  await avisar({ fin: true, listos, total });
+}
+
 /* ---------- indicador en el ícono ---------- */
 async function marcar(tabId, texto, color) {
   try {
@@ -260,6 +306,15 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
           await chrome.storage.local.set({ ultimo: { ok: false, en: Date.now(), texto: err.message } });
           throw err;
         }
+      } else if (msg?.type === "traer") {
+        const c = await config();
+        const desde = sender.tab?.url || "";
+        // Solo la página del Studio configurado puede pedir esto.
+        if (!c.url || !desde.startsWith(c.url)) throw new Error("Esta página no es el Studio configurado");
+        const anuncios = (msg.payload?.anuncios || []).filter((a) => a && /^https?:/i.test(a.enlace || ""));
+        if (!anuncios.length) throw new Error("No hay anuncios que traer");
+        responder({ ok: true, total: anuncios.length });
+        traerAnuncios({ ...msg.payload, anuncios }, sender.tab.id);
       } else if (msg?.type === "config") responder({ ok: true, ...(await config()) });
       else if (msg?.type === "productos") {
         const c = await config();
