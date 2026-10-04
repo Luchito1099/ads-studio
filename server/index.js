@@ -44,7 +44,7 @@ if (blobs) {
 const images = makeImages(blobs);
 
 try {
-  await importFromSqlite(kv, images);
+  await importFromSqlite(kv, images, blobs);
 } catch (err) {
   console.error("[nova] Falló la importación desde SQLite:", err.message);
   process.exit(1);

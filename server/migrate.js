@@ -13,7 +13,7 @@ import { isImageKey } from "./images.js";
  *
  * Si no hay SQLite, no se importa nada y la app carga sus datos de ejemplo.
  */
-export async function importFromSqlite(store, images) {
+export async function importFromSqlite(store, images, blobs = null) {
   if (store.kind !== "postgres") return;
   if ((await store.count()) > 0) return;
 
@@ -35,7 +35,17 @@ export async function importFromSqlite(store, images) {
     }
     const secret = await src.metaGet("session_secret");
     await store.setMany(rows, secret ? [{ key: "session_secret", value: secret }] : []);
-    console.log(`[nova] Importadas ${rows.length} claves (${uploaded} imágenes subidas a S3).`);
+    // Los videos y las imágenes de la Biblioteca viven en la tabla `blob`, no
+    // en kv: sin esto la migración se llevaba las fichas y dejaba los archivos.
+    let archivos = 0;
+    for (const id of await src.blobIds()) {
+      const b = await src.blobGet(id);
+      if (!b) continue;
+      if (blobs) await blobs.put(blobs.keyFor(`media/${id}`), b.data, b.mime);
+      else await store.blobSet(id, b.mime, b.data);
+      archivos++;
+    }
+    console.log(`[nova] Importadas ${rows.length} claves y ${archivos} archivos (${uploaded} imágenes subidas a S3).`);
   } finally {
     await src.close();
   }

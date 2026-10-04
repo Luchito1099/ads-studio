@@ -55,6 +55,7 @@ export async function openSqlite(file) {
     metaGet: db.prepare("SELECT value FROM meta WHERE key = ?"),
     metaSet: db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)"),
     blobGet: db.prepare("SELECT mime, data FROM blob WHERE id = ?"),
+    blobIds: db.prepare("SELECT id FROM blob"),
     blobSet: db.prepare("INSERT OR REPLACE INTO blob (id, mime, data, created_at) VALUES (?, ?, ?, ?)"),
     blobDel: db.prepare("DELETE FROM blob WHERE id = ?"),
   };
@@ -70,6 +71,7 @@ export async function openSqlite(file) {
     metaGet: async (key) => stmts.metaGet.get(key)?.value ?? null,
     metaSet: async (key, value) => void stmts.metaSet.run(key, value),
     blobGet: async (id) => stmts.blobGet.get(id) ?? null,
+    blobIds: async () => stmts.blobIds.all().map((r) => r.id),
     blobSet: async (id, mime, data) => void stmts.blobSet.run(id, mime, data, new Date().toISOString()),
     blobDel: async (id) => void stmts.blobDel.run(id),
     close: async () => db.close(),
@@ -138,6 +140,7 @@ export async function openPostgres(url) {
         [key, value]
       )),
     blobGet: async (id) => (await pool.query("SELECT mime, data FROM blob WHERE id = $1", [id])).rows[0] ?? null,
+    blobIds: async () => (await pool.query("SELECT id FROM blob")).rows.map((r) => r.id),
     blobSet: async (id, mime, data) =>
       void (await pool.query(
         "INSERT INTO blob (id, mime, data) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data",
