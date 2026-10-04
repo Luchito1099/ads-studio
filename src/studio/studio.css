@@ -470,6 +470,15 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--li
   .seg button{height:32px;padding:0 9px;font-size:12px}
   table{font-size:13px}
   .side-foot button{height:38px}
+  /* Pipeline y Embudo: una columna por pantalla, se pasa deslizando. */
+  .kanban{scroll-snap-type:x mandatory}
+  .kanban .col{width:82vw;min-width:82vw;scroll-snap-align:start}
+  /* El embudo es una pizarra con posiciones libres: se mantiene igual y se
+     desliza de lado, solo se achica la columna de títulos. */
+  .boardwrap{min-height:520px}
+  .lanehead{width:168px;padding:10px}
+  .lanehead b{font-size:14px}
+  .lanehead p{display:none}
 }
 @media (max-width:520px){
   .cstats{grid-template-columns:1fr 1fr}
