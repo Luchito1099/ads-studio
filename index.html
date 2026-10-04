@@ -5,9 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
     <title>NOVA · Studio de Ads</title>
+    <meta name="theme-color" content="#0d9488" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="NOVA Ads" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Hace la app instalable en el celular y la deja abrir sin señal.
+      if ("serviceWorker" in navigator) {
+        addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+      }
+      addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); window.__instalar = e; dispatchEvent(new Event("nova:instalable")); });
+    </script>
   </body>
 </html>

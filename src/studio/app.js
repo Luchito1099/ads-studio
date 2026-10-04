@@ -212,6 +212,7 @@ function renderSide(){
      <select id="prodsel">${S.products.map(p=>`<option value="${p.id}" ${p.id===PID()?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="__new">+ Agregar producto</option></select></div>
    ${VIEWS.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([id,i,l])=>`<button class="nav ${UI.view===id?'on':''}" data-view="${id}">${ic(i)}<span>${l}</span><span class="n">${c[id]}</span></button>`).join('')).join('')}
    <div class="side-foot">
+     ${window.__instalar?`<button id="binstalar">${ic('down','sm')}Instalar en el celular</button>`:''}
      <button id="bset">Ajustes</button>
      <button id="bexp">Exportar datos</button>
      <button id="bimp">Importar datos</button>
@@ -221,11 +222,33 @@ function renderSide(){
       if(n&&n.trim()){const code=n.trim().toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,12)||'PROD';const p={id:uid('p'),name:n.trim(),code};S.products.push(p);S.productId=p.id;S.lanes[p.id]=emptyLanes();S.seq[p.id]=0;save();}
       render();return;}
     S.productId=e.target.value;UI.selRef=null;save();render();};
-  document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{UI.view=b.dataset.view;render();});
+  document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{UI.view=b.dataset.view;abrirNav(false);render();});
+  if($('#binstalar'))$('#binstalar').onclick=instalarApp;
   $('#bset').onclick=openSettings;$('#bout').onclick=async()=>{await logout();location.reload();};$('#bexp').onclick=exportData;$('#bimp').onclick=()=>$('#importpick').click();
 }
+/* Instalar la app en el celular: Chrome avisa cuándo se puede y guardamos el
+ * aviso para usarlo al tocar el botón. */
+async function instalarApp(){
+  const ev=window.__instalar;
+  if(!ev){ toast('Abre el Studio en Chrome del celular y toca “Instalar aplicación” en su menú'); return; }
+  ev.prompt();
+  const r=await ev.userChoice.catch(()=>({outcome:'dismissed'}));
+  window.__instalar=null;
+  toast(r.outcome==='accepted'?'Instalada: búscala como NOVA Ads':'Instalación cancelada');
+  renderSide();
+}
+addEventListener('nova:instalable',()=>{ if(S&&$('#side'))renderSide(); });
 function emptyLanes(){return {TOFU:{objetivo:'Ventas → landing',auds:[]},MOFU:{objetivo:'Mensajes → WhatsApp',auds:[]},BOFU:{objetivo:'Mensajes → WhatsApp',auds:[]}};}
-function setTop(title,sub,actions=''){ $('#top').innerHTML=`<div><h1>${esc(title)}</h1><p>${esc(sub)}</p></div><div class="act">${actions}</div>`; }
+function setTop(title,sub,actions=''){
+  $('#top').innerHTML=`<button class="menubtn" id="navtog" aria-label="Abrir el menú">${ic('hook')}</button>
+    <div class="tit"><h1>${esc(title)}</h1><p>${esc(sub)}</p></div><div class="act">${actions}</div>`;
+  $('#navtog').onclick=()=>abrirNav(true);
+}
+/* En el celular el menú es un cajón que se corre desde la izquierda. */
+function abrirNav(abrir){
+  document.body.classList.toggle('nav-abierta',abrir);
+  const f=$('#navfondo'); if(f){ f.hidden=!abrir; f.onclick=()=>abrirNav(false); }
+}
 function render(){ renderSide(); const v=UI.view;
   ({ideas:vIdeas,referencias:vRefs,angulos:vAngles,conceptos:vConcepts,hooks:vHooks,pipeline:vPipeline,embudo:vEmbudo,tracker:vTracker,analisis:vAnalisis,fatiga:vFatiga,competencia:vCompetencia})[v]();
   hydrateThumbs(); }
@@ -531,6 +554,7 @@ function vRefs(){
      <div class="ltabs">
        ${[['todas','Todas',all.length],['clasificar','Por clasificar',cnt(porClasificar)],['favoritas','Favoritas',cnt(r=>r.fav)],['guion','Con guion',cnt(r=>r.extract.status==='listo')]].map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}">${l}<span>${n}</span></button>`).join('')}
        <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
+         <button class="btn ghost sm solo-movil" id="lfiltros">${ic('hook','sm')}Filtros</button>
          <label class="visually-hidden" for="lsort">Ordenar</label><select id="lsort" class="fsel">${SORTS.map(([k,l])=>`<option value="${k}" ${f.orden===k?'selected':''}>${l}</option>`).join('')}</select>
          <div class="vtog" role="group" aria-label="Vista"><button data-vista="grid" class="${f.vista==='grid'?'on':''}" aria-label="Cuadrícula">${ic('ref','sm')}</button><button data-vista="lista" class="${f.vista==='lista'?'on':''}" aria-label="Lista">${ic('hook','sm')}</button></div>
        </span>
@@ -565,6 +589,7 @@ function vRefs(){
   ladd.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;ladd.setAttribute('aria-expanded',String(!menu.hidden));};
   document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{menu.hidden=true;const a=b.dataset.add;if(a==='subir')pick();else if(a==='enlace')addLink();else openExtension();});
   $('#lcomp').onclick=()=>{UI.view='competencia';render();};
+  if($('#lfiltros'))$('#lfiltros').onclick=()=>{const w=document.querySelector('.libwrap');w.classList.toggle('con-filtros');};
   $('#lext').onclick=openExtension;
   // navegación lateral y filtros
   document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{f.scope=b.dataset.scope;render();});
@@ -2181,6 +2206,22 @@ function bloqueClave(c){
     ${enEntorno?'':`<button class="btn sm" id="stkeynew" style="margin-top:8px">${c&&c.hay?'Generar una clave nueva':'Generar clave'}</button>`}
   </div>`;
 }
+/* Cómo llevarse el Studio al celular. No hay APK: en Android se instala desde
+ * Chrome y queda como una app más, con su icono y a pantalla completa. */
+function bloqueCelular(){
+  const instalada=matchMedia('(display-mode: standalone)').matches;
+  return `<div class="panel" style="padding:12px 14px">
+    <div class="section-t">La app en el celular</div>
+    ${instalada?`<p class="hint" style="margin:6px 0 0;color:var(--accent-ink)">${ic('check','sm')}Ya la estás usando instalada.</p>`
+    :`<p class="hint" style="margin:6px 0 8px">Se instala desde el navegador y queda con su icono, a pantalla completa, sin pasar por ninguna tienda.</p>
+      <button class="btn sm" id="stinstalar">${ic('down','sm')}Instalar ahora</button>
+      <ul class="whys" style="margin:10px 0 0;padding-left:18px">
+        <li><b>Android:</b> abre esta página en Chrome y toca <b>Instalar ahora</b>, o el menú ⋮ → <b>Instalar aplicación</b>.</li>
+        <li><b>iPhone:</b> en Safari, botón Compartir → <b>Añadir a pantalla de inicio</b>.</li>
+      </ul>`}
+    <p class="hint" style="margin:10px 0 0">Ya instalada, al compartir un anuncio desde TikTok, Instagram o Facebook te aparece <b>NOVA Ads</b> en la lista: el enlace entra solo a la Biblioteca.</p>
+  </div>`;
+}
 async function openSettings(){
   let estado=null,clave=null;
   try{ const r=await fetch('/api/estado',{credentials:'same-origin'}); if(r.ok)estado=await r.json(); }catch(e){}
@@ -2188,6 +2229,7 @@ async function openSettings(){
   formModal('Ajustes',`
     ${bloqueAlmacen(estado)}
     ${bloqueClave(clave)}
+    ${bloqueCelular()}
     <div class="grid3">
      <div class="field"><label for="stu">Tope CPA (USD)</label><input id="stu" type="number" step="0.1" value="${S.settings.topeUSD}"></div>
      <div class="field"><label for="stc">Tipo de cambio</label><input id="stc" type="number" step="0.01" value="${S.settings.tc}"></div>
@@ -2209,6 +2251,8 @@ async function openSettings(){
       COMP=null; modal.remove(); openSettings(); toast('Clave generada: pégala en tu archivo .env');
     }catch(e){ gen.disabled=false; toast(e.message); }
   };
+  const inst=modal?.querySelector('#stinstalar');
+  if(inst)inst.onclick=instalarApp;
   const cop=modal?.querySelector('#stkeycopy');
   if(cop)cop.onclick=async()=>{const el=modal.querySelector('#stkey');toast(await copyText(el.value,el)?'Clave copiada':'Selecciona y copia el texto');};
 }
@@ -2520,6 +2564,19 @@ function pedirCreativos(c,faltan,boton){
   S.refs.forEach(ensureRef); if(!S.settings.whisper)S.settings.whisper='base'; if(!S.metaData)S.metaData={}; if(!S.ideas)S.ideas=[]; if(S.settings.adAccount==null)S.settings.adAccount='338354625956825'; S.pieces.forEach(p=>{if(!p.adIds)p.adIds=[];});
   const pend=lecturaFallida?null:await fatigaPendiente(S);
   if(pend){ try{importDatos(pend.datos,pend.label);S.settings.fatigaSync=pend.marca;save();toast('Datos de Meta actualizados');}catch(e){console.warn(e);} }
+  // Compartir desde TikTok, Instagram o el navegador del celular: llega como
+  // /compartir?url=… gracias al manifiesto de la app instalada.
+  if(location.pathname==='/compartir'){
+    const q=new URLSearchParams(location.search);
+    const texto=[q.get('url'),q.get('text'),q.get('title')].filter(Boolean).join(' ');
+    const enlace=(texto.match(/https?:[^\s]+/)||[''])[0];
+    history.replaceState(null,'','/');
+    if(enlace){
+      S.refs.unshift(ensureRef({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(enlace),
+        conceptId:'',angleId:'',stage:'',notes:q.get('title')||'',link:enlace,created:Date.now()}));
+      save(); UI.view='referencias'; setTimeout(()=>toast('Enlace guardado desde el celular'),600);
+    }
+  }
   const oldRender=render;
   setTimeout(traerBandeja,500);
   // Lo que quedo sin guion (llego con la pestana cerrada o fallo a medias) se extrae solo.

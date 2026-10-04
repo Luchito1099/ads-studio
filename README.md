@@ -71,6 +71,8 @@ Permisos IAM mínimos sobre el bucket: `s3:PutObject`, `s3:GetObject`, `s3:Delet
 
 ### Datos por defecto al pasar a Postgres
 
+**En el celular**: la app se instala desde el navegador (manifiesto + service worker, sin tienda ni APK). Queda con su icono, a pantalla completa, y aparece como destino al **compartir** desde TikTok, Instagram o Facebook: el enlace entra solo a la Biblioteca (`/compartir`). La interfaz se adapta a pantallas chicas — menú en cajón, filtros plegados y fichas a pantalla completa. Los iconos se regeneran con `node scripts/iconos-pwa.mjs`.
+
 La clave del canal de Claude (`SYNC_TOKEN`) se puede generar desde **Ajustes → Conexión con Claude** y queda guardada en la base, o definirse como variable de entorno, que manda sobre la otra.
 
 En **Ajustes** se ve dónde viven los datos (SQLite o Postgres, imágenes en la base o en S3) y desde cuándo existe la base. Si arranca vacía, la app avisa: es la señal de que el servidor no tiene disco persistente y cada despliegue empieza de cero. Se arregla montando un volumen en `/data` o usando `DATABASE_URL`.
