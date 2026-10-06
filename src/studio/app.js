@@ -533,7 +533,7 @@ function vRefs(){
          <button data-add="ext">${ic('ext','sm')}<span><b>Extensión Nova Swipe</b><small>Captura desde Chrome</small></span></button>
        </div></div>`);
   const navItem=(key,val,label,n,icon)=>`<button class="lnav ${f[key]===val?'on':''}" data-lf="${key}" data-v="${esc(val)}">${icon||''}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
-  $('#body').innerHTML=`<div class="libwrap">
+  $('#body').innerHTML=`${avisoBandeja()}<div class="libwrap">
    <aside class="lside">
      <div class="seg2">${[['producto',prod().name],['todos','Todos']].map(([k,l])=>`<button data-scope="${k}" class="${f.scope===k?'on':''}">${esc(l)}</button>`).join('')}</div>
      <div class="lgrp">Fuentes</div>
@@ -589,6 +589,7 @@ function vRefs(){
   ladd.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;ladd.setAttribute('aria-expanded',String(!menu.hidden));};
   document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{menu.hidden=true;const a=b.dataset.add;if(a==='subir')pick();else if(a==='enlace')addLink();else openExtension();});
   $('#lcomp').onclick=()=>{UI.view='competencia';render();};
+  if($('#lbandeja'))$('#lbandeja').onclick=async()=>{toast('Revisando la bandeja…');await traerBandeja();if(!bandeja.pendientes&&!bandeja.error)toast('Bandeja vacía: no hay nada esperando');render();};
   if($('#lfiltros'))$('#lfiltros').onclick=()=>{const w=document.querySelector('.libwrap');w.classList.toggle('con-filtros');};
   $('#lext').onclick=openExtension;
   // navegación lateral y filtros
@@ -714,16 +715,35 @@ function traerBandeja(){
 }
 async function leerBandeja(){
   try{
-    const r=await fetch('/api/inbox',{credentials:'same-origin'}); if(!r.ok)return;
-    const {items=[]}=await r.json(); if(!items.length)return;
-    const listos=[];
-    for(const it of items){ try{await recibirSwipe(it);listos.push(it.id);}catch(e){console.warn('Nova Swipe',e);} }
-    if(!listos.length)return;
+    const r=await fetch('/api/inbox',{credentials:'same-origin'});
+    if(!r.ok){ bandeja={pendientes:bandeja.pendientes,error:`El servidor respondió ${r.status} al leer la bandeja`}; pintarBandeja(); return; }
+    const {items=[]}=await r.json();
+    if(!items.length){ const habia=bandeja.pendientes; bandeja={pendientes:0,error:''}; if(habia)pintarBandeja(); return; }
+    const listos=[]; let fallo='';
+    for(const it of items){
+      try{ await recibirSwipe(it); listos.push(it.id); }
+      catch(e){ console.warn('Nova Swipe',e); fallo=fallo||(e.message||'no se pudo guardar'); }
+    }
+    bandeja={pendientes:items.length-listos.length,error:fallo};
+    if(!listos.length){ pintarBandeja(); return; }
     save();
     await fetch('/api/inbox/ack',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:listos})});
     if(UI.view==='referencias'&&!UI.refOpen)render(); else renderSide();
     toast(listos.length===1?'Llegó 1 anuncio desde Nova Swipe':`Llegaron ${listos.length} anuncios desde Nova Swipe`);
-  }catch(e){console.warn(e);}
+  }catch(e){ console.warn(e); bandeja={pendientes:bandeja.pendientes,error:e.message||'sin conexión con el servidor'}; pintarBandeja(); }
+}
+/* Lo que quedó esperando en la bandeja se ve en la Biblioteca: antes fallaba
+ * en silencio y el usuario solo notaba que sus anuncios no aparecían. */
+let bandeja={pendientes:0,error:''};
+function pintarBandeja(){ if(UI.view==='referencias'&&!UI.refOpen)render(); }
+function avisoBandeja(){
+  if(!bandeja.pendientes&&!bandeja.error)return '';
+  return `<div class="panel" style="padding:12px 14px;margin-bottom:12px;background:var(--amber-bg);border-color:#fde68a;color:var(--amber);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    ${ic('ext','sm')}<div style="min-width:0;flex-grow:1">
+      <b>${bandeja.pendientes?`${bandeja.pendientes} anuncio${bandeja.pendientes===1?'':'s'} de Nova Swipe sin entrar`:'La bandeja de Nova Swipe falló'}</b>
+      <div style="font-size:13px;line-height:1.4">${bandeja.error?esc(bandeja.error):'Están guardados en el servidor pero el Studio no pudo traerlos.'}</div>
+    </div>
+    <button class="btn ghost sm" id="lbandeja">Reintentar</button></div>`;
 }
 async function recibirSwipe(it){
   if(S.refs.some(r=>r.swipeId===it.id))return;
