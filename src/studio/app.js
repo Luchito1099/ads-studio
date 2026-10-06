@@ -2306,14 +2306,25 @@ function pageIdDe(txt){
   return m?m[1]:'';
 }
 const compDatos=c=>COMP?.competencia?.[compId(c)]||null;
+const compActivos=d=>(d?.ads||[]).filter(a=>a.activo!==false);
+const compApagados=d=>(d?.ads||[]).filter(a=>a.activo===false);
+/* Cuánto corrió un anuncio: hasta hoy si sigue vivo, hasta que se apagó si no. */
+function compVida(a){
+  const ini=Date.parse((a.inicio||'')+'T00:00:00'); if(isNaN(ini))return null;
+  const fin=a.activo===false&&a.apagado?Date.parse(a.apagado+'T00:00:00'):Date.now();
+  return Math.max(0,Math.floor((fin-ini)/86400000));
+}
 function compResumen(d){
   if(!d?.ads?.length)return null;
-  const edades=d.ads.map(a=>dias(a.inicio)).filter(n=>n!=null);
+  const act=compActivos(d),apa=compApagados(d);
+  const edades=act.map(a=>dias(a.inicio)).filter(n=>n!=null);
   const prom=edades.length?Math.round(edades.reduce((s,n)=>s+n,0)/edades.length):null;
+  const vidas=apa.map(compVida).filter(n=>n!=null);
   const h=d.historico||[];
   const previo=h.length>1?h[h.length-2]:null;
-  return {activos:d.ads.length,prom,viejo:edades.length?Math.max(...edades):null,
-    nuevos:h[h.length-1]?.nuevos||0,cambio:previo?d.ads.length-previo.total:null};
+  return {activos:act.length,apagados:apa.length,prom,viejo:edades.length?Math.max(...edades):null,
+    vida:vidas.length?Math.round(vidas.reduce((s,n)=>s+n,0)/vidas.length):null,
+    nuevos:h[h.length-1]?.nuevos||0,cambio:previo?act.length-previo.total:null};
 }
 /* Ángulos, formatos y ofertas: se leen de lo que ya guardaste de esa marca. */
 const OFERTAS=[[/env[ií]o gratis/i,'Envío gratis'],[/contra ?entrega/i,'Pago contra entrega'],[/2 ?x ?1|2x1/i,'2x1'],
@@ -2378,7 +2389,7 @@ function compCard(c){
       <div class="cmini">
         <div><b>${r.prom!=null?r.prom:'—'}</b><span>días de antigüedad media</span></div>
         <div><b>${r.viejo!=null?r.viejo:'—'}</b><span>días el más viejo</span></div>
-        <div><b>${perfil.refs.length}</b><span>guardados en Biblioteca</span></div>
+        <div><b>${r.apagados||0}</b><span>apagados en el archivo</span></div>
       </div>
       <div class="hint">Revisado ${haceTexto(d.revisado)}</div>`
     :`<div class="cnum vacio"><b>—</b><span>sin revisar todavía</span></div>
@@ -2424,17 +2435,17 @@ function compForm(c){
  * pedir que los vaya a buscar. */
 const compRefDe=adId=>adId?S.refs.map(ensureRef).find(r=>r.adId===adId):null;
 function compAnuncioCard(a,c){
-  const n=dias(a.inicio), ref=compRefDe(a.adId);
+  const apagado=a.activo===false, n=apagado?compVida(a):dias(a.inicio), ref=compRefDe(a.adId);
   const ex=ref?.extract;
   const hook=ex?.status==='listo'?((ex.blocks||[])[0]?.voz||(ex.blocks||[])[0]?.texto||''):'';
   const copy=(ref?.adText||'').split(String.fromCharCode(10)).map(x=>x.trim()).find(Boolean)||'';
-  const tono=n>=60?'win':n>=30?'warn':'';
-  return `<article class="acomp ${ref?'tiene':''}" data-ad="${esc(a.adId)}">
+  const tono=apagado?'off':n>=60?'win':n>=30?'warn':'';
+  return `<article class="acomp ${ref?'tiene':''} ${apagado?'apagado':''}" data-ad="${esc(a.adId)}">
     <div class="ath">${ref?.mediaId?thumbHTML(ref.mediaId):`<div class="thumb sinmedia">${ic(ref?'image':'ext')}<span>${ref?'Sin archivo':'Falta el creativo'}</span></div>`}
       <span class="adias ${tono}">${n!=null?n:'—'} d</span></div>
     <div class="acuerpo">
       <div class="atop"><b>${esc(a.titulo||ref?.adCopy?.boton||'Sin título de botón')}</b>
-        <span class="muted">${a.inicio?`desde ${esc(a.inicio)}`:'sin fecha'}${a.pagina&&normTxt(a.pagina)!==normTxt(c.nombre)?' · '+esc(a.pagina):''}</span></div>
+        <span class="muted">${apagado?`${a.inicio?esc(a.inicio):'?'} → ${esc(a.apagado||'')} · apagado`:a.inicio?`desde ${esc(a.inicio)}`:'sin fecha'}${a.pagina&&normTxt(a.pagina)!==normTxt(c.nombre)?' · '+esc(a.pagina):''}</span></div>
       ${hook?`<p class="ahook">“${esc(hook.slice(0,150))}”</p>`:''}
       ${copy?`<p class="acopy">${esc(copy.slice(0,180))}</p>`:''}
       ${!ref?`<p class="hint" style="margin:0">Guárdalo con Nova Swipe y aquí verás el video, el copy y su guion.</p>`:
@@ -2450,7 +2461,8 @@ function openComp(id){
   const c=byId(compLista(),id); if(!c)return;
   UI.compOpen=id;
   const d=compDatos(c),perfil=perfilMarca(c.nombre);
-  const ads=[...(d?.ads||[])].sort((a,b)=>(dias(b.inicio)??-1)-(dias(a.inicio)??-1));
+  const ads=compActivos(d).sort((a,b)=>(dias(b.inicio)??-1)-(dias(a.inicio)??-1));
+  const apagados=compApagados(d).sort((a,b)=>(compVida(b)??-1)-(compVida(a)??-1));
   const guardados=ads.filter(a=>compRefDe(a.adId)).length;
   const r=compResumen(d);
   // Tandas: cuántos lanzaron el mismo día. Muestra su ritmo de prueba.
@@ -2473,13 +2485,20 @@ function openComp(id){
         <div><b>${r.prom??'—'}</b><span>días de antigüedad media</span></div>
         <div><b>${r.viejo??'—'}</b><span>días el más viejo</span></div>
         <div><b>${guardados}/${ads.length}</b><span>con creativo guardado</span></div>
+        ${r.apagados?`<div><b>${r.apagados}</b><span>apagados${r.vida!=null?` · duraron ${r.vida} días`:''}</span></div>`:''}
       </div>`:''}
       ${guardados<ads.length?`<div class="cavisa">${ic('ext','sm')}<div><b>Faltan ${ads.length-guardados} creativos.</b>
-        <span>Meta no entrega el video ni el copy en esta consulta: los trae Nova Swipe. Toca <b>Traer creativos</b> y la extensión los abre y los guarda sola, o ábrelos uno por uno.</span></div></div>`:''}
+        <span>Meta no entrega el video ni el copy en esta consulta: los trae Nova Swipe. Toca <b>Traer creativos</b> y la extensión los abre y los guarda sola.
+        Hazlo mientras sigan activos: cuando la marca apaga un anuncio, Meta lo saca de su biblioteca y el video ya no se puede recuperar.</span></div></div>`:''}
       ${ads.length?`<div class="section-t">Sus ganadores: los que llevan más tiempo sin apagarse</div>
         <p class="hint" style="margin:4px 0 10px">Un anuncio que lleva semanas activo casi siempre es el que les está vendiendo.</p>
         <div class="agrid">${ads.map(a=>compAnuncioCard(a,c)).join('')}</div>`
       :`<div class="empty" style="text-align:left"><b style="color:var(--ink)">Todavía no hay anuncios</b><br><span>Pídele a Claude: <b>revisa la competencia</b>.</span></div>`}
+      ${apagados.length?`<div class="panel" style="padding:14px 16px;margin-top:14px">
+        <button class="fhead" id="cverapagados" aria-expanded="${UI.compApagados?'true':'false'}"><b>Ya no están corriendo</b><span class="muted">${apagados.length} anuncio${apagados.length===1?'':'s'} guardado${apagados.length===1?'':'s'}</span><span class="car">${ic(UI.compApagados?'up':'down','sm')}</span></button>
+        <p class="hint" style="margin:6px 0 0">Los guardo aunque la marca los apague: saber que un anuncio corrió ${apagados[0]&&compVida(apagados[0])!=null?compVida(apagados[0])+' días':'meses'} y después lo bajaron dice tanto como verlo activo.</p>
+        ${UI.compApagados?`<div class="agrid" style="margin-top:12px">${apagados.map(a=>compAnuncioCard(a,c)).join('')}</div>`:''}
+      </div>`:''}
       ${tandas.length?`<div class="panel" style="padding:14px 16px;margin-top:14px">
         <div class="section-t">Cómo prueban</div>
         <p class="hint" style="margin:6px 0 8px">Días en que lanzaron varios anuncios de golpe: ese es su ritmo de prueba.</p>
@@ -2502,8 +2521,9 @@ function openComp(id){
   ov.querySelector('#cx').onclick=cerrar;
   ov.addEventListener('mousedown',e=>{if(e.target===ov)cerrar();});
   ov.querySelectorAll('[data-verref]').forEach(b=>b.onclick=()=>{cerrar();UI.view='referencias';render();openRef(b.dataset.verref,'guion');});
+  if(ov.querySelector('#cverapagados'))ov.querySelector('#cverapagados').onclick=()=>{UI.compApagados=!UI.compApagados;ov.remove();openComp(id);};
   const traer=ov.querySelector('#ctraer');
-  if(traer)traer.onclick=()=>pedirCreativos(c,ads.filter(a=>!compRefDe(a.adId)),traer);
+  if(traer)traer.onclick=()=>pedirCreativos(c,[...ads,...apagados].filter(a=>!compRefDe(a.adId)),traer);
 }
 /* Le pide a Nova Swipe que abra los anuncios que faltan y los guarde.
  * El puente es el propio script de la extensión, que escucha en esta página. */

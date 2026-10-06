@@ -73,7 +73,7 @@ export function competenciaRouter({ kv, requireAuth, wrap }) {
       pais: texto(c.pais, 2).toUpperCase() || "PE",
       producto: (S?.products || []).find((p) => p.id === c.productId)?.name || "",
       revisado: guardado[clave(c)]?.revisado || null,
-      activos: guardado[clave(c)]?.ads?.length ?? null,
+      activos: guardado[clave(c)]?.ads?.filter((a) => a.activo !== false).length ?? null,
     }));
     res.json({ competidores, revisadoUltimo: Object.values(guardado).map((c) => c.revisado).sort().pop() || null });
   }));
@@ -91,25 +91,38 @@ export function competenciaRouter({ kv, requireAuth, wrap }) {
     for (const c of limpios) {
       const id = clave(c);
       const previo = todo[id] || { ads: [], historico: [] };
-      const vistos = new Map(previo.ads.map((a) => [a.adId, a.visto || fecha]));
-      const ads = [];
+      const antes = new Map(previo.ads.map((a) => [a.adId, a]));
+      const activos = [];
       for (const a of c.ads) {
         const adId = texto(a.adId ?? a.id, 60);
-        if (!adId || ads.some((x) => x.adId === adId)) continue;
-        ads.push({
+        if (!adId || activos.some((x) => x.adId === adId)) continue;
+        const viejo = antes.get(adId);
+        activos.push({
           adId,
-          titulo: texto(a.titulo ?? a.ad_creative_link_title, 200),
-          inicio: fechaISO(a.inicio ?? a.ad_delivery_start_time),
-          pagina: texto(a.pagina ?? a.page_name, 120),
-          pageId: texto(a.pageId ?? a.page_id, 40),
-          enlace: texto(a.enlace ?? a.ad_snapshot_url, 400) || `https://www.facebook.com/ads/library/?id=${adId}`,
-          visto: vistos.get(adId) || fecha,
+          titulo: texto(a.titulo ?? a.ad_creative_link_title, 200) || viejo?.titulo || "",
+          inicio: fechaISO(a.inicio ?? a.ad_delivery_start_time) || viejo?.inicio || "",
+          pagina: texto(a.pagina ?? a.page_name, 120) || viejo?.pagina || "",
+          pageId: texto(a.pageId ?? a.page_id, 40) || viejo?.pageId || "",
+          enlace: texto(a.enlace ?? a.ad_snapshot_url, 400) || viejo?.enlace || `https://www.facebook.com/ads/library/?id=${adId}`,
+          visto: viejo?.visto || fecha,
+          activo: true,
+          apagado: "",
         });
-        if (ads.length >= MAX_ADS) break;
+        if (activos.length >= MAX_ADS) break;
       }
-      // Nuevo = no estaba en la foto anterior (aunque se revise dos veces el mismo día).
-      const nuevos = previo.ads.length ? ads.filter((a) => !vistos.has(a.adId)).length : 0;
-      const historico = [...(previo.historico || []).filter((h) => h.fecha !== fecha), { fecha, total: ads.length, nuevos }].slice(-MAX_HIST);
+      /* Lo que ya no aparece no se borra: queda archivado con la fecha en que
+       * dejó de verse. Un anuncio que corrió cuatro meses y se apagó sigue
+       * siendo la mejor pista de lo que a esa marca le funcionó. */
+      const vivos = new Set(activos.map((a) => a.adId));
+      const apagadosAntes = previo.ads.filter((a) => !vivos.has(a.adId));
+      const archivados = apagadosAntes.map((a) => ({ ...a, activo: false, apagado: a.apagado || fecha }));
+      const nuevos = previo.ads.length ? activos.filter((a) => !antes.has(a.adId)).length : 0;
+      const apagados = apagadosAntes.filter((a) => a.activo !== false).length;
+      // Si hay que recortar, se van los archivados más antiguos, nunca los activos.
+      archivados.sort((x, y) => String(y.apagado).localeCompare(String(x.apagado)));
+      const ads = [...activos, ...archivados.slice(0, Math.max(0, MAX_ADS * 2 - activos.length))];
+      const historico = [...(previo.historico || []).filter((h) => h.fecha !== fecha),
+        { fecha, total: activos.length, nuevos, apagados }].slice(-MAX_HIST);
       todo[id] = {
         id,
         nombre: texto(c.nombre, 120) || previo.nombre || id,
@@ -120,7 +133,7 @@ export function competenciaRouter({ kv, requireAuth, wrap }) {
         ads,
         historico,
       };
-      resumen.push({ id, nombre: todo[id].nombre, activos: ads.length, nuevos });
+      resumen.push({ id, nombre: todo[id].nombre, activos: activos.length, nuevos, apagados, archivados: archivados.length });
     }
     await guardar(todo);
     res.json({ ok: true, revisado, competidores: resumen });

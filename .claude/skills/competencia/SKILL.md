@@ -59,6 +59,6 @@ El servidor guarda los anuncios, calcula cuáles son nuevos y deja el histórico
 
 ## 4. Contarle al usuario
 
-Un resumen corto, sin listas kilométricas. Por cada marca: cuántos anuncios activos tiene, cuántos son nuevos desde la última revisión y cuál es el más antiguo que sigue corriendo (ese suele ser su ganador). Cierra recordándole que en **Medir → Competencia** puede abrir cualquiera y guardarlo con Nova Swipe para extraerle el guion.
+Un resumen corto, sin listas kilométricas. Por cada marca: cuántos anuncios activos tiene, cuántos son nuevos desde la última revisión, cuál es el más antiguo que sigue corriendo (ese suele ser su ganador) y cuántos se apagaron desde la última vez (el servidor los archiva y devuelve el conteo en `apagados`). Un anuncio que corrió meses y lo bajaron también es información: dilo. Cierra recordándole que en **Medir → Competencia** puede abrir cualquiera y guardarlo con Nova Swipe para extraerle el guion.
 
 No inventes datos: si Meta no devuelve nada para una marca, dilo y sugiere revisar el ID de la página o las palabras clave.

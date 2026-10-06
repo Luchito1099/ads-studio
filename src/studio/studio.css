@@ -485,3 +485,6 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--li
   .sbgrid{grid-template-columns:1fr!important}
   .top .act{width:100%;justify-content:flex-start}
 }
+.acomp.apagado{opacity:.75;background:#fafafa}
+.adias.off{background:#64748b}
+.cstats{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
