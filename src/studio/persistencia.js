@@ -13,6 +13,7 @@
 const STATE_KEY = "studio:state:v2";
 const META_KEY = "studio:metadata:v2";
 const MEDIA_KEY = (id) => `studio:media:${id}`;
+const FRAMES_KEY = (id) => `studio:frames:${id}`;
 
 async function leerJSON(key) {
   const r = await window.storage.get(key);
@@ -46,9 +47,29 @@ let ultimoMeta = null;
 let pendiente = null;
 let enCurso = null;
 
+/* Los fotogramas de cada anuncio pesan más que todo el resto junto: con 76
+ * anuncios el estado pasaba de 20 MB y el servidor rechazaba el guardado, así
+ * que lo último que agregabas se perdía al recargar. Ahora cada anuncio guarda
+ * sus fotogramas en su propia clave y el estado queda liviano. */
+const framesEnviados = new Map();
+
 async function escribirEstado(S) {
   const { metaData, ...resto } = S;
-  await window.storage.set(STATE_KEY, JSON.stringify(resto));
+  const pesados = [];
+  const refs = (resto.refs || []).map((r) => {
+    const ex = r.extract;
+    if (!ex || !Array.isArray(ex.frames) || !ex.frames.length) return r;
+    pesados.push([r.id, ex.frames]);
+    return { ...r, extract: { ...ex, frames: [], nframes: ex.frames.length } };
+  });
+  for (const [id, frames] of pesados) {
+    const texto = JSON.stringify(frames);
+    const firma = `${frames.length}:${texto.length}`;
+    if (framesEnviados.get(id) === firma) continue;
+    await window.storage.set(FRAMES_KEY(id), texto);
+    framesEnviados.set(id, firma);
+  }
+  await window.storage.set(STATE_KEY, JSON.stringify({ ...resto, refs }));
   const meta = JSON.stringify(metaData || {});
   if (meta !== ultimoMeta) {
     await window.storage.set(META_KEY, meta);
@@ -93,6 +114,21 @@ export const DB = {
 
   /** Solo metadatos (miniatura, tipo, duración), sin descargar el archivo. */
   meta: (id) => leerJSON(MEDIA_KEY(id)),
+
+  /** Fotogramas de un anuncio: se piden solo al abrir su ficha. */
+  async cargarFrames(ref) {
+    const ex = ref && ref.extract;
+    if (!ex) return [];
+    if (Array.isArray(ex.frames) && ex.frames.length) return ex.frames;
+    if (!ex.nframes) return [];
+    ex.frames = (await leerJSON(FRAMES_KEY(ref.id))) || [];
+    return ex.frames;
+  },
+
+  borrarFrames(id) {
+    framesEnviados.delete(id);
+    return window.storage.delete(FRAMES_KEY(id)).catch(() => {});
+  },
 
   async put(store, val) {
     if (store === "kv") return guardarEstado(val);

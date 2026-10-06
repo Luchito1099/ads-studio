@@ -64,7 +64,9 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 // El estado del Studio y las miniaturas viajan como JSON; los archivos, por /api/media.
-app.use(express.json({ limit: "25mb" }));
+// El estado del Studio viaja completo en cada guardado; 25 MB se quedaban
+// cortos con la Biblioteca llena y el guardado fallaba en silencio.
+app.use(express.json({ limit: "64mb" }));
 app.use(cookieParser());
 
 /* ---------------- salud ---------------- */

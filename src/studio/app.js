@@ -94,7 +94,18 @@ function seed(){
     settings:{topeUSD:5,tc:3.7,muestra:10},seq:{p_novaflex:5,p_novafit:0}};
 }
 let saveT;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>DB.put('kv',S,'state').catch(e=>toast('No se pudo guardar: '+e.message)),150);}
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>DB.put('kv',S,'state').then(()=>avisoGuardado('')).catch(e=>{avisoGuardado(e.message||'error desconocido');toast('No se pudo guardar: '+e.message);}),150);}
+/* Un guardado fallido es grave: lo que agregaste desaparece al recargar. No se
+ * puede quedar en un aviso que se desvanece. */
+function avisoGuardado(err){
+  const previo=document.getElementById('savefail');
+  if(!err){ previo?.remove(); return; }
+  const el=previo||document.createElement('div');
+  el.id='savefail'; el.className='savefail';
+  el.innerHTML=`<div><b>No se guardaron los últimos cambios</b><span>${esc(err)} · si recargas ahora, los pierdes</span></div><button class="btn sm" id="savere">Reintentar</button>`;
+  if(!previo)document.body.appendChild(el);
+  el.querySelector('#savere').onclick=()=>{ toast('Guardando…'); save(); };
+}
 const PID=()=>S.productId;
 const prod=()=>S.products.find(p=>p.id===PID());
 const mine=arr=>arr.filter(x=>x.productId===PID());
@@ -726,7 +737,10 @@ async function leerBandeja(){
     }
     bandeja={pendientes:items.length-listos.length,error:fallo};
     if(!listos.length){ pintarBandeja(); return; }
-    save();
+    // Se confirma la recepción solo si el guardado funcionó: si no, el anuncio
+    // sigue en la bandeja del servidor y se reintenta, en vez de perderse.
+    try{ await DB.put('kv',S,'state'); avisoGuardado(''); }
+    catch(e){ avisoGuardado(e.message||'error al guardar'); bandeja={pendientes:items.length,error:'No se pudo guardar: '+(e.message||'')}; pintarBandeja(); return; }
     await fetch('/api/inbox/ack',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:listos})});
     if(UI.view==='referencias'&&!UI.refOpen)render(); else renderSide();
     toast(listos.length===1?'Llegó 1 anuncio desde Nova Swipe':`Llegaron ${listos.length} anuncios desde Nova Swipe`);
@@ -774,7 +788,15 @@ async function recibirSwipe(it){
 setInterval(traerBandeja,15000);
 window.addEventListener('focus',()=>traerBandeja());
 
-function openRef(id,tab){UI.refOpen=id;UI.refTab=tab||(byId(S.refs,id).extract?.status==='listo'?'guion':'datos');UI.refPrompt=false;renderRefModal();}
+function openRef(id,tab){
+  UI.refOpen=id;UI.refTab=tab||(byId(S.refs,id).extract?.status==='listo'?'guion':'datos');UI.refPrompt=false;
+  renderRefModal();
+  // Los fotogramas viven aparte del estado: se traen al abrir la ficha.
+  const r=byId(S.refs,id);
+  if(r?.extract?.nframes&&!(r.extract.frames||[]).length){
+    DB.cargarFrames(r).then(()=>{ if(UI.refOpen===id)renderRefModal(); }).catch(()=>{});
+  }
+}
 function closeRef(){UI.refOpen=null;$('#rov')?.remove();render();}
 function buildRefPrompt(r){
   const ex=r.extract;
@@ -1085,9 +1107,9 @@ function renderRefModal(){
         </div>
         ${r.mediaId&&r.kind==='video'?`<details class="opex"><summary>Opciones de extracción</summary><div style="display:flex;gap:14px;font-size:13px;padding:8px 2px 0"><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="optv" checked> Transcribir voz</label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="opto" checked> Leer texto en pantalla</label></div></details>`:''}
         ${progHTML(r.id)}
-        ${ex.frames?.length>1?`<div class="panel fpanel">
-          <button class="fhead" id="rfrtog" aria-expanded="${UI.refFrames!==false}"><b>Fotogramas</b><span class="muted">${ex.frames.length} escenas</span><span class="car">${ic(UI.refFrames!==false?'up':'down','sm')}</span></button>
-          ${UI.refFrames!==false?`<div class="frames">${ex.frames.map(fr=>`<button data-seek="${fr.t}" aria-label="Ir a ${tstr(fr.t)}"><img src="${fr.thumb}" alt=""><span>${tstr(fr.t)}</span></button>`).join('')}</div>
+        ${(ex.frames?.length||ex.nframes||0)>1?`<div class="panel fpanel">
+          <button class="fhead" id="rfrtog" aria-expanded="${UI.refFrames!==false}"><b>Fotogramas</b><span class="muted">${ex.frames?.length||ex.nframes||0} escenas${ex.frames?.length?'':' · cargando…'}</span><span class="car">${ic(UI.refFrames!==false?'up':'down','sm')}</span></button>
+          ${UI.refFrames!==false?`<div class="frames">${(ex.frames||[]).map(fr=>`<button data-seek="${fr.t}" aria-label="Ir a ${tstr(fr.t)}"><img src="${fr.thumb}" alt=""><span>${tstr(fr.t)}</span></button>`).join('')}</div>
           <button class="btn ghost sm" id="rsb" style="width:100%;justify-content:center">${ic('grid','sm')}Ver como storyboard</button>`:''}
         </div>`:''}
       </div>
@@ -1156,7 +1178,7 @@ function renderRefModal(){
     if(q('#dhook'))q('#dhook').onclick=()=>{const txt=(r.adText||'').split(String.fromCharCode(10)).map(x=>x.trim()).find(Boolean)||'';if(!txt)return;S.hooks.push({id:uid('h'),productId:PID(),text:txt,type:'Primera línea del copy',conceptId:r.conceptId,angleId:r.angleId,stage:r.stage,origin:'Referencia'});save();toast('Hook guardado');};
     q('#dfav').onclick=()=>{r.fav=!r.fav;save();renderRefModal();};
     ov.querySelectorAll('#drate button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;r.rating=r.rating===n?0:n;save();renderRefModal();});
-    q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
+    q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);await DB.borrarFrames(r.id);S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
   }
 }
 function dropZone(text){return `<div class="drop" id="drop">

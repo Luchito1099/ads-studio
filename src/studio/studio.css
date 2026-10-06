@@ -488,3 +488,8 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--li
 .acomp.apagado{opacity:.75;background:#fafafa}
 .adias.off{background:#64748b}
 .cstats{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.savefail{position:fixed;left:16px;bottom:16px;z-index:900;max-width:420px;display:flex;gap:12px;align-items:center;
+  background:#fff;border:1px solid #fecaca;border-left:4px solid var(--red);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(15,23,42,.18)}
+.savefail b{display:block;font-size:14px;color:var(--red)}
+.savefail span{font-size:12px;color:var(--ink2);line-height:1.4}
+@media (max-width:860px){.savefail{left:12px;right:12px;max-width:none}}
