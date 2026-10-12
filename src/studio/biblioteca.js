@@ -218,7 +218,7 @@ document.addEventListener('click',e=>{const m=document.getElementById('laddmenu'
 document.addEventListener('keydown',e=>{const m=document.getElementById('laddmenu');if(e.key==='Escape'&&m&&!m.hidden){m.hidden=true;document.getElementById('ladd')?.focus();}});
 
 /* ---- extensión Nova Swipe ---- */
-async function openExtension(){
+export async function openExtension(){
   let st={};
   try{const r=await fetch('/api/swipe/status',{credentials:'same-origin'});st=r.ok?await r.json():{};}catch{}
   const ov=document.createElement('div');ov.className='ov';
