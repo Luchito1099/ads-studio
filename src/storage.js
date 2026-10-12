@@ -27,10 +27,10 @@ class StorageError extends Error {
   }
 }
 
-async function attempt(method, key, body) {
+async function attempt(method, key, body, permitirBorrado) {
   let res;
   try {
-    res = await fetch(`/api/kv?key=${encodeURIComponent(key)}`, {
+    res = await fetch(`/api/kv?key=${encodeURIComponent(key)}${permitirBorrado ? "&permitir=1" : ""}`, {
       method,
       credentials: "same-origin",
       headers: body ? { "Content-Type": "application/json" } : undefined,
@@ -48,14 +48,19 @@ async function attempt(method, key, body) {
   if (res.status >= 500) {
     throw new StorageError(`Error del servidor (${res.status})`, { status: res.status, transient: true });
   }
+  if (res.status === 409) {
+    // El guardia del servidor frenó una escritura que perdía datos.
+    const d = await res.json().catch(() => ({}));
+    throw new StorageError(d.error || "El servidor rechazó el guardado para no perder datos", { status: 409 });
+  }
   if (!res.ok) throw new StorageError(`Error de almacenamiento (${res.status})`, { status: res.status });
   return res.status === 204 ? null : res.json();
 }
 
-async function request(method, key, body, retries = 0) {
+async function request(method, key, body, retries = 0, permitirBorrado = false) {
   for (let i = 0; ; i++) {
     try {
-      return await attempt(method, key, body);
+      return await attempt(method, key, body, permitirBorrado);
     } catch (err) {
       if (!err.transient || i >= retries) throw err;
       await new Promise((r) => setTimeout(r, 300 * 2 ** i));
@@ -88,7 +93,8 @@ export const serverStorage = {
 
   // El tercer parámetro del API original (`shared`) se ignora: acá todo el
   // almacenamiento es privado del servidor y protegido por la contraseña.
-  async set(key, value) {
+  /** `permitirBorrado` solo cuando el usuario borró o importó a propósito. */
+  async set(key, value, permitirBorrado) {
     if (unreadable.has(key)) {
       console.error(
         `[nova] Escritura de "${key}" bloqueada: la lectura inicial falló y ` +
@@ -96,7 +102,7 @@ export const serverStorage = {
       );
       throw new StorageError("Lectura previa fallida; no se sobrescribe");
     }
-    return request("PUT", key, { value: String(value) }, 2);
+    return request("PUT", key, { value: String(value) }, 2, !!permitirBorrado);
   },
 
   delete: (key) => request("DELETE", key, null, 2),

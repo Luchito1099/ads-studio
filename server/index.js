@@ -11,6 +11,7 @@ import { syncRouter } from "./sync.js";
 import { mediaRouter, almacenArchivos } from "./media.js";
 import { swipeRouter } from "./swipe.js";
 import { competenciaRouter } from "./competencia.js";
+import { crearGuardia } from "./guardia.js";
 import {
   COOKIE_NAME,
   setSessionSecret,
@@ -94,6 +95,7 @@ app.get("/api/estado", requireAuth, wrap(async (_req, res) => {
     imagenes: blobs ? blobs.label : "dentro de la base",
     creado,
     nueva: baseNueva,
+    respaldos: (await guardia.respaldos()).length,
     arranques: Number(await kv.metaGet("arranques")) || 1,
     arranque: ARRANQUE,
   });
@@ -137,12 +139,22 @@ app.get("/api/kv", requireAuth, wrap(async (req, res) => {
   res.json({ key: row.key, value: images.toClient(key, row.value) });
 }));
 
+const guardia = crearGuardia(kv);
+
 app.put("/api/kv", requireAuth, wrap(async (req, res) => {
   const key = readKey(req, res);
   if (key === null) return;
   const { value } = req.body ?? {};
   if (typeof value !== "string") {
     return res.status(400).json({ error: "El campo 'value' debe ser string" });
+  }
+  // El estado del Studio no se pisa a ciegas: ver server/guardia.js.
+  if (guardia.esEstado(key)) {
+    const falla = await guardia.revisar(value, req.query.permitir === "1");
+    if (falla) {
+      console.warn("[nova] Guardado rechazado:", JSON.stringify(falla.detalle));
+      return res.status(409).json(falla);
+    }
   }
   const prev = isImageKey(key) ? await kv.get(key) : null;
   const stored = await images.toStored(key, value);

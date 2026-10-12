@@ -1,6 +1,6 @@
 import "./studio.css";
 import MotorFatiga from "./motor-fatiga.js";
-import { DB, migrarLegado, fatigaPendiente } from "./persistencia.js";
+import { DB, migrarLegado, fatigaPendiente, permitirBorrado } from "./persistencia.js";
 import { logout } from "../storage.js";
 /* ============ ICONOS ============ */
 const IC={
@@ -1178,7 +1178,7 @@ function renderRefModal(){
     if(q('#dhook'))q('#dhook').onclick=()=>{const txt=(r.adText||'').split(String.fromCharCode(10)).map(x=>x.trim()).find(Boolean)||'';if(!txt)return;S.hooks.push({id:uid('h'),productId:PID(),text:txt,type:'Primera línea del copy',conceptId:r.conceptId,angleId:r.angleId,stage:r.stage,origin:'Referencia'});save();toast('Hook guardado');};
     q('#dfav').onclick=()=>{r.fav=!r.fav;save();renderRefModal();};
     ov.querySelectorAll('#drate button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;r.rating=r.rating===n?0:n;save();renderRefModal();});
-    q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);await DB.borrarFrames(r.id);S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
+    q('#ddel').onclick=async()=>{if(!confirm('¿Eliminar esta referencia de la biblioteca?'))return;const used=S.pieces.some(p=>p.mediaIds.includes(r.mediaId));if(r.mediaId&&!used)await DB.del('media',r.mediaId);await DB.borrarFrames(r.id);permitirBorrado();S.refs=S.refs.filter(x=>x.id!==r.id);if(ov._url)URL.revokeObjectURL(ov._url);closeRef();};
   }
 }
 function dropZone(text){return `<div class="drop" id="drop">
@@ -2312,6 +2312,7 @@ $('#importpick').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const d=JSON.parse(await f.text());if(!d.pieces||!d.products)throw new Error('Archivo no válido');
     if(!confirm('Esto reemplaza los datos actuales. ¿Continuar?'))return;
+    permitirBorrado();
     for(const [id,t] of Object.entries(d.thumbs||{})){const ex=await DB.get('media',id);if(!ex)await DB.put('media',{id,blob:null,type:'',kind:t.kind,name:'importado',thumb:t.thumb,duration:t.duration});thumbCache[id]=t;}
     delete d.thumbs;S=d;save();render();toast('Datos importados');
   }catch(err){toast('No se pudo importar: '+err.message);}

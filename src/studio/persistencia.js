@@ -53,6 +53,11 @@ let enCurso = null;
  * sus fotogramas en su propia clave y el estado queda liviano. */
 const framesEnviados = new Map();
 
+/* Lo pone el Studio cuando el usuario borra o importa: avisa al servidor de
+ * que esa bajada de anuncios es a propósito. Se consume en la escritura. */
+let borradoPermitido = false;
+export function permitirBorrado() { borradoPermitido = true; }
+
 async function escribirEstado(S) {
   const { metaData, ...resto } = S;
   const pesados = [];
@@ -69,7 +74,8 @@ async function escribirEstado(S) {
     await window.storage.set(FRAMES_KEY(id), texto);
     framesEnviados.set(id, firma);
   }
-  await window.storage.set(STATE_KEY, JSON.stringify({ ...resto, refs }));
+  const permiso = borradoPermitido; borradoPermitido = false;
+  await window.storage.set(STATE_KEY, JSON.stringify({ ...resto, refs }), permiso);
   const meta = JSON.stringify(metaData || {});
   if (meta !== ultimoMeta) {
     await window.storage.set(META_KEY, meta);

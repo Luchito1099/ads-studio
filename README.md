@@ -77,6 +77,8 @@ La clave del canal de Claude (`SYNC_TOKEN`) se puede generar desde **Ajustes →
 
 En **Ajustes** se ve dónde viven los datos (SQLite o Postgres, imágenes en la base o en S3) y desde cuándo existe la base. Si arranca vacía, la app avisa: es la señal de que el servidor no tiene disco persistente y cada despliegue empieza de cero. Se arregla montando un volumen en `/data` o usando `DATABASE_URL`.
 
+El estado del Studio (la Biblioteca entera, piezas y hooks) vive en una sola clave que se reescribe completa en cada guardado, así que el servidor la protege: antes de pisarla guarda una copia (`studio:respaldo:*`, se conservan las últimas 20) y **rechaza con 409 cualquier guardado que venga con menos anuncios, piezas, hooks o productos** de los que ya había. Borrar de a uno pasa sin más; borrar en bloque o importar datos manda `permitir=1`, que solo activan esas dos acciones. Ver `server/guardia.js`.
+
 La conexión a Postgres admite `DATABASE_URL` o las variables sueltas `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` (también sirven `PGHOST` y compañía). Si están las dos, manda la URL.
 
 Al arrancar con un Postgres **vacío**, el servidor copia todo lo que haya en el SQLite de `DB_PATH` (o `SQLITE_IMPORT_PATH`): guiones, banco, imágenes (que suben a S3 si está configurado) y el secreto de sesión, así nadie tiene que volver a entrar. Es una sola transacción y nunca corre si la base ya tiene datos.
