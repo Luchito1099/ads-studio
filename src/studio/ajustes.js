@@ -1,3 +1,4 @@
+import { olvidarCompetencia } from "./competencia.js";
 import { PREP_CACHE } from "./datos.js";
 import { copyText } from "./guion.js";
 import { thumbOf } from "./medios.js";
@@ -23,8 +24,22 @@ function bloqueAlmacen(e){
         <b>Ojo:</b> esta base se creó en el arranque de ahora (${esc(fecha)}), no antes. Es la señal de que el servidor
         no tiene disco persistente: cada vez que se actualiza la app, todo lo guardado vuelve a cero.
         En Coolify agrega un volumen que apunte a <code>/data</code>, o una base Postgres con <code>DATABASE_URL</code>.
-        Mientras tanto, usa <b>Exportar datos</b> antes de cada actualización.</p>`
+        Mientras tanto, baja el <b>respaldo completo</b> de aquí abajo antes de cada actualización.</p>`
       :`<p class="hint" style="margin:6px 0 0">Base creada el ${esc(fecha)} · ${e.arranques} arranques del servidor: tus datos sobreviven a las actualizaciones.</p>`}
+  </div>`;
+}
+/* El respaldo que de verdad sirve: el JSON de "Exportar datos" se lleva los
+ * textos y las miniaturas, pero los videos originales se quedan en el servidor.
+ * Este .zip se los lleva también, y se puede devolver con un solo comando. */
+function bloqueRespaldo(r){
+  const peso=r&&r.bytes?(r.bytes>=1048576?(r.bytes/1048576).toFixed(0)+' MB':Math.max(1,Math.round(r.bytes/1024))+' KB'):null;
+  return `<div class="panel" style="padding:12px 14px">
+    <div class="section-t">Respaldo completo</div>
+    ${r?`<p class="hint" style="margin:6px 0 8px"><b class="mono">${r.anuncios}</b> anuncio${r.anuncios===1?'':'s'} · <b class="mono">${r.medios}</b> archivo${r.medios===1?'':'s'}${peso?` · <b class="mono">${peso}</b>`:''}. Todo eso entra en un solo .zip, videos incluidos.</p>`
+      :`<p class="hint" style="margin:6px 0 8px">Baja en un solo .zip todo lo guardado, con los videos y las imágenes adentro.</p>`}
+    <a class="btn" id="strespaldo" href="/api/respaldo" download>${ic('down','sm')}Descargar respaldo completo</a>
+    <p class="hint" style="margin:8px 0 0">Tarda lo que pesen los videos. Para devolverlo, desde la carpeta del proyecto:
+      <code>node scripts/restaurar.mjs respaldo.zip</code></p>
   </div>`;
 }
 /* Clave del canal de Claude: se puede generar desde aqui cuando no hay forma
@@ -58,11 +73,13 @@ function bloqueCelular(){
   </div>`;
 }
 export async function openSettings(){
-  let estado=null,clave=null;
+  let estado=null,clave=null,respaldo=null;
   try{ const r=await fetch('/api/estado',{credentials:'same-origin'}); if(r.ok)estado=await r.json(); }catch(e){}
   try{ const r=await fetch('/api/sync/clave',{credentials:'same-origin'}); if(r.ok)clave=await r.json(); }catch(e){}
+  try{ const r=await fetch('/api/respaldo/resumen',{credentials:'same-origin'}); if(r.ok)respaldo=await r.json(); }catch(e){}
   formModal('Ajustes',`
     ${bloqueAlmacen(estado)}
+    ${bloqueRespaldo(respaldo)}
     ${bloqueClave(clave)}
     ${bloqueCelular()}
     <div class="grid3">
@@ -83,7 +100,7 @@ export async function openSettings(){
       const r=await fetch('/api/sync/clave',{method:'POST',credentials:'same-origin'});
       const d=await r.json();
       if(!r.ok)throw new Error(d.error||'No se pudo generar');
-      COMP=null; modal.remove(); openSettings(); toast('Clave generada: pégala en tu archivo .env');
+      olvidarCompetencia(); modal.remove(); openSettings(); toast('Clave generada: pégala en tu archivo .env');
     }catch(e){ gen.disabled=false; toast(e.message); }
   };
   const inst=modal?.querySelector('#stinstalar');
@@ -99,7 +116,7 @@ export async function exportData(){
   for(const id of ids){const t=await thumbOf(id);if(t)data.thumbs[id]=t;}
   const blob=new Blob([JSON.stringify(data)],{type:'application/json'});const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);a.download='studio-de-ads-'+new Date().toISOString().slice(0,10)+'.json';a.click();
-  toast('Datos exportados (sin los videos originales)');
+  toast('Datos exportados. Para llevarte también los videos, usa el respaldo completo de Ajustes');
 }
 $('#importpick').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;

@@ -15,6 +15,8 @@ import { formModal, render, setTop } from "./vista.js";
  * (sus ganadores) y qué ángulos, formatos y ofertas repiten.
  */
 let COMP=null, compCargando=false;
+/** Olvida la última revisión que quedó en memoria: la próxima vista la vuelve a pedir. */
+export function olvidarCompetencia(){ COMP=null; }
 const compLista=()=>{ if(!S.competidores)S.competidores=[]; return S.competidores; };
 const compId=c=>c.id||(c.nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'sin-nombre';
 export const dias=f=>{const t=Date.parse((f||'')+'T00:00:00');return isNaN(t)?null:Math.max(0,Math.floor((Date.now()-t)/86400000));};

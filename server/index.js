@@ -12,6 +12,7 @@ import { mediaRouter, almacenArchivos } from "./media.js";
 import { swipeRouter } from "./swipe.js";
 import { competenciaRouter } from "./competencia.js";
 import { crearGuardia } from "./guardia.js";
+import { respaldoRouter } from "./respaldo.js";
 import {
   COOKIE_NAME,
   setSessionSecret,
@@ -96,6 +97,7 @@ app.get("/api/estado", requireAuth, wrap(async (_req, res) => {
     creado,
     nueva: baseNueva,
     respaldos: (await guardia.respaldos()).length,
+    medios: await kv.blobStats(),
     arranques: Number(await kv.metaGet("arranques")) || 1,
     arranque: ARRANQUE,
   });
@@ -209,6 +211,9 @@ app.use("/api", swipeRouter({ kv, almacen, requireAuth, wrap }));
 /* ---------------- sincronización con Meta (vía Claude) ---------------- */
 app.use("/api/sync", syncRouter({ kv, requireAuth, wrap }));
 app.use("/api/competencia", competenciaRouter({ kv, requireAuth, wrap }));
+
+/* ---------------- respaldo completo (con los videos) ---------------- */
+app.use("/api/respaldo", respaldoRouter({ kv, almacen, requireAuth, wrap }));
 
 // Respaldo manual: descarga todo el contenido de la base en un JSON.
 // Las imágenes que están en S3 aparecen como puntero `s3:…`; el archivo

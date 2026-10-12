@@ -41,6 +41,21 @@ export function almacenArchivos({ kv, blobs }) {
       res.type(row.mime).send(Buffer.from(row.data));
       return true;
     },
+    /** Los bytes en la mano, para el respaldo. Devuelve null si no está. */
+    async leer(id) {
+      if (blobs) {
+        try {
+          const obj = await blobs.get(objectKey(id));
+          const partes = [];
+          for await (const t of obj.Body) partes.push(t);
+          return { mime: obj.ContentType || "application/octet-stream", data: Buffer.concat(partes) };
+        } catch (err) {
+          if (err.name !== "NoSuchKey") console.warn(`[nova] S3 falló al leer ${id} (${err.name || "error"}): se busca en la base`);
+        }
+      }
+      const row = await kv.blobGet(id);
+      return row ? { mime: row.mime, data: Buffer.from(row.data) } : null;
+    },
     async borrar(id) {
       if (blobs) await blobs.delete(objectKey(id)).catch(() => {});
       await kv.blobDel(id);

@@ -56,6 +56,7 @@ export async function openSqlite(file) {
     metaSet: db.prepare("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)"),
     blobGet: db.prepare("SELECT mime, data FROM blob WHERE id = ?"),
     blobIds: db.prepare("SELECT id FROM blob"),
+    blobStats: db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(LENGTH(data)), 0) AS bytes FROM blob"),
     blobSet: db.prepare("INSERT OR REPLACE INTO blob (id, mime, data, created_at) VALUES (?, ?, ?, ?)"),
     blobDel: db.prepare("DELETE FROM blob WHERE id = ?"),
   };
@@ -72,6 +73,7 @@ export async function openSqlite(file) {
     metaSet: async (key, value) => void stmts.metaSet.run(key, value),
     blobGet: async (id) => stmts.blobGet.get(id) ?? null,
     blobIds: async () => stmts.blobIds.all().map((r) => r.id),
+    blobStats: async () => { const r = stmts.blobStats.get(); return { n: r.n, bytes: Number(r.bytes) }; },
     blobSet: async (id, mime, data) => void stmts.blobSet.run(id, mime, data, new Date().toISOString()),
     blobDel: async (id) => void stmts.blobDel.run(id),
     close: async () => db.close(),
@@ -165,6 +167,10 @@ export async function openPostgres(cfg) {
       )),
     blobGet: async (id) => (await pool.query("SELECT mime, data FROM blob WHERE id = $1", [id])).rows[0] ?? null,
     blobIds: async () => (await pool.query("SELECT id FROM blob")).rows.map((r) => r.id),
+    blobStats: async () => {
+      const r = (await pool.query("SELECT COUNT(*)::int AS n, COALESCE(SUM(octet_length(data)), 0)::bigint AS bytes FROM blob")).rows[0];
+      return { n: r.n, bytes: Number(r.bytes) };
+    },
     blobSet: async (id, mime, data) =>
       void (await pool.query(
         "INSERT INTO blob (id, mime, data) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data",

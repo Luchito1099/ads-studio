@@ -77,6 +77,8 @@ La clave del canal de Claude (`SYNC_TOKEN`) se puede generar desde **Ajustes →
 
 En **Ajustes** se ve dónde viven los datos (SQLite o Postgres, imágenes en la base o en S3) y desde cuándo existe la base. Si arranca vacía, la app avisa: es la señal de que el servidor no tiene disco persistente y cada despliegue empieza de cero. Se arregla montando un volumen en `/data` o usando `DATABASE_URL`.
 
+**Respaldo completo**: en **Ajustes → Respaldo completo** se baja un `.zip` con todo: `estado.json` (la base entera), `medios/` con cada video e imagen tal cual, un manifiesto con las cuentas y un LEEME. Se arma al vuelo, así que no importa cuánto pese la biblioteca. Para devolverlo, con el entorno apuntando a la base de destino: `node scripts/restaurar.mjs respaldo.zip` (`--solo-ver` muestra qué haría, `--forzar` no pregunta). Nunca borra: escribe lo que trae el archivo.
+
 El estado del Studio (la Biblioteca entera, piezas y hooks) vive en una sola clave que se reescribe completa en cada guardado, así que el servidor la protege: antes de pisarla guarda una copia (`studio:respaldo:*`, se conservan las últimas 20) y **rechaza con 409 cualquier guardado que venga con menos anuncios, piezas, hooks o productos** de los que ya había. Borrar de a uno pasa sin más; borrar en bloque o importar datos manda `permitir=1`, que solo activan esas dos acciones. Ver `server/guardia.js`.
 
 La conexión a Postgres admite `DATABASE_URL` o las variables sueltas `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` (también sirven `PGHOST` y compañía). Si están las dos, manda la URL.
@@ -133,6 +135,7 @@ Requisitos: `SYNC_TOKEN` en el servidor y, donde corre Claude, `NOVA_URL` + `SYN
 | `GET` | `/api/swipe/ping`, `/api/swipe/products` | Para la extensión (clave) |
 | `PUT` / `POST` | `/api/swipe/media/{id}`, `/api/swipe/items` | Envíos de la extensión (clave) |
 | `GET` | `/api/export` | Descarga toda la base en JSON (las imágenes en S3 salen como puntero) |
+| `GET` | `/api/respaldo`, `/api/respaldo/resumen` | Respaldo completo en `.zip` (videos incluidos) y sus cuentas |
 
 Todo bajo `/api/kv`, `/api/img` y `/api/sync` exige la cookie, salvo `/api/sync/agent*`, que exige `Authorization: Bearer $SYNC_TOKEN`. El login compara en tiempo constante y corta a los 10 intentos fallidos por IP en 15 minutos.
 
@@ -176,7 +179,7 @@ Ver [.env.example](.env.example).
 5. Puerto expuesto: `3000`. Asigna el dominio y activa HTTPS.
 6. Deploy. En los logs verás qué base y qué almacenamiento de imágenes quedaron activos, y si se importó el SQLite.
 
-Para respaldar: `pg_dump` (o los backups de Coolify / RDS) para la base y el versionado del bucket para las imágenes. `/api/export` sigue disponible como respaldo rápido de los datos.
+Para respaldar: `pg_dump` (o los backups de Coolify / RDS) para la base y el versionado del bucket para las imágenes. Sin tocar el servidor, **Ajustes → Respaldo completo** baja todo en un `.zip` (videos incluidos) y `node scripts/restaurar.mjs` lo devuelve; `/api/export` sigue sirviendo como volcado rápido en JSON.
 
 ## Desarrollo local
 
