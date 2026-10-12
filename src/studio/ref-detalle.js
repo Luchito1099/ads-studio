@@ -287,7 +287,7 @@ export function renderRefModal(){
         <div class="rbar"><b>Clasificación</b><span class="hint" style="margin-left:auto">Así lo encuentras en filtros y en el análisis 80/20</span></div>
         <div class="field"><span class="lbl">Etapa del embudo</span><div class="chips">${STAGES.map(s=>`<button class="chipb ${r.stage===s?'on '+s:''}" data-stage="${s}">${s} · ${s==='TOFU'?'Descubrimiento':s==='MOFU'?'Consideración':'Decisión'}</button>`).join('')}</div>
           ${sug.stage?`<button class="sugb" data-sugstage="${sug.stage}">${ic('spark','sm')}Sugerido: ${sug.stage}</button>`:''}</div>
-        <div class="field"><span class="lbl">Formato</span><div class="chips">${FORMATS.map(f=>`<button class="chipb ${r.format===f[0]?'on dark':''}" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div></div>
+        <div class="field"><span class="lbl">Tipo de archivo</span><div class="chips">${FORMATS.map(f=>`<button class="chipb ${r.format===f[0]?'on dark':''}" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div></div>
         <div class="grid2">
           <div class="field"><label for="dc">Formato creativo</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
           <div class="field"><label for="dco">Colección</label><select id="dco" data-rf="collection"><option value="">Sin colección</option>${libCollections().map(c=>`<option ${c===r.collection?'selected':''}>${esc(c)}</option>`).join('')}<option value="__nueva">+ Nueva colección…</option></select></div>

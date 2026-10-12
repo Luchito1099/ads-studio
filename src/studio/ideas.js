@@ -168,7 +168,7 @@ function ideaForm(i=null){
     <div class="field"><label for="id2">Qué se ve y por qué funcionaría</label><textarea id="id2">${esc(d.descripcion)}</textarea></div>
     <div class="field"><label for="ih">Hook (opcional)</label><input id="ih" value="${esc(d.hook)}" placeholder="La primera frase o texto en pantalla"></div>
     <div class="grid3">
-      <div class="field"><label for="if">Formato</label><select id="if"><option value="">—</option>${FORMATS.map(x=>`<option value="${x[0]}" ${x[0]===d.formato?'selected':''}>${x[1]}</option>`).join('')}</select></div>
+      <div class="field"><label for="if">Tipo de archivo</label><select id="if"><option value="">—</option>${FORMATS.map(x=>`<option value="${x[0]}" ${x[0]===d.formato?'selected':''}>${x[1]}</option>`).join('')}</select></div>
       <div class="field"><label for="ia2">Ángulo</label><select id="ia2">${opt(mine(S.angles),d.angleId)}</select></div>
       <div class="field"><label for="ic2">Formato creativo</label><select id="ic2">${opt(S.concepts,d.conceptId)}</select></div>
     </div>

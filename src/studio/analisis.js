@@ -38,7 +38,7 @@ export function vAnalisis(){
   const recortar=items.filter(G=>G.accion==='Recortar'); const escalar=items.filter(G=>G.accion==='Escalar'||G.accion==='Darle más presupuesto');
   const recG=recortar.reduce((s,G)=>s+G.g,0)/U.dias;
   const cpaT=tot.r?tot.g/tot.r:null, cpaP=prev.r?prev.g/prev.r:null;
-  const dimLabels=[['anuncio','Anuncio'],['creativo','Creativo (mismo nombre)'],['campana','Campaña'],['conjunto','Conjunto'],['formato','Formato'],['angulo','Ángulo'],['concepto','Concepto'],['etapa','Etapa']];
+  const dimLabels=[['anuncio','Anuncio'],['creativo','Creativo (mismo nombre)'],['campana','Campaña'],['conjunto','Conjunto'],['formato','Tipo de archivo'],['angulo','Ángulo'],['concepto','Formato'],['etapa','Etapa']];
   const unlinked=['angulo','concepto','etapa'].includes(U.dim)?items.find(G=>G.k==='_'):null;
   setTop('Análisis 80/20',`${prod().name} · ${MotorFatiga.aFecha(desde)} a ${MotorFatiga.aFecha(hasta)} · objetivo CPA ${mm(tope)}`,`<button class="btn ghost" id="aimp">Actualizar datos</button>`);
   const top=items.slice(0,24), restV=items.slice(24).reduce((s,G)=>s+G[key],0);

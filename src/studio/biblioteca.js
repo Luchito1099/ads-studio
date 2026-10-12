@@ -79,7 +79,7 @@ export function vRefs(){
        </span>
      </div>
      <div class="lfilters">
-       <label class="visually-hidden" for="lff">Formato</label><select id="lff" class="fsel" data-sel="formato"><option value="">Formato</option>${FORMATS.map(x=>`<option value="${x[0]}" ${f.formato===x[0]?'selected':''}>${x[1]}</option>`).join('')}<option value="link" ${f.formato==='link'?'selected':''}>Solo enlace</option></select>
+       <label class="visually-hidden" for="lff">Tipo de archivo</label><select id="lff" class="fsel" data-sel="formato"><option value="">Tipo</option>${FORMATS.map(x=>`<option value="${x[0]}" ${f.formato===x[0]?'selected':''}>${x[1]}</option>`).join('')}<option value="link" ${f.formato==='link'?'selected':''}>Solo enlace</option></select>
        <label class="visually-hidden" for="lfe">Etapa</label><select id="lfe" class="fsel" data-sel="etapa">${stageOpt(f.etapa,'Etapa')}</select>
        <label class="visually-hidden" for="lfc">Formato creativo</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Formato')}</select>
        <label class="visually-hidden" for="lfa">Ángulo</label><select id="lfa" class="fsel" data-sel="angulo">${opt(f.scope==='todos'?S.angles:mine(S.angles),f.angulo,'Ángulo')}</select>
@@ -160,7 +160,7 @@ function libCard(r){
     </div></div>`;
 }
 function libTable(list){
-  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Formato</th><th>Etapa</th><th>Formato</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
+  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Tipo</th><th>Etapa</th><th>Formato</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
   ${list.map(r=>`<tr class="lrow" data-id="${r.id}" tabindex="0" style="cursor:pointer">
     <td style="width:52px"><div style="width:40px;height:52px">${r.mediaId?thumbHTML(r.mediaId):`<div class="thumb" style="height:52px;background:#f1f5f9">${srcIcon(r.source)}</div>`}</div></td>
     <td><b>${esc(r.brand||'Sin marca')}</b>${r.notes?`<div class="muted" style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.notes)}</div>`:''}</td>

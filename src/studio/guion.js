@@ -87,7 +87,7 @@ export function renderModal(){
   if(tab==='guion'){
     content=`<div style="padding:18px;display:flex;flex-direction:column;gap:14px">
       <div class="grid3">
-        <div class="field"><label for="mfo">Formato</label><select id="mfo">${FORMATS.map(f=>`<option value="${f[0]}" ${f[0]===p.format?'selected':''}>${f[1]}</option>`).join('')}</select></div>
+        <div class="field"><label for="mfo">Tipo de archivo</label><select id="mfo">${FORMATS.map(f=>`<option value="${f[0]}" ${f[0]===p.format?'selected':''}>${f[1]}</option>`).join('')}</select></div>
         <div class="field"><label for="man">Ángulo de venta</label><select id="man">${opt(mine(S.angles),p.angleId,'Elegir ángulo')}</select></div>
         <div class="field"><label for="mse">Etapa</label><select id="mse">${stageOpt(p.stage)}</select></div>
       </div>
