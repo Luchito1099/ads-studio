@@ -1,6 +1,6 @@
 import { logout } from "../storage.js";
 import { exportData, openSettings } from "./ajustes.js";
-import { $, PID, S, UI, emptyLanes, esc, ic, mine, save, toast, uid } from "./nucleo.js";
+import { $, PID, S, TODOS, UI, emptyLanes, esc, esTodos, ic, mine, normTxt, prod, save, toast, uid } from "./nucleo.js";
 import { abrirNav, render } from "./vista.js";
 
 /** El menú lateral: la marca, el producto y las tres familias de pantallas. */
@@ -32,7 +32,7 @@ export function counts() {
     embudo: mine(S.pieces).filter(p => p.stage).length,
     pipeline: mine(S.pieces).length,
     hooks: mine(S.hooks).length,
-    referencias: mine(S.refs).length,
+    referencias: mine(S.refs).filter(r => !r.stage || !r.conceptId).length,
     testing: meta || '',
     ganadores: mine(S.pieces).filter(p => p.status === 'resultado').length || '',
     metricas: '',
@@ -64,10 +64,16 @@ export function renderSide() {
      <button class="marop" id="bmarcanew"><span class="mk vacio">${ic('plus','sm')}</span><span>Nueva marca</span></button>
    </div>` : ''}
 
-   <div class="prodlist">
-     ${S.products.map(p => `<button class="prod ${p.id === PID() ? 'on' : ''}" data-prod="${p.id}">
-        <span class="pth"></span><span class="pnm">${esc(p.name)}</span><span class="pn">${nRefs(p)}</span></button>`).join('')}
-     <button class="prod nuevo" id="bprodnew"><span class="pth vacio">${ic('plus','sm')}</span><span class="pnm">Agregar producto</span></button>
+   <div class="prodwrap">
+     <button class="prodbtn ${esTodos() ? '' : 'on'}" id="bprod" aria-expanded="${!!UI.prodOpen}">
+       ${ic('box','sm')}<span>${esc(prod().name)}</span>${ic('chev','sm')}</button>
+     ${UI.prodOpen ? `<div class="proddrop">
+       ${S.products.length > 5 ? `<label class="prodbuscar">${ic('search','sm')}<input id="bprodq" placeholder="Buscar producto" value="${esc(UI.prodQ || '')}"></label>` : ''}
+       <button class="prod ${esTodos() ? 'on' : ''}" data-prod="${TODOS}"><span class="pth vacio"></span><span class="pnm">Todos los productos</span><span class="pn">${S.refs.length}</span></button>
+       ${S.products.filter(p => !UI.prodQ || normTxt(p.name).includes(normTxt(UI.prodQ))).map(p => `<button class="prod ${p.id === PID() ? 'on' : ''}" data-prod="${p.id}">
+          <span class="pth"></span><span class="pnm">${esc(p.name)}</span><span class="pn">${nRefs(p)}</span></button>`).join('')}
+       <button class="prod nuevo" id="bprodnew"><span class="pth vacio">${ic('plus','sm')}</span><span class="pnm">Agregar producto</span></button>
+     </div>` : ''}
    </div>
 
    <div class="sdiv"></div>
@@ -96,8 +102,10 @@ export function renderSide() {
     UI.marcaOpen = false; renderSide();
     toast('Por ahora el Studio trabaja con una marca y varios productos. Dime cuándo quieres la segunda y la agrego.');
   };
-  document.querySelectorAll('[data-prod]').forEach(b => b.onclick = () => { S.productId = b.dataset.prod; UI.selRef = null; save(); render(); });
-  $('#bprodnew').onclick = () => {
+  $('#bprod').onclick = () => { UI.prodOpen = !UI.prodOpen; renderSide(); };
+  document.querySelectorAll('[data-prod]').forEach(b => b.onclick = () => { S.productId = b.dataset.prod; UI.selRef = null; UI.prodOpen = false; save(); render(); });
+  if ($('#bprodq')) { const q = $('#bprodq'); q.oninput = () => { UI.prodQ = q.value; renderSide(); $('#bprodq').focus(); }; }
+  if ($('#bprodnew')) $('#bprodnew').onclick = () => {
     const n = prompt('Nombre del producto');
     if (!n || !n.trim()) return;
     const code = n.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 12) || 'PROD';

@@ -1,5 +1,5 @@
 import { hydrateThumbs, ingest, openViewer, pick, thumbHTML } from "./medios.js";
-import { $, FORMATS, PID, S, STATUS, UI, byId, cpa, esc, ic, mine, money, opt, prod, result, save, stageOpt, toast, tope, uid } from "./nucleo.js";
+import { $, byId, cpa, esc, FORMATS, ic, mine, money, opt, PID, pidReal, prod, result, S, save, stageOpt, STATUS, toast, tope, UI, uid } from "./nucleo.js";
 import { render } from "./vista.js";
 
 /** El editor de guion y copy de una pieza. */
@@ -223,7 +223,7 @@ export function renderModal(){
     ov.querySelectorAll('[data-cover]').forEach(b=>b.onclick=()=>{p.mediaIds=[b.dataset.cover,...p.mediaIds.filter(x=>x!==b.dataset.cover)];save();renderModal();});
     txt('#mcp',v=>p.copy.principal=v);txt('#mct',v=>p.copy.titulo=v);txt('#mwa',v=>p.copy.mensaje=v);chg('#mcc',v=>p.copy.cta=v);
     ov.querySelectorAll('[data-savehook]').forEach(b=>b.onclick=()=>{const t=p.copy.alternativos[+b.dataset.savehook];
-      S.hooks.push({id:uid('h'),productId:PID(),text:t,type:hasVoice(p.format)?'Hablado':'Texto en pantalla',conceptId:p.conceptId,angleId:p.angleId,stage:p.stage,origin:'Claude'});
+      S.hooks.push({id:uid('h'),productId:pidReal(),text:t,type:hasVoice(p.format)?'Hablado':'Texto en pantalla',conceptId:p.conceptId,angleId:p.angleId,stage:p.stage,origin:'Claude'});
       p.copy.alternativos.splice(+b.dataset.savehook,1);save();renderModal();toast('Hook guardado');});
   }else{
     txt('#mti',v=>p.title=v);txt('#mcode',v=>p.adName=v);chg('#mst',v=>p.status=v);

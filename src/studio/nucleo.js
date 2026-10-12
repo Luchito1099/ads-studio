@@ -42,6 +42,8 @@ const IC={
  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
  check:'<path d="M5 12l5 5L20 7"/>',
  down:'<path d="M12 4v12M6 10l6 6 6-6M4 20h16"/>',
+ chev:'<path d="M6 9l6 6 6-6"/>',
+ box:'<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/>',
  updown:'<path d="M8 9l4-4 4 4M8 15l4 4 4-4"/>',
  pen:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
  flask:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/>',
@@ -117,9 +119,14 @@ export function avisoGuardado(err){
   if(!previo)document.body.appendChild(el);
   el.querySelector('#savere').onclick=()=>{ toast('Guardando…'); save(); };
 }
+/* El filtro de producto del menú puede estar en "Todos los productos": ahí
+ * `mine` no filtra nada y lo que se crea va al primer producto real. */
+export const TODOS='__todos';
 export const PID=()=>S.productId;
-export const prod=()=>S.products.find(p=>p.id===PID());
-export const mine=arr=>arr.filter(x=>x.productId===PID());
+export const esTodos=()=>S.productId===TODOS;
+export const pidReal=()=>esTodos()?(S.products[0]?.id||''):S.productId;
+export const prod=()=>esTodos()?{id:TODOS,name:'Todos los productos',code:''}:(S.products.find(p=>p.id===PID())||S.products[0]||{id:'',name:'Sin producto',code:''});
+export const mine=arr=>esTodos()?arr.slice():arr.filter(x=>x.productId===PID());
 export const byId=(arr,id)=>arr.find(x=>x.id===id);
 export const tope=()=>S.settings.topeUSD*S.settings.tc;
 export const cpa=p=>p.spend&&p.conf?p.spend/p.conf:null;

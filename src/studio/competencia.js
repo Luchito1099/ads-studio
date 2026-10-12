@@ -2,7 +2,7 @@ import { openSettings } from "./ajustes.js";
 import { traerBandeja } from "./biblioteca.js";
 import { copyText } from "./guion.js";
 import { hydrateThumbs, thumbHTML } from "./medios.js";
-import { $, FORMATS, PID, S, UI, byId, ensureRef, esc, ic, normTxt, opt, save, toast } from "./nucleo.js";
+import { $, byId, ensureRef, esc, FORMATS, ic, normTxt, opt, PID, pidReal, S, save, toast, UI } from "./nucleo.js";
 import { openRef } from "./ref-detalle.js";
 import { formModal, render, setTop } from "./vista.js";
 
@@ -133,7 +133,7 @@ function compCard(c){
 }
 function compForm(c){
   const nuevo=!c;
-  c=c||{id:'',nombre:'',pageIds:[],terminos:'',pais:'PE',productId:PID(),notas:''};
+  c=c||{id:'',nombre:'',pageIds:[],terminos:'',pais:'PE',productId:pidReal(),notas:''};
   formModal(nuevo?'Agregar competidor':'Editar competidor',`
     <div class="field"><label for="cfn">Marca o tienda</label><input id="cfn" value="${esc(c.nombre)}" placeholder="Ej. Ireca Shop"></div>
     <div class="field"><label for="cfp">Página en la Biblioteca de anuncios</label><input id="cfp" value="${esc((c.pageIds||[]).join(', '))}" placeholder="Pega el enlace de su Biblioteca o el ID de la página">

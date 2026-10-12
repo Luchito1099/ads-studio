@@ -1,5 +1,5 @@
 import { thumbHTML } from "./medios.js";
-import { $, HOOK_TYPES, PID, S, STAGES, UI, byId, esc, ic, mine, money, opt, prod, result, save, stageOpt, toast, uid } from "./nucleo.js";
+import { $, byId, esc, HOOK_TYPES, ic, mine, money, opt, PID, pidReal, prod, result, S, save, stageOpt, STAGES, toast, UI, uid } from "./nucleo.js";
 import { formModal, render, setTop } from "./vista.js";
 
 /** Ángulos de venta, formatos y hooks. */
@@ -35,7 +35,7 @@ function angleForm(a=null){
     <div class="field"><label for="fs">Etapa donde mejor funciona</label><select id="fs">${stageOpt(d.stage,'Cualquiera')}</select></div>`,
     ()=>{const v={name:$('#fn').value.trim(),deseo:$('#fd').value.trim(),desc:$('#fx').value.trim(),stage:$('#fs').value};
       if(!v.name){toast('Ponle nombre al ángulo');return false;}
-      if(a)Object.assign(a,v);else S.angles.push({id:uid('a'),productId:PID(),...v});save();render();},
+      if(a)Object.assign(a,v);else S.angles.push({id:uid('a'),productId:pidReal(),...v});save();render();},
     a?()=>{if(!confirm('¿Eliminar este ángulo?'))return false;S.angles=S.angles.filter(x=>x.id!==a.id);S.pieces.forEach(p=>{if(p.angleId===a.id)p.angleId='';});save();render();}:null);
 }
 
@@ -76,6 +76,6 @@ function hookForm(h=null){
     <div class="field"><label for="hc">Formato creativo</label><select id="hc">${opt(S.concepts,d.conceptId)}</select></div>
     <div class="field"><label for="hs">Etapa</label><select id="hs">${stageOpt(d.stage)}</select></div></div>`,
     ()=>{const v={text:$('#ht').value.trim(),type:$('#hy').value,origin:$('#ho').value,angleId:$('#ha').value,conceptId:$('#hc').value,stage:$('#hs').value};
-      if(!v.text){toast('Escribe el hook');return false;} if(h)Object.assign(h,v);else S.hooks.push({id:uid('h'),productId:PID(),...v});save();render();},
+      if(!v.text){toast('Escribe el hook');return false;} if(h)Object.assign(h,v);else S.hooks.push({id:uid('h'),productId:pidReal(),...v});save();render();},
     h?()=>{if(!confirm('¿Eliminar este hook?'))return false;S.hooks=S.hooks.filter(x=>x.id!==h.id);save();render();}:null);
 }

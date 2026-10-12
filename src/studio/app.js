@@ -11,7 +11,7 @@ import { ensureScript } from "./guion.js";
 import { vIdeas } from "./ideas.js";
 import { hydrateThumbs } from "./medios.js";
 import { renderSide } from "./menu.js";
-import { $, PID, S, UI, ensureRef, linkSource, save, seed, setS, thumbCache, toast, uid } from "./nucleo.js";
+import { $, ensureRef, linkSource, PID, pidReal, S, save, seed, setS, thumbCache, toast, UI, uid } from "./nucleo.js";
 import { DB, fatigaPendiente, migrarLegado } from "./persistencia.js";
 import { vPipeline } from "./pipeline.js";
 import { vPronto } from "./pronto.js";
@@ -53,7 +53,7 @@ function pintarVista(){ $('#body').style.overflow=''; renderSide(); const v=UI.v
     const enlace=(texto.match(/https?:[^\s]+/)||[''])[0];
     history.replaceState(null,'','/');
     if(enlace){
-      S.refs.unshift(ensureRef({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(enlace),
+      S.refs.unshift(ensureRef({id:uid('r'),productId:pidReal(),mediaId:null,kind:'link',brand:'',source:linkSource(enlace),
         conceptId:'',angleId:'',stage:'',notes:q.get('title')||'',link:enlace,created:Date.now()}));
       save(); UI.view='referencias'; setTimeout(()=>toast('Enlace guardado desde el celular'),600);
     }

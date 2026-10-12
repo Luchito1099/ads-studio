@@ -1,6 +1,6 @@
 import { counts } from "./menu.js";
 import MotorFatiga from "./motor-fatiga.js";
-import { $, PID, S, byId, esc, mine, prod, save, toast } from "./nucleo.js";
+import { $, byId, esc, mine, PID, pidReal, prod, S, save, toast } from "./nucleo.js";
 import { formModal, render, setTop } from "./vista.js";
 
 /** Datos de Meta: leer el archivo exportado y dejarlo listo para analizar. */
@@ -91,11 +91,11 @@ export function openImport(){
 }
 const SAMPLE_OK=()=>true;
 export const PREP_CACHE=new Map();
-export function dataset(){ const d=S.metaData?.[PID()]; if(!d||!d.diario?.length)return null;
-  const key=PID()+':'+d.importedAt; if(PREP_CACHE.has(key))return PREP_CACHE.get(key);
+export function dataset(){ const d=S.metaData?.[pidReal()]; if(!d||!d.diario?.length)return null;
+  const key=pidReal()+':'+d.importedAt; if(PREP_CACHE.has(key))return PREP_CACHE.get(key);
   const copy={meta:d.meta,anuncios:d.anuncios.map(a=>({...a})),diario:d.diario.map(r=>({...r}))};
   const prep=MotorFatiga.preparar(copy); const out={d,prep}; PREP_CACHE.clear(); PREP_CACHE.set(key,out); return out; }
-const curMoneda=()=>S.metaData?.[PID()]?.meta?.moneda||'USD';
+const curMoneda=()=>S.metaData?.[pidReal()]?.meta?.moneda||'USD';
 export const objetivoMeta=()=>curMoneda()==='USD'?S.settings.topeUSD:S.settings.topeUSD*S.settings.tc;
 export const mm=v=>v==null||!isFinite(v)?'—':(curMoneda()==='USD'?'$'+v.toFixed(2):'S/'+v.toFixed(1));
 export const mmBig=v=>v==null||!isFinite(v)?'—':(curMoneda()==='USD'?'$':'S/')+Math.round(v).toLocaleString('es-PE');

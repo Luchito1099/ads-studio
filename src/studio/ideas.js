@@ -1,5 +1,5 @@
 import { applyTemplate, copyText, openModal, parseAI } from "./guion.js";
-import { $, FORMATS, PID, S, STAGES, UI, byId, esc, ic, mine, normTxt, opt, prod, result, save, stageOpt, toast, uid } from "./nucleo.js";
+import { $, byId, esc, FORMATS, ic, mine, normTxt, opt, PID, pidReal, prod, result, S, save, stageOpt, STAGES, toast, UI, uid } from "./nucleo.js";
 import { newPiece } from "./pipeline.js";
 import { openRef } from "./ref-detalle.js";
 import { formModal, render, setTop } from "./vista.js";
@@ -13,7 +13,7 @@ const IDEA_PRIO=[['alta','Alta','lose'],['media','Media','warn'],['baja','Baja',
 const ideaEstado=k=>IDEA_ESTADOS.find(e=>e[0]===k)||IDEA_ESTADOS[0];
 const ideaPrio=k=>IDEA_PRIO.find(e=>e[0]===k)||IDEA_PRIO[1];
 export function newIdea(o={}){
-  const i={id:uid('i'),productId:PID(),titulo:'',descripcion:'',hook:'',formato:'',angleId:'',conceptId:'',stage:'',origen:'Propio',prioridad:'media',estado:'nueva',refId:'',pieceId:'',created:Date.now(),...o};
+  const i={id:uid('i'),productId:pidReal(),titulo:'',descripcion:'',hook:'',formato:'',angleId:'',conceptId:'',stage:'',origen:'Propio',prioridad:'media',estado:'nueva',refId:'',pieceId:'',created:Date.now(),...o};
   S.ideas.unshift(i); save(); return i;
 }
 function ideaToPiece(i){

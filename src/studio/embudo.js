@@ -1,7 +1,7 @@
 import { openExtension } from "./biblioteca.js";
 import { openModal } from "./guion.js";
 import { hydrateThumbs, thumbHTML } from "./medios.js";
-import { $, PID, S, STAGES, UI, byId, esc, ic, mine, normTxt, prod, save, toast } from "./nucleo.js";
+import { $, byId, esc, esTodos, ic, mine, normTxt, PID, pidReal, prod, S, save, STAGES, toast, UI } from "./nucleo.js";
 import { newPiece } from "./pipeline.js";
 import { openRef } from "./ref-detalle.js";
 import { formModal, render, setTop } from "./vista.js";
@@ -17,6 +17,27 @@ import { formModal, render, setTop } from "./vista.js";
  * Tres vistas, como en el diseño: Formatos (el lienzo), Colmena (qué está
  * probado) y Grilla (todo junto para buscar).
  */
+
+/* Lo que el diseño dice de cada formato. Es solo el texto que se muestra
+ * cuando el formato todavía no tiene el suyo: no se escribe en los datos. */
+const CATALOGO = {
+  'ugc': ['Persona común le habla al celular como si le contara a una amiga.', 'No parece anuncio: parece recomendación, y por eso la gente lo cree y se queda.'],
+  'pov': ['Grabado en primera persona, como si lo vieras tú.', 'Pone al espectador dentro de la escena: se siente como el video de un amigo.'],
+  'voz en off': ['Tomas del producto en uso con una voz que narra.', 'Las tomas muestran y la voz explica: es el formato más fácil de producir y escalar.'],
+  'transformacional': ['Antes y después: el resultado visible en segundos.', 'El cerebro no resiste un antes y después. Muestra el resultado antes de explicar nada.'],
+  'comercial': ['Pieza producida con luz, edición y estética de marca.', 'Da estatus a la marca; funciona cuando ya te conocen.'],
+  'celebridad': ['Una figura conocida presenta o usa el producto.', 'Pide prestada la confianza que esa persona ya tiene.'],
+  'dialogo': ['Dos personas conversando, una le recomienda a la otra.', 'La recomendación entre dos se escucha sin defensas.'],
+  'variado': ['Mezcla de tomas, estilos y voces en un mismo video.', 'Sirve para encontrar qué estilo engancha antes de apostar por uno.'],
+  'venta': ['Imagen de venta directa: precio, promo o pack.', 'Directo al grano para quien ya conoce el producto: precio, oferta y botón.'],
+  'educativo': ['Le enseñas algo útil sobre el problema, paso a paso.', 'Primero ayudas, después vendes: así te ganas la atención.'],
+  'comparativo': ['Pone el producto al lado de la alternativa y muestra la diferencia.', 'La diferencia se ve, no se promete.'],
+  'demostracion': ['Cómo se pone, cómo ajusta y cómo se siente.', 'Responde la duda de si de verdad funciona.'],
+  'unboxing': ['Qué llega en la caja y cómo se ve en mano.', 'Quita el miedo a comprar por internet: ya sabes qué te llega.'],
+  'testimonio': ['Cliente real cuenta su resultado a cámara.', 'Un cliente vale más que cualquier promesa de la marca.'],
+  'reseñas': ['Capturas y fotos reales de clientes.', 'Ver que otros ya compraron y les llegó quita el miedo.'],
+};
+const textoDe = (c, i) => (i ? c.why : c.desc) || CATALOGO[normTxt(c.name).split(' / ')[0].split('/')[0].trim()]?.[i] || '';
 
 const META = {
   TOFU: { nombre: 'Top Of The Funnel', sub: 'Atraer público nuevo', color: 'var(--tofu)', tinte: 'var(--tofu-bg)', linea: 'var(--tofu-line)' },
@@ -34,10 +55,10 @@ const CAMPOS = [
   ['angulos', 'Ángulos', 'uno por línea', 4, 'Trabajo de pie\nFútbol sin miedo'],
 ];
 
-const est = () => UI.emb || (UI.emb = { vista: 'formatos', modo: 'referentes', tam: 'refs', zoom: 1, px: 0, py: 0, foco: null, q: '', getapa: 'Todas', gorigen: 'Todos' });
+const est = () => UI.emb || (UI.emb = { vista: 'formatos', carril: 'ads', modo: 'referentes', tam: 'refs', zoom: 1, px: 0, py: 0, foco: null, q: '', getapa: 'Todas', gorigen: 'Todos' });
 
 /* ---------- de los datos reales al embudo ---------- */
-const refsDe = (c) => S.refs.filter(r => r.productId === PID() && r.conceptId === c.id);
+const refsDe = (c) => mine(S.refs).filter(r => r.conceptId === c.id);
 const piezasDe = (c) => mine(S.pieces).filter(p => p.conceptId === c.id);
 const hooksDe = (c) => mine(S.hooks).filter(h => h.conceptId === c.id);
 /** La etapa de un formato: la fijada a mano o la que más repiten sus anuncios. */
@@ -55,7 +76,7 @@ function grupoDe(c) {
   const est = rs.filter(r => r.kind === 'image' || r.format === 'imagen' || r.format === 'carrusel').length;
   return est > rs.length / 2 && rs.length ? 'Estáticos' : 'Video';
 }
-const cuotas = () => (S.cuotas || (S.cuotas = {}))[PID()] || (S.cuotas[PID()] = { ...CUOTA_DEF });
+const cuotas = () => (S.cuotas || (S.cuotas = {}))[pidReal()] || (S.cuotas[pidReal()] = { ...CUOTA_DEF });
 const estrategia = () => (S.estrategia || (S.estrategia = {}))[S.marca || 'NOVA'] || {};
 const angulosEstrategia = () => (estrategia().angulos || '').split('\n').map(s => s.trim()).filter(Boolean);
 /** Lanzadas esta semana: lo que ya salió a Meta en los últimos 7 días. */
@@ -66,22 +87,26 @@ function hechasSemana(stage) {
 
 export function vEmbudo() {
   const f = est();
-  const C = S.concepts.map(c => ({ c, stage: etapaDe(c), grupo: grupoDe(c), refs: refsDe(c).length, piezas: piezasDe(c).length }));
+  const C = S.concepts.filter(c => (c.lane || 'ads') === f.carril).map(c => ({ c, stage: etapaDe(c), grupo: grupoDe(c), refs: refsDe(c).length, piezas: piezasDe(c).length }));
   const total = C.reduce((a, x) => a + (f.modo === 'creados' ? x.piezas : x.refs), 0);
   const cuenta = f.vista === 'formatos' ? `${C.filter(x => x.stage).length} formatos · ${total} ${f.modo === 'creados' ? 'piezas' : 'referencias'}`
     : f.vista === 'colmena' ? `${C.length} formatos · ${C.filter(x => x.piezas).length} con piezas`
     : `${total} elementos`;
   setTop('Embudo creativo', `${esc(S.marca || 'NOVA')} / ${esc(prod().name)} / Embudo`,
-    `<div class="segtabs" role="tablist" aria-label="Vista">
-       ${[['formatos', 'funnel', 'Formatos'], ['colmena', 'grid', 'Colmena'], ['grilla', 'ref', 'Grilla']].map(([k, i, l]) =>
-         `<button class="${f.vista === k ? 'on' : ''}" data-ev="${k}" role="tab" aria-selected="${f.vista === k}">${ic(i, 'sm')}${l}</button>`).join('')}
-     </div>
-     <span class="muted" style="font-size:11.5px">${cuenta}</span>
+    `<span class="prodchip ${esTodos() ? '' : 'on'}">${ic('box','sm')}${esc(prod().name)}</span>
      <button class="btn" id="enew">${ic('plus','sm')}Nueva pieza</button>`);
 
   if (f.vista === 'formatos') lienzo(C);
   else if (f.vista === 'colmena') colmena(C);
   else grilla(C);
+  // la barra de vistas va dentro de la página, debajo del título
+  $('#body').insertAdjacentHTML('afterbegin', `<div class="evistas">
+     <div class="segtabs" role="tablist" aria-label="Vista">
+       ${[['formatos', 'funnel', 'Formatos'], ['colmena', 'grid', 'Colmena'], ['grilla', 'ref', 'Grilla']].map(([k, i, l]) =>
+         `<button class="${f.vista === k ? 'on' : ''}" data-ev="${k}" role="tab" aria-selected="${f.vista === k}">${ic(i, 'sm')}${l}</button>`).join('')}
+     </div>
+     <span class="muted" style="font-size:11.5px">${cuenta}</span>
+   </div>`);
 
   document.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { f.vista = b.dataset.ev; render(); });
   $('#enew').onclick = () => { const p = newPiece({}); openModal(p.id); };
@@ -99,6 +124,9 @@ function lienzo(C) {
       <div style="display:flex;align-items:center">
         <div style="min-width:0"><div class="eyebrow">Embudo</div><b>${esc(S.marca || 'NOVA')}</b><div class="hint">${esc(prod().name)}</div></div>
         <button class="iconbtn" id="ecuotas" title="Cuotas semanales" aria-label="Cuotas semanales">${ic('concept','sm')}</button>
+      </div>
+      <div class="seg2" role="group" aria-label="Tipo">
+        ${[['ads', 'Anuncios'], ['org', 'Orgánico']].map(([k, l]) => `<button class="${f.carril === k ? 'on' : ''}" data-ecarril="${k}">${l}</button>`).join('')}
       </div>
       <div class="seg2" role="group" aria-label="Qué se cuenta">
         ${[['referentes', 'Referentes'], ['creados', 'Creados']].map(([k, l]) => `<button class="${f.modo === k ? 'on' : ''}" data-emodo="${k}">${l}</button>`).join('')}
@@ -161,6 +189,7 @@ function lienzo(C) {
   hydrateThumbs();
   // panel
   document.querySelectorAll('[data-emodo]').forEach(b => b.onclick = () => { f.modo = b.dataset.emodo; render(); });
+  document.querySelectorAll('[data-ecarril]').forEach(b => b.onclick = () => { f.carril = b.dataset.ecarril; render(); });
   document.querySelectorAll('[data-efoco]').forEach(b => b.onclick = () => { f.foco = f.foco === b.dataset.efoco ? null : b.dataset.efoco; f.px = 0; f.py = 0; render(); });
   if ($('#everall')) $('#everall').onclick = () => { f.foco = null; render(); };
   $('#ecuotas').onclick = abrirCuotas;
@@ -213,7 +242,9 @@ function tarjetaFormato(x, stage) {
     </div>
     <div class="ecb">
       <div class="ecn">${esc(x.c.name)}</div>
+      ${textoDe(x.c, 0) ? `<div class="ecd">${esc(textoDe(x.c, 0))}</div>` : ''}
       <div class="hint" style="color:${m.color};font-weight:600">Ver más</div>
+      <div class="echips"><span class="echip prod">${esc(esTodos() ? (S.marca || 'NOVA') : prod().name)}</span>${x.c.niche ? `<span class="echip">${esc(x.c.niche)}</span>` : ''}</div>
       <div class="ecount">${n} ${f.modo === 'creados' ? (n === 1 ? 'pieza creada' : 'piezas creadas') : (n === 1 ? 'referencia' : 'referencias')}</div>
       <div class="emini">${refs.map(r => `<span class="emn" data-thumb="${esc(r.mediaId || '')}"></span>`).join('')}${x.refs > 3 ? `<span class="emn mas">+${x.refs - 3}</span>` : ''}</div>
     </div>
@@ -345,7 +376,7 @@ function abrirFormato(id) {
         <div class="grid2">
           <section class="panel" style="padding:14px 16px;background:#f8fafc">
             <div class="eyebrow">Por qué funciona</div>
-            <p style="margin:6px 0 0;line-height:1.6">${esc(c.why || 'Todavía no escribiste por qué funciona este formato. Pulsa Editar y cuéntalo en una línea: te sirve a ti y a quien escriba los guiones.')}</p>
+            <p style="margin:6px 0 0;line-height:1.6">${esc(textoDe(c, 1) || 'Todavía no escribiste por qué funciona este formato. Pulsa Editar y cuéntalo en una línea: te sirve a ti y a quien escriba los guiones.')}</p>
           </section>
           <section class="panel" style="padding:14px 16px;background:#f8fafc">
             <div class="eyebrow">Cómo se hace</div>
@@ -398,11 +429,17 @@ function editarFormato(c) {
       <div class="field"><label for="fet">Etapa fija</label><select id="fet"><option value="">Según sus anuncios (${etapaDe(c) || 'sin etapa'})</option>${STAGES.map(s => `<option ${c.stage === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
       <div class="field"><label for="fgr">Grupo</label><select id="fgr"><option value="">Según sus anuncios (${grupoDe(c)})</option><option value="video" ${c.grupo === 'video' ? 'selected' : ''}>Video</option><option value="estatico" ${c.grupo === 'estatico' ? 'selected' : ''}>Estáticos</option></select></div>
     </div>
+    <div class="grid2">
+      <div class="field"><label for="fdesc">Descripción corta · la que se lee en la tarjeta</label><input id="fdesc" value="${esc(c.desc || '')}" placeholder="Persona común hablando a cámara desde casa"></div>
+      <div class="field"><label for="fnicho">Nicho</label><input id="fnicho" value="${esc(c.niche || '')}" placeholder="Deporte, Salud, Marca…"></div>
+    </div>
+    <div class="field"><label for="flane">Carril</label><select id="flane"><option value="ads" ${(c.lane||'ads')==='ads'?'selected':''}>Anuncios</option><option value="org" ${c.lane==='org'?'selected':''}>Orgánico</option></select></div>
     <div class="field"><label for="fwhy">Por qué funciona</label><textarea id="fwhy" rows="3">${esc(c.why || '')}</textarea></div>
     <div class="field"><label for="fhow">Cómo se hace · un paso por línea</label><textarea id="fhow" rows="5">${esc(c.how || '')}</textarea></div>`,
     () => {
       c.name = $('#fnom').value.trim() || c.name;
-      c.stage = $('#fet').value; c.grupo = $('#fgr').value;
+      c.stage = $('#fet').value; c.grupo = $('#fgr').value; c.lane = $('#flane').value;
+      c.desc = $('#fdesc').value.trim(); c.niche = $('#fnicho').value.trim();
       c.why = $('#fwhy').value.trim(); c.how = $('#fhow').value.trim();
       save(); render(); toast('Formato guardado');
     });
@@ -417,7 +454,7 @@ function abrirCuotas() {
       <div style="flex:1"><b style="color:${META[s].color}">${META[s].nombre}</b><div class="hint">${META[s].sub}</div></div>
       <input id="cu-${s}" type="number" min="0" max="50" value="${q[s]}" style="width:72px;text-align:center;font-family:var(--mono)">
     </div>`).join('')}`,
-    () => { STAGES.forEach(s => { S.cuotas[PID()][s] = Math.max(0, Math.min(50, +$('#cu-' + s).value || 0)); }); save(); render(); toast('Cuotas guardadas'); });
+    () => { STAGES.forEach(s => { S.cuotas[pidReal()][s] = Math.max(0, Math.min(50, +$('#cu-' + s).value || 0)); }); save(); render(); toast('Cuotas guardadas'); });
 }
 function abrirEstrategia() {
   const e = { ...estrategia() };

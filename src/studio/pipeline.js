@@ -1,14 +1,14 @@
 import { openModal } from "./guion.js";
 import { thumbHTML } from "./medios.js";
-import { $, PID, S, STATUS, UI, byId, columnOf, cpa, esc, fmtIcon, ic, mine, money, opt, prod, result, save, toast, tope, uid } from "./nucleo.js";
+import { $, byId, columnOf, cpa, esc, fmtIcon, ic, mine, money, opt, PID, pidReal, prod, result, S, save, STATUS, toast, tope, UI, uid } from "./nucleo.js";
 import { render, setTop } from "./vista.js";
 
 /** Content Pipeline: el tablero de piezas por estado. */
 
 /* ============ PIPELINE ============ */
 export function newPiece(o={}){
-  S.seq[PID()]=(S.seq[PID()]||0)+1; const n=S.seq[PID()];
-  const p={id:uid('pc'),productId:PID(),code:'SCR_'+String(n).padStart(3,'0'),title:'Nueva pieza',format:'video',conceptId:'',angleId:'',hookId:'',status:'guion',stage:'',spend:null,conf:null,delivered:null,mediaIds:[],copy:{principal:'',titulo:'',cta:'Comprar'},board:null,created:Date.now(),...o};
+  S.seq[pidReal()]=(S.seq[pidReal()]||0)+1; const n=S.seq[pidReal()];
+  const p={id:uid('pc'),productId:pidReal(),code:'SCR_'+String(n).padStart(3,'0'),title:'Nueva pieza',format:'video',conceptId:'',angleId:'',hookId:'',status:'guion',stage:'',spend:null,conf:null,delivered:null,mediaIds:[],copy:{principal:'',titulo:'',cta:'Comprar'},board:null,created:Date.now(),...o};
   if(p.stage&&!p.board)p.board={x:Math.random()*.6,y:Math.random()};
   S.pieces.push(p);save();return p;
 }

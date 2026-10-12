@@ -3,7 +3,7 @@ import { JOBS, autoExtraer, progHTML, runExtract, tstr } from "./extraccion.js";
 import { copyText } from "./guion.js";
 import { makeThumb, pick, thumbHTML } from "./medios.js";
 import { renderSide } from "./menu.js";
-import { $, FORMATS, PID, S, UI, avisoGuardado, byId, diasActivo, ensureRef, esc, fechaISO, ic, linkSource, mine, normTxt, opt, prod, save, stageOpt, thumbCache, toast, uid } from "./nucleo.js";
+import { $, avisoGuardado, byId, diasActivo, ensureRef, esc, fechaISO, FORMATS, ic, linkSource, mine, normTxt, opt, PID, pidReal, prod, S, save, stageOpt, thumbCache, toast, UI, uid } from "./nucleo.js";
 import { DB } from "./persistencia.js";
 import { openRef, sugerencias } from "./ref-detalle.js";
 import { render, setTop } from "./vista.js";
@@ -161,7 +161,7 @@ export function vRefs(){
 function addLink(){
   const u=prompt('Pega el enlace del anuncio (Biblioteca de Meta, TikTok, Instagram…)');
   if(!u||!/^https?:\/\//.test(u.trim())){if(u)toast('Eso no parece un enlace');return;}
-  S.refs.unshift({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(u),conceptId:'',angleId:'',stage:'',notes:'',link:u.trim(),created:Date.now()});
+  S.refs.unshift({id:uid('r'),productId:pidReal(),mediaId:null,kind:'link',brand:'',source:linkSource(u),conceptId:'',angleId:'',stage:'',notes:'',link:u.trim(),created:Date.now()});
   save();render();openRef(S.refs[0].id,'datos');toast('Enlace guardado');
 }
 /** Todas las tarjetas miden lo mismo: miniatura fija arriba y ficha abajo. */

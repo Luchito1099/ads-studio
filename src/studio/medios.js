@@ -1,6 +1,6 @@
 import { autoExtraer } from "./extraccion.js";
 import { renderModal } from "./guion.js";
-import { $, PID, S, UI, byId, ensureRef, esc, ic, linkSource, save, thumbCache, toast, uid } from "./nucleo.js";
+import { $, byId, ensureRef, esc, ic, linkSource, PID, pidReal, S, save, thumbCache, toast, UI, uid } from "./nucleo.js";
 import { DB } from "./persistencia.js";
 import { openRef } from "./ref-detalle.js";
 import { render } from "./vista.js";
@@ -68,7 +68,7 @@ export async function ingest(files,{toPiece=null}={}){
   const ids=[];for(const f of files){ids.push(await addMedia(f));}
   if(toPiece){ toPiece.mediaIds.push(...ids); UI.modalTab='creativos'; save(); renderModal(); toast(ids.length>1?`${ids.length} archivos agregados a la pieza`:'Archivo agregado a la pieza'); }
   else{
-    for(const id of ids){ const m=thumbCache[id]; S.refs.unshift({id:uid('r'),productId:PID(),mediaId:id,kind:m.kind,format:m.kind==='image'?'imagen':'',brand:'',source:'Sin fuente',conceptId:'',angleId:'',stage:'',notes:'',link:'',created:Date.now()}); }
+    for(const id of ids){ const m=thumbCache[id]; S.refs.unshift({id:uid('r'),productId:pidReal(),mediaId:id,kind:m.kind,format:m.kind==='image'?'imagen':'',brand:'',source:'Sin fuente',conceptId:'',angleId:'',stage:'',notes:'',link:'',created:Date.now()}); }
     S.refs.slice(0,ids.length).forEach(r=>autoExtraer(ensureRef(r)));
     save(); UI.view='referencias'; render(); if(ids.length===1)openRef(S.refs[0].id,'datos'); toast(ids.length>1?`${ids.length} referencias guardadas`:'Referencia guardada');
   }
@@ -80,7 +80,7 @@ document.addEventListener('paste',e=>{
   if(tag==='input'||tag==='textarea')return;
   const text=e.clipboardData?.getData('text')||'';
   if(/^https?:\/\//.test(text.trim())&&!UI.modal){ e.preventDefault();
-    S.refs.unshift({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(text),conceptId:'',angleId:'',stage:'',notes:'',link:text.trim(),created:Date.now()});
+    S.refs.unshift({id:uid('r'),productId:pidReal(),mediaId:null,kind:'link',brand:'',source:linkSource(text),conceptId:'',angleId:'',stage:'',notes:'',link:text.trim(),created:Date.now()});
     UI.view='referencias';save();render();openRef(S.refs[0].id,'datos');toast('Enlace guardado en la biblioteca');}
 });
 let pickTarget=null;
