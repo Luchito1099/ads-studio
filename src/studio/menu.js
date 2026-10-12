@@ -3,44 +3,124 @@ import { exportData, openSettings } from "./ajustes.js";
 import { $, PID, S, UI, emptyLanes, esc, ic, mine, save, toast, uid } from "./nucleo.js";
 import { abrirNav, render } from "./vista.js";
 
-/** El menú lateral: las dos familias de pantallas, la marca y el pie. */
+/** El menú lateral: la marca, el producto y las tres familias de pantallas. */
 
-const VIEWS=[
-  ['Creativos',[['embudo','funnel','Embudo'],['pipeline','pipe','Content Pipeline'],['hooks','hook','Hooks'],['referencias','ref','Biblioteca'],['conceptos','concept','Formatos'],['angulos','angle','Ángulos de venta'],['ideas','spark','Ideas de contenido']]],
-  ['Resultados',[['analisis','pareto','Análisis 80/20'],['fatiga','battery','Fatiga'],['competencia','store','Competencia'],['tracker','chart','Tracker']]]];
-export function counts(){return {ideas:mine(S.ideas).filter(i=>['nueva','aprobada'].includes(i.estado)).length,referencias:mine(S.refs).length,angulos:mine(S.angles).length,conceptos:S.concepts.length,hooks:mine(S.hooks).length,pipeline:mine(S.pieces).length,embudo:mine(S.pieces).filter(p=>p.stage).length,tracker:mine(S.pieces).filter(p=>['lanzado','testing','resultado'].includes(p.status)).length,analisis:S.metaData?.[PID()]?.anuncios?.length||'',fatiga:S.metaData?.[PID()]?.anuncios?.length?'':'',competencia:(S.competidores||[]).length||''};}
-export function renderSide(){
-  const c=counts();
-  $('#side').innerHTML=`
-   <div class="logo"><div class="mk">${ic('funnel')}</div><div><b>noviitools</b><span>STUDIO ADS</span></div></div>
-   <div class="marca"><span class="mk">${esc((S.marca||'NOVA').charAt(0))}</span><div style="min-width:0"><b>${esc(S.marca||'NOVA')}</b><span>${S.products.length} producto${S.products.length===1?'':'s'}</span></div></div>
-   <div class="prod"><label for="prodsel">Producto</label>
-     <select id="prodsel">${S.products.map(p=>`<option value="${p.id}" ${p.id===PID()?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="__new">+ Agregar producto</option></select></div>
-   ${VIEWS.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([id,i,l])=>`<button class="nav ${UI.view===id?'on':''}" data-view="${id}">${ic(i)}<span>${l}</span><span class="n">${c[id]}</span></button>`).join('')).join('')}
-   <div class="side-foot">
-     ${window.__instalar?`<button id="binstalar">${ic('down','sm')}Instalar en el celular</button>`:''}
-     <button id="bset">Ajustes</button>
-     <button id="bexp">Exportar datos</button>
-     <button id="bimp">Importar datos</button>
-     <button id="bout">Cerrar sesión</button>
-   </div>`;
-  $('#prodsel').onchange=e=>{ if(e.target.value==='__new'){ const n=prompt('Nombre del producto');
-      if(n&&n.trim()){const code=n.trim().toUpperCase().replace(/[^A-Z0-9]+/g,'').slice(0,12)||'PROD';const p={id:uid('p'),name:n.trim(),code};S.products.push(p);S.productId=p.id;S.lanes[p.id]=emptyLanes();S.seq[p.id]=0;save();}
-      render();return;}
-    S.productId=e.target.value;UI.selRef=null;save();render();};
-  document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{UI.view=b.dataset.view;abrirNav(false);render();});
-  if($('#binstalar'))$('#binstalar').onclick=instalarApp;
-  $('#bset').onclick=openSettings;$('#bout').onclick=async()=>{await logout();location.reload();};$('#bexp').onclick=exportData;$('#bimp').onclick=()=>$('#importpick').click();
+/* Las tres secciones del diseño. `pronto` marca las pantallas que todavía no
+ * están hechas: se ven en el menú, pero avisan en qué fase llegan. */
+export const VIEWS = [
+  ['Creativos', [
+    ['embudo', 'funnel', 'Embudo'],
+    ['pipeline', 'pipe', 'Content Pipeline'],
+    ['hooks', 'hook', 'Hooks'],
+    ['referencias', 'ref', 'Biblioteca'],
+  ]],
+  ['Resultados', [
+    ['testing', 'flask', 'Testing'],
+    ['ganadores', 'trophy', 'Ganadores'],
+    ['metricas', 'chart', 'Métricas'],
+    ['competencia', 'store', 'Competencia'],
+  ]],
+  ['Operación', [
+    ['plan', 'cal', 'Plan de implementación'],
+    ['tareas', 'check', 'Tareas'],
+  ]],
+];
+
+export function counts() {
+  const meta = S.metaData?.[PID()]?.anuncios?.length || 0;
+  return {
+    embudo: mine(S.pieces).filter(p => p.stage).length,
+    pipeline: mine(S.pieces).length,
+    hooks: mine(S.hooks).length,
+    referencias: mine(S.refs).length,
+    testing: meta || '',
+    ganadores: mine(S.pieces).filter(p => p.status === 'resultado').length || '',
+    metricas: '',
+    competencia: (S.competidores || []).length || '',
+    plan: '',
+    tareas: '',
+  };
 }
-/* Instalar la app en el celular: Chrome avisa cuándo se puede y guardamos el
- * aviso para usarlo al tocar el botón. */
-export async function instalarApp(){
-  const ev=window.__instalar;
-  if(!ev){ toast('Abre el Studio en Chrome del celular y toca “Instalar aplicación” en su menú'); return; }
+
+const marcaColor = () => '#84cc16';
+
+export function renderSide() {
+  const c = counts();
+  const abierta = !!UI.marcaOpen;
+  const marca = S.marca || 'NOVA';
+  const nRefs = p => S.refs.filter(r => r.productId === p.id).length;
+  $('#side').innerHTML = `
+   <div class="logo"><div class="mk">${ic('funnel')}</div><div><b>noviitools</b><span>STUDIO ADS</span></div></div>
+
+   <div class="slbl">Marca</div>
+   <button class="marca" id="bmarca" aria-expanded="${abierta}">
+     <span class="mk" style="background:${marcaColor()}">${esc(marca.charAt(0))}</span>
+     <span class="mtx"><b>${esc(marca)}</b><span>${S.products.length} producto${S.products.length === 1 ? '' : 's'}</span></span>
+     ${ic('updown', 'sm')}
+   </button>
+   ${abierta ? `<div class="mardrop">
+     <button class="marop on"><span class="mk" style="background:${marcaColor()}">${esc(marca.charAt(0))}</span><span>${esc(marca)}</span>${ic('check','sm')}</button>
+     <button class="marop" id="bmarcaren"><span class="mk vacio">${ic('pen','sm')}</span><span>Cambiar el nombre</span></button>
+     <button class="marop" id="bmarcanew"><span class="mk vacio">${ic('plus','sm')}</span><span>Nueva marca</span></button>
+   </div>` : ''}
+
+   <div class="prodlist">
+     ${S.products.map(p => `<button class="prod ${p.id === PID() ? 'on' : ''}" data-prod="${p.id}">
+        <span class="pth"></span><span class="pnm">${esc(p.name)}</span><span class="pn">${nRefs(p)}</span></button>`).join('')}
+     <button class="prod nuevo" id="bprodnew"><span class="pth vacio">${ic('plus','sm')}</span><span class="pnm">Agregar producto</span></button>
+   </div>
+
+   <div class="sdiv"></div>
+
+   ${VIEWS.map(([g, items]) => `<div class="grp">${g}</div>` + items.map(([id, i, l]) => `
+     <button class="nav ${UI.view === id ? 'on' : ''}" data-view="${id}">${ic(i)}<span>${l}</span>${c[id] ? `<span class="n">${c[id]}</span>` : ''}</button>`).join('')).join('')}
+
+   <div class="side-foot">
+     <div class="yo"><span class="av">${esc((marca || 'L').charAt(0))}</span><div><b>${esc(S.usuario || 'Luchito')}</b><span>Dueño</span></div>
+       <button class="iconbtn" id="bset" aria-label="Ajustes" title="Ajustes">${ic('concept','sm')}</button></div>
+     <div class="foot2">
+       ${window.__instalar ? `<button id="binstalar">${ic('down','sm')}Instalar</button>` : ''}
+       <button id="bexp">Exportar</button>
+       <button id="bimp">Importar</button>
+       <button id="bout">Salir</button>
+     </div>
+   </div>`;
+
+  $('#bmarca').onclick = () => { UI.marcaOpen = !UI.marcaOpen; renderSide(); };
+  if ($('#bmarcaren')) $('#bmarcaren').onclick = () => {
+    const n = prompt('Nombre de la marca', marca);
+    if (n && n.trim()) { S.marca = n.trim(); save(); }
+    UI.marcaOpen = false; render();
+  };
+  if ($('#bmarcanew')) $('#bmarcanew').onclick = () => {
+    UI.marcaOpen = false; renderSide();
+    toast('Por ahora el Studio trabaja con una marca y varios productos. Dime cuándo quieres la segunda y la agrego.');
+  };
+  document.querySelectorAll('[data-prod]').forEach(b => b.onclick = () => { S.productId = b.dataset.prod; UI.selRef = null; save(); render(); });
+  $('#bprodnew').onclick = () => {
+    const n = prompt('Nombre del producto');
+    if (!n || !n.trim()) return;
+    const code = n.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 12) || 'PROD';
+    const p = { id: uid('p'), name: n.trim(), code };
+    S.products.push(p); S.productId = p.id; S.lanes[p.id] = emptyLanes(); S.seq[p.id] = 0; save(); render();
+  };
+  document.querySelectorAll('.nav').forEach(b => b.onclick = () => { UI.view = b.dataset.view; abrirNav(false); render(); });
+  if ($('#binstalar')) $('#binstalar').onclick = instalarApp;
+  $('#bset').onclick = openSettings;
+  $('#bout').onclick = async () => { await logout(); location.reload(); };
+  $('#bexp').onclick = exportData;
+  $('#bimp').onclick = () => $('#importpick').click();
+}
+
+/* Instalar la app en el celular: el navegador avisa cuándo se puede y
+ * guardamos el aviso para usarlo al tocar el botón. */
+export async function instalarApp() {
+  const ev = window.__instalar;
+  if (!ev) { toast('Abre esta página en Chrome (Android) o Safari (iPhone) para instalarla'); return; }
   ev.prompt();
-  const r=await ev.userChoice.catch(()=>({outcome:'dismissed'}));
-  window.__instalar=null;
-  toast(r.outcome==='accepted'?'Instalada: búscala como NOVA Ads':'Instalación cancelada');
+  const r = await ev.userChoice.catch(() => ({ outcome: 'dismissed' }));
+  window.__instalar = null;
+  toast(r.outcome === 'accepted' ? 'Instalada: búscala como NOVA Ads' : 'Instalación cancelada');
   renderSide();
 }
-addEventListener('nova:instalable',()=>{ if(S&&$('#side'))renderSide(); });
+addEventListener('nova:instalable', () => { if (S && $('#side')) renderSide(); });

@@ -14,6 +14,7 @@ import { renderSide } from "./menu.js";
 import { $, PID, S, UI, ensureRef, linkSource, save, seed, setS, thumbCache, toast, uid } from "./nucleo.js";
 import { DB, fatigaPendiente, migrarLegado } from "./persistencia.js";
 import { vPipeline } from "./pipeline.js";
+import { vPronto } from "./pronto.js";
 import { vTracker } from "./tracker.js";
 import { alPintar } from "./vista.js";
 
@@ -23,8 +24,13 @@ import { alPintar } from "./vista.js";
  * Cada pantalla vive en su propio módulo; aquí solo se decide cuál se pinta.
  */
 
+/* Las pantallas viejas (Análisis 80/20, Fatiga, Tracker, Formatos, Ángulos,
+ * Ideas) siguen funcionando aunque ya no estén en el menú: las pantallas nuevas
+ * que todavía no existen llevan a ellas. */
+const PANTALLAS={ideas:vIdeas,referencias:vRefs,angulos:vAngles,conceptos:vConcepts,hooks:vHooks,pipeline:vPipeline,
+  embudo:vEmbudo,tracker:vTracker,analisis:vAnalisis,fatiga:vFatiga,competencia:vCompetencia};
 function pintarVista(){ $('#body').style.overflow=''; renderSide(); const v=UI.view;
-  ({ideas:vIdeas,referencias:vRefs,angulos:vAngles,conceptos:vConcepts,hooks:vHooks,pipeline:vPipeline,embudo:vEmbudo,tracker:vTracker,analisis:vAnalisis,fatiga:vFatiga,competencia:vCompetencia})[v]();
+  (PANTALLAS[v]||vPronto)();
   hydrateThumbs(); }
 
 (async()=>{

@@ -80,8 +80,10 @@ export function vRefs(){
    </section>`:''}
    <div class="lmain">
      <div class="ltabs">
+       <div class="segtabs" role="group" aria-label="Estado">
        ${[['todas','Todos',all.length],['clasificar','Sin asignar',cnt(sinAsignar)],['asignados','Asignados',cnt(r=>!sinAsignar(r))],['favoritas','Favoritas',cnt(r=>r.fav)],['guion','Con guion',cnt(r=>r.extract.status==='listo')]]
-         .map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}">${l}<span>${n}</span></button>`).join('')}
+         .map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}" aria-pressed="${f.tab===k}">${l}<span>${n}</span></button>`).join('')}
+       </div>
        <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
          <label class="visually-hidden" for="lsort">Ordenar</label><select id="lsort" class="fsel">${SORTS.map(([k,l])=>`<option value="${k}" ${f.orden===k?'selected':''}>${l}</option>`).join('')}</select>
          <div class="vtog" role="group" aria-label="Vista"><button data-vista="grid" class="${f.vista==='grid'?'on':''}" aria-label="Cuadrícula">${ic('ref','sm')}</button><button data-vista="lista" class="${f.vista==='lista'?'on':''}" aria-label="Lista">${ic('hook','sm')}</button></div>
@@ -141,6 +143,12 @@ export function vRefs(){
   // tarjetas
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();const r=byId(S.refs,b.dataset.fav);r.fav=!r.fav;save();render();});
   document.querySelectorAll('[data-asignar]').forEach(b=>b.onclick=e=>{e.stopPropagation();abrirAsignar(b.dataset.asignar,bandejaIds);});
+  // "Asignar" a secas acepta la sugerencia de la IA sin abrir el popup
+  document.querySelectorAll('[data-acepta]').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const r=byId(S.refs,b.dataset.acepta),s=sugerencias(r);
+    const c=S.concepts.find(x=>normTxt(x.name)===normTxt(s.concepto));
+    if(!s.stage||!c)return abrirAsignar(r.id,bandejaIds);
+    r.stage=s.stage;r.conceptId=c.id;save();toast(`Asignado a ${s.stage} · ${c.name}`);render();});
   document.querySelectorAll('.libcard,.lrow').forEach(c=>{
     c.onclick=()=>openRef(c.dataset.id);
     c.onkeydown=e=>{if(e.key==='Enter')openRef(c.dataset.id);};
@@ -177,10 +185,10 @@ function libCard(r){
     <span class="srcpill"><i class="dot" style="background:${(SOURCE_INFO[r.source]||SOURCE_INFO['Otro enlace']).color}"></i>${esc(canal)}</span>
     <div class="lb">
       <div class="lrow1"><b>${esc(r.brand||'Sin marca')}</b><span>${cuando(r.created)}</span></div>
-      <div class="lrow2">${ready?`<span class="chip win sm">Guion</span>`:ex.status==='error'?'<span class="chip lose sm">Error</span>':''}${r.adId?`<span class="mono lid" title="ID del anuncio">${esc(r.adId)}</span>`:''}${r.collection?`<span class="lcol">${esc(r.collection)}</span>`:''}</div>
+      <div class="lrow2"><i class="dot" style="background:#84cc16"></i><b>${esc(S.marca||'NOVA')}</b><span class="lprod">· ${esc(byId(S.products,r.productId)?.name||'sin producto')}</span>${ex.status==='error'?'<span class="chip lose sm">Error</span>':''}</div>
       ${sinAsignar(r)
         ?`<div class="liasug">${sug&&(sug.stage||sug.concepto)?`<span class="iatag">IA sugiere</span>${sug.stage?`<span class="chip ${sug.stage}">${sug.stage}</span>`:''}${sug.concepto?`<b>${esc(sug.concepto)}</b>`:''}`:'<span class="hint">Sin etapa ni formato</span>'}</div>
-         <div class="lacc"><button class="btn sm" data-asignar="${r.id}">Asignar</button></div>`
+         <div class="lacc">${sug&&sug.stage&&sug.concepto?`<button class="btn sm" data-acepta="${r.id}" title="Acepta la sugerencia de la IA">Asignar</button>`:''}<button class="btn ghost sm" data-asignar="${r.id}">${sug&&sug.stage&&sug.concepto?'Cambiar':'Asignar'}</button></div>`
         :`<div class="lasig">
             <span class="chip ${r.stage}">${r.stage}</span>
             <span class="lfmt">${esc(con?.name||'Sin formato')}</span>

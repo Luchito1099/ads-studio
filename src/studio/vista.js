@@ -10,7 +10,7 @@ export function render(){ pintar(); }
 
 export function setTop(title,sub,actions=''){
   $('#top').innerHTML=`<button class="menubtn" id="navtog" aria-label="Abrir el menú">${ic('hook')}</button>
-    <div class="tit"><h1>${esc(title)}</h1><p>${esc(sub)}</p></div><div class="act">${actions}</div>`;
+    <div class="tit"><p>${esc(sub)}</p><h1>${esc(title)}</h1></div><div class="act">${actions}</div>`;
   $('#navtog').onclick=()=>abrirNav(true);
 }
 /* En el celular el menú es un cajón que se corre desde la izquierda. */
