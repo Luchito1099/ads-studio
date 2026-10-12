@@ -23,7 +23,7 @@ export function abrirNav(abrir){
 export function formModal(title,inner,onSave,onDelete){
   const ov=document.createElement('div');ov.className='ov';
   ov.innerHTML=`<div class="modal" style="max-width:560px" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mh"><b>${esc(title)}</b><button class="btn ghost sm" style="margin-left:auto" data-c aria-label="Cerrar">${ic('x','sm')}</button></div>
-    <div style="padding:18px;display:flex;flex-direction:column;gap:12px">${inner}</div>
+    <div class="mb" style="padding:18px;display:flex;flex-direction:column;gap:12px">${inner}</div>
     <div class="mf">${onDelete?'<button class="btn danger" data-d style="margin-right:auto">Eliminar</button>':''}<button class="btn ghost" data-c>Cancelar</button><button class="btn" data-s>Guardar</button></div></div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();

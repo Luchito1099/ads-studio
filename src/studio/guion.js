@@ -1,3 +1,4 @@
+import { COLS } from "./pipeline.js";
 import { hydrateThumbs, ingest, openViewer, pick, thumbHTML } from "./medios.js";
 import { $, byId, cpa, esc, FORMATS, ic, mine, money, opt, PID, pidReal, prod, result, S, save, stageOpt, STATUS, toast, tope, UI, uid } from "./nucleo.js";
 import { render } from "./vista.js";
@@ -154,7 +155,7 @@ export function renderModal(){
     content=`<div style="padding:18px;display:flex;flex-direction:column;gap:12px">
       <div class="grid2">
         <div class="field"><label for="mti">Título interno</label><input id="mti" value="${esc(p.title)}"></div>
-        <div class="field"><label for="mst">Estado</label><select id="mst">${STATUS.filter(s=>s[0]!=='resultado').map(s=>`<option value="${s[0]}" ${s[0]===p.status?'selected':''}>${s[1]}</option>`).join('')}</select></div>
+        <div class="field"><label for="mst">Columna</label><select id="mst">${COLS.map(c=>`<option value="${c[0]}" ${c[0]===p.status?'selected':''}>${c[1]}</option>`).join('')}${['lanzado','testing','resultado'].includes(p.status)?`<option value="${p.status}" selected>Ya lanzada</option>`:''}</select></div>
       </div>
       <div class="field"><label for="mcode">Nombre del anuncio</label><div style="display:flex;gap:6px"><input id="mcode" value="${esc(p.adName||'')}" placeholder="${esc(suggestCode(p))}" style="font-family:var(--mono);font-size:12px"><button class="btn ghost sm" id="msug" style="height:38px">Sugerir</button></div></div>
       <div class="section-t">Resultados</div>

@@ -42,6 +42,7 @@ const IC={
  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>',
  check:'<path d="M5 12l5 5L20 7"/>',
  down:'<path d="M12 4v12M6 10l6 6 6-6M4 20h16"/>',
+ warn:'<path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
  chev:'<path d="M6 9l6 6 6-6"/>',
  box:'<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/>',
  updown:'<path d="M8 9l4-4 4 4M8 15l4 4 4-4"/>',
