@@ -95,9 +95,35 @@ function sslOption() {
   }
 }
 
-export async function openPostgres(url) {
+/**
+ * Datos de conexión a Postgres. Dos formas, la que te resulte cómoda:
+ *   - DATABASE_URL=postgres://usuario:clave@host:5432/base
+ *   - o por separado: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
+ * (también valen los nombres estándar PGHOST, PGPORT, PGDATABASE, PGUSER,
+ * PGPASSWORD). Si están las dos, manda DATABASE_URL.
+ */
+export function configPostgres(env = process.env) {
+  const url = (env.DATABASE_URL || "").trim();
+  if (url) {
+    const { hostname, port, pathname } = new URL(url);
+    return { conexion: { connectionString: url }, etiqueta: `${hostname}${port ? ":" + port : ""}${pathname}` };
+  }
+  const host = (env.DB_HOST || env.PGHOST || "").trim();
+  if (!host) return null;
+  const port = Number(env.DB_PORT || env.PGPORT) || 5432;
+  const database = (env.DB_NAME || env.PGDATABASE || "nova").trim();
+  const user = (env.DB_USER || env.PGUSER || "postgres").trim();
+  const password = String(env.DB_PASSWORD ?? env.PGPASSWORD ?? "");
+  return { conexion: { host, port, database, user, password }, etiqueta: `${host}:${port}/${database}` };
+}
+
+export async function openPostgres(cfg) {
+  // Acepta la URL de siempre o el objeto de configPostgres().
+  const { conexion, etiqueta } = typeof cfg === "string"
+    ? { conexion: { connectionString: cfg }, etiqueta: (() => { const u = new URL(cfg); return `${u.hostname}${u.port ? ":" + u.port : ""}${u.pathname}`; })() }
+    : cfg;
   const { default: pg } = await import("pg");
-  const pool = new pg.Pool({ connectionString: url, ssl: sslOption(), max: 5 });
+  const pool = new pg.Pool({ ...conexion, ssl: sslOption(), max: 5 });
   // Sin esto, un corte de la conexión inactiva tumba el proceso.
   pool.on("error", (err) => console.error("[nova] Error en conexión Postgres inactiva:", err.message));
 
@@ -123,11 +149,9 @@ export async function openPostgres(url) {
     INSERT INTO kv (key, value, updated_at) VALUES ($1, $2, now())
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = EXCLUDED.updated_at
   `;
-  const { hostname, port, pathname } = new URL(url);
-
   return {
     kind: "postgres",
-    label: `Postgres ${hostname}${port ? ":" + port : ""}${pathname}`,
+    label: `Postgres ${etiqueta}`,
     get: async (key) => (await pool.query("SELECT key, value FROM kv WHERE key = $1", [key])).rows[0] ?? null,
     all: async () => (await pool.query("SELECT key, value, updated_at FROM kv ORDER BY key")).rows,
     count: async () => (await pool.query("SELECT COUNT(*)::int AS n FROM kv")).rows[0].n,
@@ -169,8 +193,8 @@ export async function openPostgres(url) {
 }
 
 export function openStore() {
-  const url = process.env.DATABASE_URL;
-  return url ? openPostgres(url) : openSqlite(SQLITE_PATH);
+  const cfg = configPostgres();
+  return cfg ? openPostgres(cfg) : openSqlite(SQLITE_PATH);
 }
 
 /**
