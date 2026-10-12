@@ -83,6 +83,8 @@ El estado del Studio (la Biblioteca entera, piezas y hooks) vive en una sola cla
 
 La conexión a Postgres admite `DATABASE_URL` o las variables sueltas `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` (también sirven `PGHOST` y compañía). Si están las dos, manda la URL.
 
+Si el SQLite vive en un contenedor sin volumen (se borra en cada despliegue), la copia hay que hacerla **antes** de cambiar la configuración, desde adentro del contenedor que está corriendo: se pega ahí `scripts/a-postgres.mjs` y se corre con las variables `DB_*`. No depende del resto del proyecto y comprueba el tamaño de cada archivo después de escribirlo.
+
 Al arrancar con un Postgres **vacío**, el servidor copia todo lo que haya en el SQLite de `DB_PATH` (o `SQLITE_IMPORT_PATH`): guiones, banco, imágenes (que suben a S3 si está configurado) y el secreto de sesión, así nadie tiene que volver a entrar. Es una sola transacción y nunca corre si la base ya tiene datos.
 
 Si no hay SQLite que importar, la app carga sus datos de ejemplo la primera vez.
