@@ -78,7 +78,7 @@ function pieceFromRef(r,useAdapt=false){
 }
 /* Sugerencias a partir del guion extraído y del copy: son un atajo, no un
  * automatismo. Solo se aplican si el usuario toca el chip. */
-function sugerencias(r){
+export function sugerencias(r){
   const ex=r.extract||{};
   const t=normTxt([(ex.blocks||[]).map(b=>`${b.voz||''} ${b.texto||''}`).join(' '),r.adText||''].join(' '));
   if(!t)return {stage:'',concepto:''};

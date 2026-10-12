@@ -1,48 +1,63 @@
+import { abrirAsignar } from "./asignar.js";
 import { JOBS, autoExtraer, progHTML, runExtract, tstr } from "./extraccion.js";
 import { copyText } from "./guion.js";
 import { makeThumb, pick, thumbHTML } from "./medios.js";
 import { renderSide } from "./menu.js";
-import { $, FORMATS, PID, S, UI, avisoGuardado, byId, ensureRef, esc, fechaISO, ic, linkSource, mine, normTxt, opt, prod, save, stageOpt, thumbCache, toast, uid } from "./nucleo.js";
+import { $, FORMATS, PID, S, UI, avisoGuardado, byId, diasActivo, ensureRef, esc, fechaISO, ic, linkSource, mine, normTxt, opt, prod, save, stageOpt, thumbCache, toast, uid } from "./nucleo.js";
 import { DB } from "./persistencia.js";
-import { openRef } from "./ref-detalle.js";
+import { openRef, sugerencias } from "./ref-detalle.js";
 import { render, setTop } from "./vista.js";
 
 /** Biblioteca de anuncios: la rejilla, los filtros y lo que llega de Nova Swipe. */
 
-/* ---- fuentes, colecciones y marcas ---- */
+/* ---- fuentes, colecciones y canales ---- */
 const SOURCE_GROUPS=[
-  ['Anuncios pagados',[['Biblioteca de Meta','book','#1d4ed8'],['TikTok Creative Center','spark','#0f172a']]],
-  ['Redes sociales',[['Facebook','globe','#1d4ed8'],['Instagram','insta','#db2777'],['TikTok','music','#0f172a'],['YouTube','yt','#dc2626'],['Pinterest','pin','#dc2626']]],
+  ['Anuncios pagados',[['Biblioteca de Meta','book','#2563eb'],['TikTok Creative Center','spark','#0f172a']]],
+  ['Redes sociales',[['Facebook','globe','#1d4ed8'],['Instagram','insta','#db2777'],['TikTok','music','#0f172a'],['YouTube','yt','#dc2626'],['Pinterest','pin','#be123c']]],
   ['Otros',[['Tienda de la competencia','store','#7c3aed'],['Grabación propia','video','#0d9488'],['Sin fuente','up','#64748b'],['Otro enlace','link','#64748b']]]
 ];
 const SOURCE_INFO=Object.fromEntries(SOURCE_GROUPS.flatMap(([,l])=>l.map(([n,i,c])=>[n,{icon:i,color:c}])));
 const srcIcon=(s,cls='sm')=>{const x=SOURCE_INFO[s]||SOURCE_INFO['Otro enlace'];return `<span style="color:${x.color};display:inline-flex">${ic(x.icon,cls)}</span>`;};
-const porClasificar=r=>!r.brand||!r.conceptId||!r.stage;
+/* Los canales del diseño: lo demás (grabación propia, enlaces sueltos) se
+ * agrupa en "Otros" para que la fila de filtros no se haga interminable. */
+const CANALES=[['Biblioteca de Meta','Meta Ads'],['TikTok','TikTok'],['Instagram','Instagram'],['Facebook','Facebook'],['YouTube','YouTube'],['Pinterest','Pinterest']];
+const sinAsignar=r=>!r.stage||!r.conceptId;
 export const libCollections=()=>{ if(!S.libCollections)S.libCollections=[]; const set=new Set(S.libCollections); S.refs.forEach(r=>{if(r.collection&&!set.has(r.collection)){set.add(r.collection);S.libCollections.push(r.collection);}}); return S.libCollections; };
 const SORTS=[['recientes','Más recientes'],['antiguas','Más antiguas'],['calificadas','Mejor calificadas'],['marca','Marca (A–Z)'],['duracion','Más cortos']];
+const TIPOS=[['','Todo tipo'],['video','Video'],['imagen','Imagen'],['carrusel','Carrusel'],['link','Solo enlace']];
 
 function libState(){ return UI.lib||(UI.lib={scope:'producto',tab:'todas',fuente:'',coleccion:'',marca:'',formato:'',etapa:'',concepto:'',angulo:'',q:'',orden:'recientes',vista:'grid'}); }
 function libScope(){ const f=libState(); return S.refs.map(ensureRef).filter(r=>f.scope==='todos'||r.productId===PID()); }
 function libFiltered(){
   const f=libState(); const q=normTxt(f.q);
   const list=libScope().filter(r=>
-    (f.tab==='todas'||(f.tab==='clasificar'&&porClasificar(r))||(f.tab==='favoritas'&&r.fav)||(f.tab==='guion'&&r.extract.status==='listo'))
-    &&(!f.fuente||r.source===f.fuente)&&(!f.coleccion||r.collection===f.coleccion)&&(!f.marca||r.brand===f.marca)
-    &&(!f.formato||(f.formato==='link'?r.kind==='link':r.format===f.formato))&&(!f.etapa||r.stage===f.etapa)&&(!f.concepto||r.conceptId===f.concepto)&&(!f.angulo||r.angleId===f.angulo)
+    (f.tab==='todas'||(f.tab==='clasificar'&&sinAsignar(r))||(f.tab==='asignados'&&!sinAsignar(r))||(f.tab==='favoritas'&&r.fav)||(f.tab==='guion'&&r.extract.status==='listo'))
+    &&(!f.fuente||(f.fuente==='otros'?!CANALES.some(([c])=>c===r.source):r.source===f.fuente))&&(!f.coleccion||r.collection===f.coleccion)&&(!f.marca||r.brand===f.marca)
+    &&(!f.formato||(f.formato==='link'?r.kind==='link':r.format===f.formato||(f.formato==='video'&&r.kind==='video'&&!r.format)||(f.formato==='imagen'&&r.kind==='image'&&!r.format)))
+    &&(!f.etapa||r.stage===f.etapa)&&(!f.concepto||r.conceptId===f.concepto)&&(!f.angulo||r.angleId===f.angulo)
     &&(!q||normTxt([r.brand,r.adId,r.notes,r.collection,r.link,r.source,r.adText,...(r.extract.transcript||[]).map(t=>t.text),...(r.extract.ocr||[]).map(o=>o.text),r.extract.analysis?JSON.stringify(r.extract.analysis):''].join(' ')).includes(q)));
   const cmp={recientes:(a,b)=>(b.created||0)-(a.created||0),antiguas:(a,b)=>(a.created||0)-(b.created||0),calificadas:(a,b)=>(b.rating||0)-(a.rating||0)||(b.fav?1:0)-(a.fav?1:0),
     marca:(a,b)=>(a.brand||'~').localeCompare(b.brand||'~','es'),duracion:(a,b)=>(a.extract.duration||thumbCache[a.mediaId]?.duration||9999)-(b.extract.duration||thumbCache[b.mediaId]?.duration||9999)}[f.orden];
   return list.sort(cmp);
 }
+/** "Hoy", "Ayer", "Hace 3 días"… para la esquina de cada tarjeta. */
+function cuando(ms){
+  if(!ms)return '';
+  const d=Math.floor((Date.now()-ms)/86400000);
+  if(d<=0)return 'Hoy'; if(d===1)return 'Ayer'; if(d<7)return `Hace ${d} días`;
+  if(d<30)return `Hace ${Math.floor(d/7)} sem`;
+  return new Date(ms).toLocaleDateString('es-PE',{day:'2-digit',month:'short'});
+}
 export function vRefs(){
   const f=libState(); const all=libScope(); const list=libFiltered();
   const cnt=fn=>all.filter(fn).length;
-  const fuenteN=s=>all.filter(r=>r.source===s).length;
+  const bandejaIds=all.filter(sinAsignar).map(r=>r.id);
   const brands=Object.entries(all.reduce((o,r)=>{if(r.brand)o[r.brand]=(o[r.brand]||0)+1;return o;},{})).sort((a,b)=>b[1]-a[1]);
   const cols=libCollections();
   const pend=all.filter(r=>r.mediaId&&r.extract.status!=='listo'&&!JOBS[r.id]).length;
   const hayFiltros=f.fuente||f.coleccion||f.marca||f.formato||f.etapa||f.concepto||f.angulo||f.q;
-  setTop('Biblioteca',`Anuncios de otras marcas y redes · ${f.scope==='todos'?'todos los productos':prod().name}`,
+  const canalN=s=>all.filter(r=>s==='otros'?!CANALES.some(([c])=>c===r.source):r.source===s).length;
+  setTop('Biblioteca',`${esc(S.marca||'NOVA')} · ${f.scope==='todos'?'todos los productos':prod().name}`,
     `<div class="lsearch">${ic('search','sm')}<label class="visually-hidden" for="lq">Buscar en la biblioteca</label><input id="lq" value="${esc(f.q)}" placeholder="Buscar marca, frase dicha o texto en pantalla…"></div>
      ${pend?`<button class="btn ghost" id="lall" title="Extraer el guion de los anuncios que aún no lo tienen">Extraer pendientes (${pend})</button>`:''}
      <div class="menuwrap"><button class="btn" id="ladd" aria-haspopup="true" aria-expanded="false">${ic('plus','sm')}Agregar</button>
@@ -51,44 +66,48 @@ export function vRefs(){
          <button data-add="enlace">${ic('link','sm')}<span><b>Pegar un enlace</b><small>Biblioteca de Meta, TikTok, Instagram…</small></span></button>
          <button data-add="ext">${ic('ext','sm')}<span><b>Extensión Nova Swipe</b><small>Captura desde Chrome</small></span></button>
        </div></div>`);
-  const navItem=(key,val,label,n,icon)=>`<button class="lnav ${f[key]===val?'on':''}" data-lf="${key}" data-v="${esc(val)}">${icon||''}<span class="lbl">${esc(label)}</span><span class="n">${n}</span></button>`;
-  $('#body').innerHTML=`${avisoBandeja()}<div class="libwrap">
-   <aside class="lside">
-     <div class="seg2">${[['producto',prod().name],['todos','Todos']].map(([k,l])=>`<button data-scope="${k}" class="${f.scope===k?'on':''}">${esc(l)}</button>`).join('')}</div>
-     <div class="lgrp">Fuentes</div>
-     ${navItem('fuente','','Todas las fuentes',all.length)}
-     ${SOURCE_GROUPS.map(([g,items])=>`<div class="lsub">${g}</div>`+items.map(([n])=>navItem('fuente',n,n,fuenteN(n),srcIcon(n))).join('')).join('')}
-     <button class="lnav lgo" id="lcomp">${ic('store','sm')}<span class="lbl">Vigilar competencia</span><span class="n">${(S.competidores||[]).length||''}</span></button>
-     <div class="lgrp" style="display:flex;align-items:center">Colecciones<button class="iconbtn" id="lcolnew" aria-label="Nueva colección" title="Nueva colección">${ic('plus','sm')}</button></div>
-     ${cols.length?cols.map(c=>navItem('coleccion',c,c,all.filter(r=>r.collection===c).length)).join(''):'<p class="hint" style="margin:2px 10px">Agrupa anuncios por tema o campaña.</p>'}
-     <div class="lgrp">Marcas</div>
-     ${brands.length?brands.slice(0,12).map(([b,n])=>navItem('marca',b,b,n)).join(''):'<p class="hint" style="margin:2px 10px">Pon la marca al clasificar.</p>'}
-     <div class="extcard">
-       <div style="display:flex;gap:8px;align-items:center">${ic('ext','sm')}<b>Nova Swipe</b></div>
-       <p>Guarda anuncios desde Chrome directo a esta biblioteca.</p>
-       <button class="btn sm" id="lext">Descargar extensión</button>
+  const fchip=(key,val,label,n,extra='')=>`<button class="fchip ${f[key]===val?'on':''}" data-lf="${key}" data-v="${esc(val)}" aria-pressed="${f[key]===val}">${extra}${esc(label)}${n!==undefined?`<em>${n}</em>`:''}</button>`;
+  $('#body').innerHTML=`${avisoBandeja()}
+   ${bandejaIds.length?`<section class="lbandeja">
+     <span class="lbico">${ic('down')}</span>
+     <div style="min-width:0">
+       <b>${bandejaIds.length} anuncio${bandejaIds.length===1?'':'s'} sin asignar</b>
+       <p>Ponles etapa y formato para que aparezcan en el Embudo y cuenten en los reportes. Son ${bandejaIds.length===1?'uno':'unos pocos'} clics.</p>
+       <div class="lbchips">${Object.entries(all.filter(sinAsignar).reduce((o,r)=>{const k=r.brand||'Sin marca';o[k]=(o[k]||0)+1;return o;},{})).sort((a,b)=>b[1]-a[1]).slice(0,5)
+         .map(([b,n])=>`<span>${n} ${esc(b)}</span>`).join('')}</div>
      </div>
-   </aside>
-   <section class="lmain">
+     <button class="btn claro" id="lrevisar">Revisar bandeja</button>
+   </section>`:''}
+   <div class="lmain">
      <div class="ltabs">
-       ${[['todas','Todas',all.length],['clasificar','Por clasificar',cnt(porClasificar)],['favoritas','Favoritas',cnt(r=>r.fav)],['guion','Con guion',cnt(r=>r.extract.status==='listo')]].map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}">${l}<span>${n}</span></button>`).join('')}
+       ${[['todas','Todos',all.length],['clasificar','Sin asignar',cnt(sinAsignar)],['asignados','Asignados',cnt(r=>!sinAsignar(r))],['favoritas','Favoritas',cnt(r=>r.fav)],['guion','Con guion',cnt(r=>r.extract.status==='listo')]]
+         .map(([k,l,n])=>`<button class="${f.tab===k?'on':''}" data-tab="${k}">${l}<span>${n}</span></button>`).join('')}
        <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
-         <button class="btn ghost sm solo-movil" id="lfiltros">${ic('hook','sm')}Filtros</button>
          <label class="visually-hidden" for="lsort">Ordenar</label><select id="lsort" class="fsel">${SORTS.map(([k,l])=>`<option value="${k}" ${f.orden===k?'selected':''}>${l}</option>`).join('')}</select>
          <div class="vtog" role="group" aria-label="Vista"><button data-vista="grid" class="${f.vista==='grid'?'on':''}" aria-label="Cuadrícula">${ic('ref','sm')}</button><button data-vista="lista" class="${f.vista==='lista'?'on':''}" aria-label="Lista">${ic('hook','sm')}</button></div>
        </span>
      </div>
      <div class="lfilters">
-       <label class="visually-hidden" for="lff">Tipo de archivo</label><select id="lff" class="fsel" data-sel="formato"><option value="">Tipo</option>${FORMATS.map(x=>`<option value="${x[0]}" ${f.formato===x[0]?'selected':''}>${x[1]}</option>`).join('')}<option value="link" ${f.formato==='link'?'selected':''}>Solo enlace</option></select>
+       ${S.products.length>1?`<label class="visually-hidden" for="lfp">Producto</label><select id="lfp" class="fsel" data-scopesel>
+         <option value="producto">${esc(prod().name)}</option><option value="todos" ${f.scope==='todos'?'selected':''}>Todos los productos</option></select>`:''}
+       <div class="fchips" role="group" aria-label="Tipo">${TIPOS.map(([v,l])=>fchip('formato',v,l)).join('')}</div>
+       ${brands.length?`<label class="visually-hidden" for="lfm">Marca del anuncio</label><select id="lfm" class="fsel" data-sel="marca"><option value="">Todas las marcas</option>${brands.map(([b,n])=>`<option value="${esc(b)}" ${f.marca===b?'selected':''}>${esc(b)} (${n})</option>`).join('')}</select>`:''}
+       ${cols.length?`<label class="visually-hidden" for="lfcol">Colección</label><select id="lfcol" class="fsel" data-sel="coleccion"><option value="">Colecciones</option>${cols.map(c=>`<option value="${esc(c)}" ${f.coleccion===c?'selected':''}>${esc(c)}</option>`).join('')}</select>`:''}
        <label class="visually-hidden" for="lfe">Etapa</label><select id="lfe" class="fsel" data-sel="etapa">${stageOpt(f.etapa,'Etapa')}</select>
-       <label class="visually-hidden" for="lfc">Formato creativo</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Formato')}</select>
+       <label class="visually-hidden" for="lfc">Formato</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Formato')}</select>
        <label class="visually-hidden" for="lfa">Ángulo</label><select id="lfa" class="fsel" data-sel="angulo">${opt(f.scope==='todos'?S.angles:mine(S.angles),f.angulo,'Ángulo')}</select>
-       ${[['fuente','Fuente'],['coleccion','Colección'],['marca','Marca']].filter(([k])=>f[k]).map(([k,l])=>`<span class="chip">${l}: ${esc(f[k])}<button class="chipx" data-clear="${k}" aria-label="Quitar filtro ${l}">×</button></span>`).join('')}
        ${hayFiltros?'<button class="linkbtn" id="lclear">Limpiar filtros</button>':''}
        <span class="muted" style="margin-left:auto;font-size:13px">${list.length} anuncio${list.length===1?'':'s'}</span>
      </div>
+     <div class="lcanal" role="group" aria-label="Canal">
+       <span class="lcl">Canal</span>
+       ${fchip('fuente','','Todos',all.length)}
+       ${CANALES.map(([v,l])=>fchip('fuente',v,l,canalN(v),`<i class="dot" style="background:${SOURCE_INFO[v].color}"></i>`)).join('')}
+       ${canalN('otros')?fchip('fuente','otros','Otros',canalN('otros')):''}
+       <button class="linkbtn" id="lcomp" style="margin-left:auto">${ic('store','sm')}Vigilar competencia</button>
+     </div>
      ${list.length?(f.vista==='grid'?`<div class="lib">${list.map(libCard).join('')}</div>`:libTable(list))
-       :all.length?`<div class="empty">Nada coincide con estos filtros. <button class="linkbtn" id="lclear2">Limpiar filtros</button></div>`
+       :all.length?`<div class="empty">${f.tab==='clasificar'?'Todo asignado: la bandeja está vacía.':'Nada coincide con estos filtros.'} <button class="linkbtn" id="lclear2">Limpiar filtros</button></div>`
        :`<div class="lempty">
           <h2>Tu biblioteca de anuncios empieza aquí</h2>
           <p>Todo lo que te inspire, venga de donde venga, queda en un solo lugar con su guion extraído.</p>
@@ -99,7 +118,7 @@ export function vRefs(){
           </div>
           <p class="hint">Atajo: copia una captura y presiona <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
         </div>`}
-   </section></div>`;
+   </div>`;
   // búsqueda
   const lq=$('#lq'); lq.oninput=()=>{f.q=lq.value;clearTimeout(lq._t);lq._t=setTimeout(()=>{const pos=lq.selectionStart;render();const n=$('#lq');n.focus();n.setSelectionRange(pos,pos);},250);};
   if($('#lall'))$('#lall').onclick=async()=>{for(const r of all.filter(r=>r.mediaId&&r.extract.status!=='listo')){await runExtract(r,{voz:true,texto:true});}};
@@ -108,22 +127,20 @@ export function vRefs(){
   ladd.onclick=e=>{e.stopPropagation();menu.hidden=!menu.hidden;ladd.setAttribute('aria-expanded',String(!menu.hidden));};
   document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{menu.hidden=true;const a=b.dataset.add;if(a==='subir')pick();else if(a==='enlace')addLink();else openExtension();});
   $('#lcomp').onclick=()=>{UI.view='competencia';render();};
+  if($('#lrevisar'))$('#lrevisar').onclick=()=>abrirAsignar(bandejaIds[0],bandejaIds);
   if($('#lbandeja'))$('#lbandeja').onclick=async()=>{toast('Revisando la bandeja…');await traerBandeja();if(!bandeja.pendientes&&!bandeja.error)toast('Bandeja vacía: no hay nada esperando');render();};
-  if($('#lfiltros'))$('#lfiltros').onclick=()=>{const w=document.querySelector('.libwrap');w.classList.toggle('con-filtros');};
-  $('#lext').onclick=openExtension;
-  // navegación lateral y filtros
-  document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{f.scope=b.dataset.scope;render();});
+  // filtros
   document.querySelectorAll('[data-lf]').forEach(b=>b.onclick=()=>{const k=b.dataset.lf,v=b.dataset.v;f[k]=f[k]===v&&v?'':v;render();});
   document.querySelectorAll('.ltabs [data-tab]').forEach(b=>b.onclick=()=>{f.tab=b.dataset.tab;render();});
   document.querySelectorAll('[data-sel]').forEach(s=>s.onchange=()=>{f[s.dataset.sel]=s.value;render();});
-  document.querySelectorAll('[data-clear]').forEach(b=>b.onclick=()=>{f[b.dataset.clear]='';render();});
+  if($('#lfp'))$('#lfp').onchange=e=>{f.scope=e.target.value;render();};
   const limpiar=()=>{Object.assign(f,{fuente:'',coleccion:'',marca:'',formato:'',etapa:'',concepto:'',angulo:'',q:''});render();};
   if($('#lclear'))$('#lclear').onclick=limpiar; if($('#lclear2'))$('#lclear2').onclick=limpiar;
   $('#lsort').onchange=e=>{f.orden=e.target.value;render();};
   document.querySelectorAll('[data-vista]').forEach(b=>b.onclick=()=>{f.vista=b.dataset.vista;render();});
-  $('#lcolnew').onclick=()=>{const n=prompt('Nombre de la colección');if(n&&n.trim()){const c=n.trim();if(!libCollections().includes(c))S.libCollections.push(c);save();f.coleccion=c;render();}};
   // tarjetas
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();const r=byId(S.refs,b.dataset.fav);r.fav=!r.fav;save();render();});
+  document.querySelectorAll('[data-asignar]').forEach(b=>b.onclick=e=>{e.stopPropagation();abrirAsignar(b.dataset.asignar,bandejaIds);});
   document.querySelectorAll('.libcard,.lrow').forEach(c=>{
     c.onclick=()=>openRef(c.dataset.id);
     c.onkeydown=e=>{if(e.key==='Enter')openRef(c.dataset.id);};
@@ -139,28 +156,42 @@ function addLink(){
   S.refs.unshift({id:uid('r'),productId:PID(),mediaId:null,kind:'link',brand:'',source:linkSource(u),conceptId:'',angleId:'',stage:'',notes:'',link:u.trim(),created:Date.now()});
   save();render();openRef(S.refs[0].id,'datos');toast('Enlace guardado');
 }
+/** Todas las tarjetas miden lo mismo: miniatura fija arriba y ficha abajo. */
 function libCard(r){
   const ex=r.extract; const ready=ex.status==='listo';
   const hook=ready?(ex.analysis?.hook?.texto||ex.blocks[0]?.voz||ex.blocks[0]?.texto||''):'';
   const dur=ex.duration||thumbCache[r.mediaId]?.duration;
-  return `<div class="libcard" data-id="${r.id}" tabindex="0" role="button" aria-label="Abrir ${esc(r.brand||'referencia')}">
-    <div style="position:relative">
-    ${r.kind==='link'?`<div class="thumb" style="aspect-ratio:9/16;background:#f1f5f9;color:#334155;flex-direction:column;gap:8px">${srcIcon(r.source,'')}<span style="font-weight:600">${esc(r.source)}</span><span style="font-size:11px;padding:0 14px;text-align:center;color:#64748b">Solo enlace · adjunta el video para extraer su guion</span></div>`:
-      `<div class="thumb" style="aspect-ratio:9/16" data-thumb="${r.mediaId}"></div>`}
-      <button class="favbtn ${r.fav?'on':''}" data-fav="${r.id}" aria-label="${r.fav?'Quitar de favoritas':'Marcar como favorita'}" aria-pressed="${!!r.fav}">${ic('star','sm')}</button>
-      ${ready?'<span class="readybadge">Guion</span>':''}
-    </div>
+  const tipo=r.kind==='link'?'Enlace':r.format==='carrusel'?'Carrusel':r.kind==='image'?'Imagen':'Video';
+  const dias=r.startedAt?diasActivo(r):null;
+  const con=byId(S.concepts,r.conceptId);
+  const sug=sinAsignar(r)?sugerencias(r):null;
+  const canal=(CANALES.find(([c])=>c===r.source)||[r.source,r.source])[1];
+  return `<article class="libcard" data-id="${r.id}" tabindex="0" role="button" aria-label="Abrir ${esc(r.brand||'anuncio')}">
+    ${r.kind==='link'
+      ?`<div class="thumb enlace">${srcIcon(r.source,'')}<span>${esc(r.source)}</span><small>Solo enlace · adjunta el archivo para extraer el guion</small></div>`
+      :`<div class="thumb" data-thumb="${r.mediaId}"></div>`}
+    ${hook?`<span class="hookover">${esc(hook.slice(0,80))}</span>`:''}
+    <span class="tipotag">${esc(tipo)}</span>
+    ${dias!=null?`<span class="diastag">${dias}d</span>`:dur?`<span class="diastag">${tstr(dur)}</span>`:''}
+    <button class="favbtn ${r.fav?'on':''}" data-fav="${r.id}" aria-label="${r.fav?'Quitar de favoritas':'Marcar como favorita'}" aria-pressed="${!!r.fav}">${ic('star','sm')}</button>
+    <span class="srcpill"><i class="dot" style="background:${(SOURCE_INFO[r.source]||SOURCE_INFO['Otro enlace']).color}"></i>${esc(canal)}</span>
     <div class="lb">
-      <div style="display:flex;align-items:center;gap:6px"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.brand||'Sin marca')}</b>${r.rating?`<span class="muted" style="margin-left:auto;font-size:12px" aria-label="${r.rating} de 5">${'★'.repeat(r.rating)}</span>`:''}</div>
-      <span class="muted" style="font-size:12px;display:flex;gap:5px;align-items:center">${srcIcon(r.source)}${esc(r.source)}${dur?' · '+tstr(dur):''}</span>
-      ${r.adId?`<span class="muted" style="font-size:11px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}
-      ${hook?`<span class="hookline">“${esc(hook.slice(0,90))}”</span>`:''}
-      <div style="display:flex;gap:5px;flex-wrap:wrap">${ex.status==='error'?'<span class="chip lose">Error al extraer</span>':''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}${r.conceptId?`<span class="chip">${esc(byId(S.concepts,r.conceptId)?.name||'')}</span>`:''}${porClasificar(r)?'<span class="chip warn">Por clasificar</span>':''}</div>
+      <div class="lrow1"><b>${esc(r.brand||'Sin marca')}</b><span>${cuando(r.created)}</span></div>
+      <div class="lrow2">${ready?`<span class="chip win sm">Guion</span>`:ex.status==='error'?'<span class="chip lose sm">Error</span>':''}${r.adId?`<span class="mono lid" title="ID del anuncio">${esc(r.adId)}</span>`:''}${r.collection?`<span class="lcol">${esc(r.collection)}</span>`:''}</div>
+      ${sinAsignar(r)
+        ?`<div class="liasug">${sug&&(sug.stage||sug.concepto)?`<span class="iatag">IA sugiere</span>${sug.stage?`<span class="chip ${sug.stage}">${sug.stage}</span>`:''}${sug.concepto?`<b>${esc(sug.concepto)}</b>`:''}`:'<span class="hint">Sin etapa ni formato</span>'}</div>
+         <div class="lacc"><button class="btn sm" data-asignar="${r.id}">Asignar</button></div>`
+        :`<div class="lasig">
+            <span class="chip ${r.stage}">${r.stage}</span>
+            <span class="lfmt">${esc(con?.name||'Sin formato')}</span>
+            ${r.angleId?`<span class="chip ang sm">${esc(byId(S.angles,r.angleId)?.name||'')}</span>`:''}
+            <button class="lcambiar" data-asignar="${r.id}">Cambiar</button>
+          </div>`}
       ${progHTML(r.id)}
-    </div></div>`;
+    </div></article>`;
 }
 function libTable(list){
-  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Tipo</th><th>Etapa</th><th>Formato</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
+  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Canal</th><th>Tipo</th><th>Etapa</th><th>Formato</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
   ${list.map(r=>`<tr class="lrow" data-id="${r.id}" tabindex="0" style="cursor:pointer">
     <td style="width:52px"><div style="width:40px;height:52px">${r.mediaId?thumbHTML(r.mediaId):`<div class="thumb" style="height:52px;background:#f1f5f9">${srcIcon(r.source)}</div>`}</div></td>
     <td><b>${esc(r.brand||'Sin marca')}</b>${r.notes?`<div class="muted" style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.notes)}</div>`:''}</td>
