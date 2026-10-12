@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Content Pipeline · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+.pc:hover{border-color:#94a3b8;box-shadow:0 4px 12px rgba(15,23,42,.06)}
+.fi{width:100%;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:9px;padding:9px 11px;font-size:13.5px;color:#0f172a;background:#ffffff;outline:none}
+.fi:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.12)}
+.ps{appearance:none;-webkit-appearance:none;border:1px solid #e2e8f0;border-radius:20px;padding:6px 26px 6px 11px;font-size:12px;font-weight:600;color:#0f172a;background:#ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;outline:none;cursor:pointer}
+.ps:focus{border-color:#0d9488}
+.ib:hover{background:#f1f5f9}
+.sg:hover{border-color:#0d9488;color:#0f766e}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Content Pipeline" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Todos los productos</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Content Pipeline</h1>
+</div>
+<button type="button" onClick="{{openNom}}" title="{{nomExample}}" style="margin-left: auto; height: 36px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #0f172a">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg>
+Nomenclatura <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 500; color: #94a3b8; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{nomExample}}</span></button>
+<div role="group" aria-label="Carril" style=" display: flex; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px">
+<sc-for list="{{lanes}}" as="l" hint-placeholder-count="2">
+<button type="button" onClick="{{l.pick}}" style="{{l.style}}">{{l.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; opacity: .7">{{l.n}}</span></button>
+</sc-for>
+</div>
+<div role="group" aria-label="Nueva pieza" style="display: flex; gap: 0; border-radius: 9px; overflow: hidden; border: 1px solid #0d9488">
+<span style="height: 36px; padding: 0 12px; background: #0d9488; color: #ffffff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nueva</span>
+<sc-for list="{{newBtns}}" as="nb" hint-placeholder-count="3">
+<button type="button" onClick="{{nb.add}}" style="height: 36px; padding: 0 12px; border: none; border-left: 1px solid #ccfbf1; background: #ffffff; color: #0f766e; font-size: 12.5px; font-weight: 600">{{nb.label}}</button>
+</sc-for>
+</div>
+</header>
+
+<!-- HEALTH + SESSION -->
+<div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch">
+<section aria-label="Salud del pipeline" style="flex: 999 1 620px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px">
+<sc-for list="{{health}}" as="h" hint-placeholder-count="6">
+<div style="{{h.box}}">
+<div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px">{{h.name}}
+<sc-if value="{{h.slow}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></sc-if>
+</div>
+<div style="display: flex; align-items: baseline; gap: 6px; margin-top: 3px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600">{{h.n}}</span>
+<span style="{{h.daysStyle}}">{{h.days}} d prom.</span>
+</div>
+</div>
+</sc-for>
+</section>
+<section style="flex: 1 1 300px; background: #0f172a; color: #ffffff; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+<span style="font-size: 12.5px; font-weight: 700">Sesión de grabación · mar 13</span>
+<span style="margin-left: auto; font-size: 11px; color: #94a3b8">{{sessionSummary}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 5px">
+<sc-for list="{{session}}" as="s" hint-placeholder-count="3">
+<button type="button" onClick="{{s.open}}" style="font-size: 11px; padding: 4px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.06); color: #ffffff"><b style="font-family: 'JetBrains Mono', monospace; color: #5eead4; font-weight: 600">{{s.id}}</b> {{s.what}}</button>
+</sc-for>
+<sc-if value="{{sessionEmpty}}" hint-placeholder-val="{{false}}"><span style="font-size: 11.5px; color: #94a3b8">Nada pendiente por grabar.</span></sc-if>
+</div>
+<div style="font-size: 10.5px; color: #64748b">Solo videos. Los estáticos van a diseño.</div>
+</section>
+</div>
+
+<!-- BOARD -->
+<div style="overflow-x: auto; padding-bottom: 6px">
+<div style="display: grid; grid-template-columns: repeat(6, minmax(200px, 1fr)); gap: 10px; min-width: 1240px; align-items: start">
+<sc-for list="{{cols}}" as="col" hint-placeholder-count="6">
+<section onDragOver="{{col.onOver}}" onDragLeave="{{col.onLeave}}" onDrop="{{col.onDrop}}" style="{{col.style}}">
+<div style="padding: 4px 4px 2px">
+<div style="display: flex; align-items: center; gap: 6px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #94a3b8">{{col.n}}</span>
+<h2 style="margin: 0; font-size: 12.5px; font-weight: 700">{{col.name}}</h2>
+<span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b">{{col.count}}</span>
+</div>
+<div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px">{{col.hint}}</div>
+</div>
+<sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+<button type="button" class="pc" draggable="true" onDragStart="{{c.onDrag}}" onClick="{{c.pick}}" style="{{c.style}}">
+<div style="display: flex; align-items: center; gap: 6px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600; color: #475569">{{c.id}}</span>
+<span style="{{c.laneChip}}">{{c.laneLabel}}</span>
+<span style="{{c.tag}}">{{c.stage}}</span>
+<span style="{{c.daysStyle}}">{{c.days}}d</span>
+</div>
+<div style="font-size: 12.5px; font-weight: 600; line-height: 1.35; color: #0f172a">{{c.title}}</div>
+<div style="display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #64748b">
+<span style="{{c.typeChip}}">{{c.typeLabel}}</span>{{c.format}}<span style="{{c.angleStyle}}">{{c.angleText}}</span>
+</div>
+<sc-if value="{{c.hasRef}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #475569; background: #f8fafc; border-radius: 6px; padding: 4px 6px">
+<span style="width: 12px; height: 18px; border-radius: 3px; background: linear-gradient(180deg,#64748b,#1e293b); flex-shrink: 0"></span>
+<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Ref: {{c.refText}}</span>
+</div>
+</sc-if>
+<sc-if value="{{c.hasHooks}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px">
+<span style="font-size: 10px; color: #64748b; margin-right: 2px">{{c.itemsLabel}}</span>
+<sc-for list="{{c.hooks}}" as="h" hint-placeholder-count="3">
+<span style="{{h.style}}">{{h.label}}</span>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{c.inReview}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 6px">
+<span style="flex: 1; height: 5px; border-radius: 5px; background: #e2e8f0; overflow: hidden"><span style="{{c.checkBar}}"></span></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #475569">{{c.checkText}}</span>
+</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 6px; border-top: 1px solid #f1f5f9; padding-top: 7px">
+<span style="{{c.av}}">{{c.ini}}</span>
+<span style="font-size: 10.5px; color: #64748b; display: inline-flex; align-items: center; gap: 3px"><svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>{{c.files}}</span>
+<span style="{{c.nextStyle}}">{{c.next}}</span>
+</div>
+</button>
+</sc-for>
+<sc-if value="{{col.empty}}" hint-placeholder-val="{{false}}">
+<div style="border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 16px 8px; text-align: center; font-size: 11px; color: #94a3b8">Arrastra una pieza aquí</div>
+</sc-if>
+</section>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #64748b">
+<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+Haz clic en una tarjeta para editarla. Los estáticos y carruseles saltan Edición: pasan de Producción a Revisión.
+</div>
+
+<sc-if value="{{hasLaunched}}" hint-placeholder-val="{{false}}">
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px">
+<div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px">{{launchedTitle}}</div>
+<sc-for list="{{launched}}" as="x" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px 0; border-top: 1px solid #f1f5f9; font-size: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 600">{{x.id}}</span>
+<span style="color: #475569">{{x.title}}</span>
+<span style="margin-left: auto; display: flex; gap: 4px">
+<sc-for list="{{x.ads}}" as="a" hint-placeholder-count="3">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 6px; border-radius: 5px; background: #ccfbf1; color: #0f766e">{{a}}</span>
+</sc-for>
+</span>
+<span style="font-size: 11px; color: #64748b">→ {{x.dest}}</span>
+</div>
+</sc-for>
+</section>
+</sc-if>
+</main>
+</div>
+
+<!-- MODAL -->
+<sc-if value="{{modalOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.55); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Editar pieza" style="position: relative; width: 100%; max-width: 1000px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); display: flex; flex-direction: column">
+
+<!-- head -->
+<div style="padding: 16px 20px 12px; border-bottom: 1px solid #f1f5f9; position: sticky; top: 0; background: #ffffff; z-index: 2; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #475569">{{sel.id}}</span>
+<input type="text" value="{{sel.title}}" onChange="{{sel.onTitle}}" aria-label="Título de la pieza" placeholder="Título de la pieza" style="flex: 1; min-width: 0; border: none; outline: none; font: inherit; font-size: 17px; font-weight: 700; color: #0f172a; padding: 4px 6px; border-radius: 7px; background: transparent">
+<sc-if value="{{sel.dirty}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: #fef3c7; color: #92400e; white-space: nowrap">Sin guardar</span></sc-if>
+<button type="button" class="ib" aria-label="Eliminar pieza" onClick="{{sel.remove}}" style="width: 32px; height: 32px; border: none; border-radius: 8px; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+<button type="button" class="ib" aria-label="Cerrar" onClick="{{close}}" style="width: 32px; height: 32px; border: none; border-radius: 8px; background: transparent; color: #475569; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<div role="group" aria-label="Destino" style="display: flex; background: #f1f5f9; border-radius: 20px; padding: 3px">
+<sc-for list="{{sel.lanes}}" as="ln" hint-placeholder-count="2">
+<button type="button" onClick="{{ln.pick}}" style="{{ln.style}}">{{ln.label}}</button>
+</sc-for>
+</div>
+<div role="group" aria-label="Tipo de pieza" style="display: flex; background: #f1f5f9; border-radius: 20px; padding: 3px">
+<sc-for list="{{sel.types}}" as="t" hint-placeholder-count="3">
+<button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{sel.isAds}}" hint-placeholder-val="{{true}}">
+<div role="group" aria-label="Canal" title="A dónde lleva el anuncio: define qué embudo usa Testing" style="display: flex; align-items: center; background: #f1f5f9; border-radius: 20px; padding: 3px">
+<span style="font-size: 11px; color: #94a3b8; padding: 0 6px 0 8px">Lleva a</span>
+<sc-for list="{{sel.channels}}" as="c" hint-placeholder-count="2">
+<button type="button" onClick="{{c.pick}}" style="{{c.style}}">{{c.label}}</button>
+</sc-for>
+</div>
+</sc-if>
+<select class="ps" value="{{sel.format}}" onChange="{{sel.onFormat}}" aria-label="Formato"><sc-for list="{{sel.formats}}" as="o" hint-placeholder-count="4"><option value="{{o}}">{{o}}</option></sc-for></select>
+<select class="ps" value="{{sel.angle}}" onChange="{{sel.onAngle}}" aria-label="Ángulo de venta" style="{{sel.angleSelect}}"><sc-for list="{{opts.angles}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for></select>
+<select class="ps" value="{{sel.stage}}" onChange="{{sel.onStage}}" aria-label="Etapa del embudo" style="{{sel.stageSelect}}"><sc-for list="{{opts.stages}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select>
+<select class="ps" value="{{sel.product}}" onChange="{{sel.onProduct}}" aria-label="Producto"><sc-for list="{{opts.products}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select>
+<select class="ps" value="{{sel.owner}}" onChange="{{sel.onOwner}}" aria-label="Responsable"><sc-for list="{{opts.owners}}" as="o" hint-placeholder-count="3"><option value="{{o.v}}">{{o.label}}</option></sc-for></select>
+<span style="margin-left: auto; font-size: 11px; color: #94a3b8">{{sel.days}} d en esta etapa</span>
+</div>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{sel.steps}}" as="st" hint-placeholder-count="6">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+<span style="{{st.bar}}"></span>
+<span style="{{st.label}}">{{st.name}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 16px 20px">
+
+<!-- LEFT: editor -->
+<div style="flex: 1 1 400px; display: flex; flex-direction: column; gap: 14px">
+
+<sc-if value="{{sel.hasRef}}" hint-placeholder-val="{{false}}">
+<section style="display: flex; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px">
+<a href="Referente.dc.html" aria-label="Ver referente" style="flex: 0 0 62px; height: 104px; border-radius: 8px; background: linear-gradient(180deg,#64748b,#1e293b); display: flex; align-items: center; justify-content: center; text-decoration: none">
+<span style="width: 26px; height: 26px; border-radius: 13px; background: rgba(255,255,255,.9); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="#0f172a"><path d="M7 4l13 8-13 8z"/></svg></span>
+</a>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 6px">
+<span style="font-size: 9.5px; font-weight: 800; letter-spacing: .08em; padding: 2px 7px; border-radius: 5px; background: #0f172a; color: #ffffff">REFERENTE</span>
+<span style="font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><b>{{sel.ref.brand}}</b> · {{sel.ref.hook}}</span>
+<a href="Referente.dc.html" style="margin-left: auto; font-size: 11.5px; font-weight: 600; color: #0f766e; text-decoration: none; white-space: nowrap">Ver referente</a>
+</div>
+<div style="font-size: 11px; color: #64748b">{{sel.ref.meta}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{sel.ref.structure}}" as="rs" hint-placeholder-count="4">
+<span style="font-size: 10.5px; padding: 2px 7px; border-radius: 5px; background: #ffffff; border: 1px solid #e2e8f0; color: #475569">{{rs}}</span>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px">
+<span style="font-size: 10.5px; color: #94a3b8">Hooks del referente:</span>
+<sc-for list="{{sel.ref.hooks}}" as="rh" hint-placeholder-count="2">
+<button type="button" class="sg" onClick="{{rh.add}}" style="font-size: 11px; padding: 3px 8px; border: 1px solid #e2e8f0; border-radius: 20px; background: #ffffff; color: #475569">+ {{rh.text}}</button>
+</sc-for>
+</div>
+<button type="button" onClick="{{sel.ref.toggleSb}}" style="align-self: flex-start; height: 30px; padding: 0 11px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 12px; font-weight: 600; color: #0f172a; display: inline-flex; align-items: center; gap: 6px">
+<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>{{sel.ref.sbLabel}}</button>
+<sc-if value="{{sel.ref.sbOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px">
+<sc-for list="{{sel.ref.scenes}}" as="sc" hint-placeholder-count="8">
+<div style="flex: 0 0 76px; display: flex; flex-direction: column; gap: 3px">
+<div style="{{sc.frame}}">
+<span style="position: absolute; top: 4px; left: 4px; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 4px; background: #0f172a; color: #ffffff">{{sc.n}}</span>
+<span style="position: absolute; left: 4px; right: 4px; top: 30%; text-align: center; font-size: 8.5px; font-weight: 700; line-height: 1.2; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,.8)">{{sc.text}}</span>
+</div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #64748b">{{sc.t}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</section>
+</sc-if>
+
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #0f172a; color: #ffffff">{{sel.itemTag}}</span>
+<span style="font-size: 11.5px; color: #64748b">{{sel.itemHelp}}</span>
+</div>
+<sc-for list="{{sel.hooks}}" as="h" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569; width: 24px; flex-shrink: 0">{{h.k}}</span>
+<input class="fi" type="text" value="{{h.text}}" onChange="{{h.onText}}" placeholder="{{sel.itemPlaceholder}}" aria-label="{{sel.itemTag}}">
+<button type="button" class="ib" aria-label="Quitar" onClick="{{h.remove}}" style="width: 30px; height: 30px; flex-shrink: 0; border: none; border-radius: 7px; background: transparent; color: #94a3b8; font-size: 16px">×</button>
+</div>
+</sc-for>
+<button type="button" onClick="{{sel.addHook}}" style="height: 34px; width: 100%; border: 1px dashed #cbd5e1; border-radius: 9px; background: #ffffff; font-size: 12.5px; color: #475569">{{sel.addLabel}}</button>
+<sc-if value="{{sel.hasSuggest}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px">
+<span style="font-size: 10.5px; color: #94a3b8">Del banco:</span>
+<sc-for list="{{sel.suggest}}" as="sg" hint-placeholder-count="3">
+<button type="button" class="sg" onClick="{{sg.add}}" style="font-size: 11px; padding: 4px 9px; border: 1px solid #e2e8f0; border-radius: 20px; background: #ffffff; color: #475569">+ {{sg.text}}</button>
+</sc-for>
+</div>
+</sc-if>
+</section>
+
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #0d9488; color: #ffffff">{{sel.bodyTag}}</span>
+<span style="font-size: 11.5px; color: #64748b">{{sel.bodyHelp}}</span>
+</div>
+<textarea class="fi" rows="{{sel.bodyRows}}" value="{{sel.body}}" onChange="{{sel.onBody}}" placeholder="{{sel.bodyPlaceholder}}" style="resize: vertical; line-height: 1.55"></textarea>
+</section>
+
+<sc-if value="{{sel.isStaticLike}}" hint-placeholder-val="{{false}}">
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #4338ca; color: #ffffff">OFERTA</span>
+<span style="font-size: 11.5px; color: #64748b">precio o sello que va en la imagen</span>
+</div>
+<input class="fi" type="text" value="{{sel.offer}}" onChange="{{sel.onOffer}}" placeholder="Ej: 2x S/ 99 · Envío gratis" aria-label="Oferta">
+</section>
+</sc-if>
+
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #a16207; color: #ffffff">CTA</span>
+<span style="font-size: 11.5px; color: #64748b">{{sel.ctaHelp}}</span>
+</div>
+<input class="fi" type="text" value="{{sel.cta}}" onChange="{{sel.onCta}}" placeholder="{{sel.ctaPlaceholder}}" aria-label="CTA">
+<div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px">
+<sc-for list="{{ctaPresets}}" as="cp" hint-placeholder-count="3">
+<button type="button" class="sg" onClick="{{cp.use}}" style="font-size: 11px; padding: 4px 9px; border: 1px solid #e2e8f0; border-radius: 20px; background: #ffffff; color: #475569">{{cp.text}}</button>
+</sc-for>
+</div>
+</section>
+
+<sc-if value="{{sel.isStaticLike}}" hint-placeholder-val="{{false}}">
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #475569; color: #ffffff">COPY DEL ANUNCIO</span>
+<span style="font-size: 11.5px; color: #64748b">el texto que va arriba de la imagen en Meta</span>
+</div>
+<textarea class="fi" rows="3" value="{{sel.copy}}" onChange="{{sel.onCopy}}" placeholder="Texto principal del anuncio" style="resize: vertical; line-height: 1.55"></textarea>
+</section>
+<section>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .08em; padding: 3px 8px; border-radius: 6px; background: #e2e8f0; color: #334155">ESTILO VISUAL</span>
+<span style="font-size: 11.5px; color: #64748b">fondo, colores, referencia · opcional</span>
+</div>
+<input class="fi" type="text" value="{{sel.visual}}" onChange="{{sel.onVisual}}" placeholder="Ej: fondo blanco, producto al centro, sello de precio en lima" aria-label="Estilo visual">
+</section>
+</sc-if>
+</div>
+
+<!-- RIGHT -->
+<div style="flex: 1 1 360px; display: flex; flex-direction: column; gap: 14px">
+
+<section style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-size: 12.5px; font-weight: 700">{{sel.outTitle}}</span>
+<span style="font-size: 11px; color: #94a3b8">{{sel.outSub}}</span>
+<span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #475569">{{sel.outMeta}}</span>
+</div>
+<sc-if value="{{sel.multi}}" hint-placeholder-val="{{true}}">
+<div role="tablist" aria-label="Versión" style="display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{sel.versions}}" as="v" hint-placeholder-count="2">
+<button type="button" role="tab" onClick="{{v.pick}}" style="{{v.style}}">{{v.k}}</button>
+</sc-for>
+</div>
+</sc-if>
+<textarea readonly="readonly" ref="{{previewRef}}" rows="7" value="{{sel.paragraph}}" aria-label="Texto listo para copiar" style="width: 100%; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 13px; line-height: 1.6; color: #0f172a; background: #ffffff; resize: vertical; outline: none"></textarea>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" onClick="{{sel.copyOne}}" style="flex: 1 1 160px; height: 38px; border: none; border-radius: 9px; background: #0f172a; color: #ffffff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>{{sel.copyOneLabel}}</button>
+<sc-if value="{{sel.showCopyAll}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{sel.copyAll}}" style="flex: 1 1 160px; height: 38px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; color: #0f172a; font-size: 12.5px; font-weight: 600">Copiar todas las versiones</button>
+</sc-if>
+<sc-if value="{{sel.isStaticLike}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{sel.copyAdCopy}}" style="flex: 1 1 160px; height: 38px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; color: #0f172a; font-size: 12.5px; font-weight: 600">Copiar copy para Meta</button>
+</sc-if>
+</div>
+<div style="font-size: 10.5px; color: #94a3b8; line-height: 1.4">{{sel.outHint}}</div>
+</section>
+
+<section style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center"><span style="font-size: 12.5px; font-weight: 700">{{sel.panelTitle}}</span><span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #475569">{{sel.panelCount}}</span></div>
+
+<sc-if value="{{sel.showReady}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{sel.ready}}" as="r" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 3px 0">
+<span style="{{r.dot}}"><sc-if value="{{r.ok}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if></span>
+<span style="{{r.textStyle}}">{{r.label}}</span>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{sel.showProd}}" hint-placeholder-val="{{false}}">
+<sc-for list="{{sel.prod}}" as="h" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 8px; padding: 4px 0">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569; width: 24px">{{h.k}}</span>
+<span style="flex: 1; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{h.text}}</span>
+<button type="button" onClick="{{h.toggle}}" style="{{h.chip}}">{{h.label}}</button>
+</div>
+</sc-for>
+<div style="font-size: 10.5px; color: #94a3b8">{{sel.prodHint}}</div>
+</sc-if>
+
+<sc-if value="{{sel.showChecks}}" hint-placeholder-val="{{false}}">
+<sc-for list="{{sel.checks}}" as="k" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{k.on}}" onClick="{{k.toggle}}" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 0; border: none; background: transparent; text-align: left; font-size: 12.5px; color: #0f172a">
+<span style="{{k.box}}"><sc-if value="{{k.on}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if></span>{{k.label}}</button>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{sel.showLaunch}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 11.5px; color: #64748b; line-height: 1.45">Pega cada nombre tal cual en Meta. Con eso Testing une solo los datos del Excel a esta pieza.</div>
+<sc-for list="{{sel.adNames}}" as="a" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-radius: 8px; background: #f0fdfa; border: 1px solid #ccfbf1">
+<span style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #0f766e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" title="{{a.name}}">{{a.name}}</span>
+<button type="button" onClick="{{a.copy}}" style="height: 26px; padding: 0 9px; border: 1px solid #99f6e4; border-radius: 6px; background: #ffffff; font-size: 11px; font-weight: 600; color: #0f766e">Copiar</button>
+</div>
+</sc-for>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<button type="button" onClick="{{sel.copyNames}}" style="flex: 1 1 140px; height: 32px; border: none; border-radius: 8px; background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 600">Copiar todos los nombres</button>
+<button type="button" onClick="{{openNom}}" style="height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 12px; font-weight: 600; color: #475569">Cambiar nomenclatura</button>
+</div>
+</sc-if>
+</section>
+</div>
+</div>
+
+<!-- footer -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #f8fafc; position: sticky; bottom: 0; border-radius: 0 0 18px 18px">
+<sc-if value="{{sel.confirm}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1 1 260px; font-size: 13px; font-weight: 600; color: #92400e; line-height: 1.4">Tienes cambios sin guardar. ¿Qué hacemos?</div>
+<button type="button" onClick="{{sel.keepEditing}}" style="height: 40px; padding: 0 14px; border: none; border-radius: 9px; background: transparent; font-size: 13px; font-weight: 600; color: #475569">Seguir editando</button>
+<button type="button" onClick="{{sel.discard}}" style="height: 40px; padding: 0 14px; border: 1px solid #fecaca; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #b91c1c">Descartar</button>
+<button type="button" onClick="{{sel.saveClose}}" style="height: 40px; padding: 0 18px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">Guardar y cerrar</button>
+</sc-if>
+<sc-if value="{{sel.notConfirm}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1 1 220px; font-size: 12.5px; color: {{sel.gateColor}}; line-height: 1.4">{{sel.gateText}}</div>
+<button type="button" onClick="{{sel.back}}" style="{{sel.backStyle}}">← Atrás</button>
+<button type="button" onClick="{{sel.save}}" style="{{sel.saveStyle}}">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{sel.saveLabel}}</button>
+<button type="button" onClick="{{sel.next}}" style="{{sel.nextStyle}}">{{sel.nextLabel}}</button>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- NOMENCLATURA -->
+<sc-if value="{{nomOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeNom}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.55); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Nomenclatura de anuncios" style="position: relative; width: 100%; max-width: 600px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 4px; display: flex; gap: 10px">
+<div style="flex: 1">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Nomenclatura de anuncios</h2>
+<p style="margin: 6px 0 0; font-size: 12.5px; color: #64748b; line-height: 1.5">Así se va a llamar cada anuncio al lanzarlo. Testing reconoce cada fila del Excel por el <b style="color: #0f172a">ID y la versión</b>; el resto te sirve para leer el nombre rápido en el Administrador de anuncios.</p>
+</div>
+<button type="button" aria-label="Cerrar" onClick="{{closeNom}}" style="border: none; background: transparent; font-size: 20px; line-height: 1; color: #94a3b8; align-self: flex-start">×</button>
+</div>
+
+<div style="padding: 12px 20px 6px">
+<div style="background: #0f172a; border-radius: 12px; padding: 12px 14px">
+<div style="font-size: 10.5px; color: #94a3b8; margin-bottom: 5px">Vista previa</div>
+<sc-for list="{{nomPreview}}" as="x" hint-placeholder-count="3">
+<div style="display: flex; gap: 10px; align-items: baseline; padding: 2px 0"><span style="font-size: 10.5px; color: #64748b; width: 62px; flex-shrink: 0">{{x.label}}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5eead4; word-break: break-all">{{x.name}}</span></div>
+</sc-for>
+</div>
+</div>
+
+<div style="padding: 6px 20px">
+<div style="font-size: 11px; color: #94a3b8; margin: 6px 0 2px">Partes del nombre · en orden</div>
+<sc-for list="{{nomRows}}" as="r" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid #f1f5f9">
+<button type="button" aria-pressed="{{r.on}}" onClick="{{r.toggle}}" style="{{r.box}}" aria-label="{{r.label}}"><sc-if value="{{r.on}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if></button>
+<span style="flex: 1; min-width: 0"><span style="{{r.labelStyle}}">{{r.label}}</span> <sc-if value="{{r.locked}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #ccfbf1; color: #0f766e; margin-left: 4px">Obligatorio</span></sc-if><span style="display: block; font-size: 11px; color: #94a3b8">{{r.help}}</span></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #475569">{{r.ex}}</span>
+<button type="button" aria-label="Subir" onClick="{{r.up}}" style="{{r.upStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+<button type="button" aria-label="Bajar" onClick="{{r.down}}" style="{{r.downStyle}}"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+</div>
+</sc-for>
+</div>
+
+<div style="padding: 8px 20px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="font-size: 12px; font-weight: 600">Separador</span>
+<sc-for list="{{nomSeps}}" as="sp" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{sp.on}}" onClick="{{sp.pick}}" style="{{sp.style}}">{{sp.label}}</button>
+</sc-for>
+</div>
+
+<div style="margin: 0 20px 16px; border: 1px solid #e2e8f0; border-radius: 12px; padding: 11px 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="flex: 1 1 300px; font-size: 12px; color: #475569; line-height: 1.5"><b style="color: #0f172a">Para que el ERP también cruce:</b> en Meta, en Parámetros de URL de cada anuncio, pega esto. Así cada pedido llega con el nombre del anuncio.</div>
+<code style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; padding: 5px 9px; border-radius: 7px; background: #f1f5f9; color: #0f172a">{{utmText}}</code>
+<button type="button" onClick="{{copyUtm}}" style="height: 30px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 12px; font-weight: 600; color: #0f172a">Copiar</button>
+</div>
+
+<div style="display: flex; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9">
+<button type="button" onClick="{{resetNom}}" style="height: 38px; padding: 0 12px; border: none; background: transparent; font-size: 12.5px; font-weight: 600; color: #64748b">Restablecer</button>
+<button type="button" onClick="{{closeNom}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cancelar</button>
+<button type="button" onClick="{{saveNom}}" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">Guardar</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- TOAST -->
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="{{msgStyle}}">
+<span style="flex: 1">{{msg}}</span>
+<button type="button" aria-label="Cerrar aviso" onClick="{{clearMsg}}" style="border: none; background: transparent; color: inherit; font-size: 15px; line-height: 1">×</button>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    var mk = function(o){
+      return { id: o.id, lane: o.lane || 'Ads', col: o.col || 0, stage: o.stage || 'TOFU', type: o.type || 'video', title: o.title, format: o.format, product: o.product || 'Tobillera de compresión', owner: o.owner || 'L', days: o.days || 0,
+        hooks: (o.hooks || []).map(function(h){ return { text: h[0], status: h[1] }; }), checks: o.checks || [false,false,false,false,false],
+        body: o.body || '', cta: o.cta || '', offer: o.offer || '', copy: o.copy || '', visual: o.visual || '', ref: o.ref || null, angle: o.angle || '', channel: o.channel || 'WEB' };
+    };
+    var B = 'Trabajo de pie todo el día y al llegar a casa tenía el tobillo hinchado. Me la puse bajo la zapatilla, no se nota, y por primera vez terminé el turno sin dolor. Es delgadita, respira y se ajusta sola.';
+    var C = 'Pídela hoy y paga cuando te llegue a casa.';
+    this.previewEl = null;
+    this.state = {
+      lane: 'Todos', sel: null, open: false, pv: 0, msg: '', msgKind: 'info', over: -1, seq: 57, launched: [],
+      nom: { sep: '_', toks: [['brand',1],['product',1],['id',1],['version',1],['channel',1],['format',1],['angle',1],['stage',1],['date',0]] }, nomOpen: false, nomDraft: null,
+      pieces: [
+        mk({ id: 'IDEA-064', col: 0, title: 'Me dolía al caminar · versión NOVAFLEX', format: 'UGC', angle: 'Alternativa a la venda', days: 0, hooks: [['','pend']],
+          ref: { brand: 'Competidor A', hook: 'Me dolía al caminar', concept: 'UGC · TOFU', days: 48, structure: ['0–2 s dolor en texto', '2–8 s contexto en casa', '8–14 s demo de uso', '14–18 s CTA contraentrega'], hooks: ['Me dolía al caminar y nadie sabía por qué', 'No es una venda común'] } }),
+        mk({ id: 'IDEA-061', col: 0, title: 'Subir escaleras sin dolor de rodilla', format: 'UGC', product: 'Rodillera', days: 1 }),
+        mk({ id: 'IDEA-063', col: 0, type: 'static', stage: 'BOFU', title: 'Reseñas reales de clientes', format: 'Reseña / testimonio', angle: 'Pagas al recibir', days: 2 }),
+        mk({ id: 'SCR_050', col: 1, title: 'Si trabajas de pie todo el día, mira esto', format: 'UGC', angle: 'Trabajo de pie', days: 1, hooks: [['Si trabajas de pie todo el día, mira esto','pend'],['Llegaba con el pie hinchado a casa','pend']], body: B }),
+        mk({ id: 'CAR_057', col: 1, type: 'carousel', stage: 'MOFU', title: '4 errores al vendar un esguince', format: 'Educativo', angle: 'Alternativa a la venda', days: 1, hooks: [['¿Vendas tu tobillo así?','pend'],['Error 1: apretar demasiado','pend'],['Error 2: vendar sin soporte lateral','pend'],['La alternativa: compresión que no se suelta','pend']], cta: 'Conócela aquí', copy: 'Si te doblaste el tobillo, guarda esto antes de volver a vendarlo.' }),
+        mk({ id: 'SCR_049', col: 2, title: 'El error que cometía con mis esguinces', format: 'Voz en off', angle: 'Recomendado por fisio', owner: 'A', days: 3, hooks: [['El error que cometía con mis esguinces','rec'],['Tercer esguince del año','pend'],['Mi fisio me dijo esto','pend']], body: B, cta: C }),
+        mk({ id: 'EST_056', col: 2, type: 'static', stage: 'BOFU', title: '2 tobilleras por S/ 99', format: 'Venta directa', angle: 'Pagas al recibir', owner: 'E', days: 1, hooks: [['Tu tobillo protegido: 2 por S/ 99','ok'],['Paga al recibir · 2x S/ 99','pend']], body: 'Compresión firme · No se nota bajo la zapatilla · Talla única', offer: '2x S/ 99 + envío gratis', cta: 'Pide aquí', copy: 'Llévate 2 tobilleras NOVAFLEX por S/ 99 y paga cuando te lleguen. Envío gratis a todo el Perú.', visual: 'Fondo blanco, producto al centro, sello de precio en lima' }),
+        mk({ id: 'SCR_047', col: 3, title: 'Mi tobillo ya no se dobla', format: 'Transformacional', angle: 'Fútbol sin miedo', owner: 'E', days: 2, hooks: [['Mi tobillo ya no se dobla','rec'],['Antes y después de un mes','ok']], body: B, cta: C }),
+        mk({ id: 'SCR_046', col: 4, title: 'Trabajo 10 horas de pie', format: 'UGC', angle: 'Trabajo de pie', hooks: [['Trabajo 10 horas de pie','ok'],['Si trabajas de pie, mira esto','ok'],['Nadie en mi trabajo la conocía','ok']], checks: [true,true,true,true,false], body: B, cta: C }),
+        mk({ id: 'SCR_045', channel: 'WA', col: 5, stage: 'MOFU', title: 'Lo que llega en la caja', format: 'Unboxing', angle: 'Pagas al recibir', hooks: [['Abre la caja conmigo','ok'],['Esto es lo que te llega','ok']], checks: [true,true,true,true,true], body: B, cta: C }),
+        mk({ id: 'IDEA-070', lane: 'Orgánico', col: 0, title: '3 señales de que tu tobillo necesita soporte', format: 'Educativo', days: 2 }),
+        mk({ id: 'ORG_010', lane: 'Orgánico', col: 1, title: 'Rutina de 5 min antes de correr', format: 'Educativo', days: 1, hooks: [['Haz esto antes de correr','pend']] }),
+        mk({ id: 'ORG_009', lane: 'Orgánico', col: 3, stage: 'MOFU', title: 'Así empacamos tu pedido', format: 'Detrás de cámaras', owner: 'E', days: 1, hooks: [['Detrás de cámaras','rec']], body: 'Así preparamos cada pedido.', cta: 'Síguenos para más.' })
+      ]
+    };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var ST = { TOFU: ['#f0fdf4','#15803d','#bbf7d0'], MOFU: ['#fefce8','#a16207','#fde68a'], BOFU: ['#fef2f2','#dc2626','#fecaca'] };
+    var PEOPLE = { L: ['Luchito','#0d9488'], A: ['Asesora','#4338ca'], E: ['Editor','#a16207'] };
+    var DEFS = {
+      Ads: [['Idea','Referente o insight'],['Guion / Brief','Video: guion · Estático: textos'],['Producción','Grabar o diseñar'],['Edición','Solo video'],['Revisión','Checklist antes de subir'],['Listo para lanzar','Al lanzar pasa a Testing']],
+      'Orgánico': [['Idea','Tema o tendencia'],['Guion / Brief','Video: guion · Estático: textos'],['Producción','Grabar o diseñar'],['Edición','Solo video'],['Revisión','Checklist antes de publicar'],['Programado','Al publicar pasa a Métricas']],
+      Todos: [['Idea','Referente, insight o tema'],['Guion / Brief','Video: guion · Estático: textos'],['Producción','Grabar o diseñar'],['Edición','Solo video'],['Revisión','Checklist antes de salir'],['Listo para salir','Ads → Testing · Orgánico → publicar']]
+    };
+    var LANES = { Ads: ['ADS','#ccfbf1','#0f766e'], 'Orgánico': ['ORG','#fce7f3','#be185d'] };
+    var TYPES = {
+      video: { label: 'Video', k: 'H', prefix: 'SCR_0', chip: ['#0f172a','#ffffff'] },
+      static: { label: 'Estático', k: 'V', prefix: 'EST_0', chip: ['#e0e7ff','#4338ca'] },
+      carousel: { label: 'Carrusel', k: 'T', prefix: 'CAR_0', chip: ['#fef3c7','#a16207'] }
+    };
+    var FORMATS = {
+      video: ['UGC','POV','Voz en off','Transformacional','Diálogo','Comercial','Celebridad','Variado','Educativo','Comparativo','Demo / modo de uso','Unboxing','Entrevista','Testimonio','Detrás de cámaras'],
+      static: ['Venta directa','Comparativo','Antes y después','Reseña / testimonio','Beneficios','Educativo','Meme'],
+      carousel: ['Educativo','Beneficios','Comparativo','Testimonios','Paso a paso','Errores comunes']
+    };
+    var CHECKS = {
+      video: ['Hook visible en los primeros 3 s', 'Subtítulos en todo el video', 'Formato 9:16 sin bordes negros', 'Precio y oferta correctos', 'CTA con pago contraentrega'],
+      static: ['Texto legible en el celular', 'Producto protagonista', 'Precio y oferta correctos', 'Medidas 1:1 y 4:5 exportadas', 'Logo y colores de marca'],
+      carousel: ['La tarjeta 1 engancha sola', 'Una idea por tarjeta', 'Texto legible en el celular', 'Última tarjeta con CTA', 'Medidas 1:1 exportadas']
+    };
+    var lane = S.lane, defs = DEFS[lane];
+    var STATUS = { pend: ['Pendiente','#f1f5f9','#475569','#cbd5e1'], rec: ['Grabado','#e0e7ff','#4338ca','#a5b4fc'], ok: ['Listo','#ccfbf1','#0f766e','#5eead4'] };
+    var BANK = ['Nadie me dijo que esto existía', 'Mi fisio me recomendó esto', 'El error que yo cometía', 'Si te pasa esto, mira'];
+    var CTAS = { video: ['Pídela hoy y paga cuando te llegue a casa.', 'Escríbenos al WhatsApp y te asesoramos.', 'Envío gratis a todo el Perú, solo por hoy.'], static: ['Pide aquí', 'Paga al recibir', 'Escríbenos al WhatsApp', 'Comprar ahora'], carousel: ['Conócela aquí', 'Pide la tuya', 'Escríbenos al WhatsApp'] };
+    var tagOf = function(stage){ var s = ST[stage]; return 'font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:' + s[0] + ';color:' + s[1] + ';border:1px solid ' + s[2]; };
+    var sentence = function(t){ t = (t || '').trim(); if (!t) return ''; return /[.!?…]$/.test(t) ? t : t + '.'; };
+    var vidPara = function(p, i){ var h = p.hooks[i] ? p.hooks[i].text : ''; return [sentence(h), sentence(p.body), sentence(p.cta)].filter(Boolean).join(' '); };
+    var stBrief = function(p, i){
+      var h = p.hooks[i] ? p.hooks[i].text.trim() : '';
+      if (!h && !p.body.trim()) return '';
+      var parts = ['Anuncio estático de ' + p.format.toLowerCase() + ' para ' + p.product.toLowerCase() + ' de la marca NOVAFLEX.'];
+      if (h) parts.push('Texto principal grande: "' + h + '".');
+      if (p.body.trim()) parts.push('Texto de apoyo: ' + sentence(p.body));
+      if (p.offer.trim()) parts.push('Sello de oferta: ' + sentence(p.offer));
+      if (p.cta.trim()) parts.push('Botón: "' + p.cta.trim() + '".');
+      if (p.visual.trim()) parts.push('Estilo: ' + sentence(p.visual));
+      parts.push('Producto protagonista, texto legible en celular, formatos 1:1 y 4:5.');
+      return parts.join(' ');
+    };
+    var carBrief = function(p){
+      var cards = p.hooks.filter(function(h){ return h.text.trim(); });
+      if (!cards.length) return '';
+      var lines = ['Carrusel de ' + cards.length + ' tarjetas (' + p.format.toLowerCase() + ') para ' + p.product.toLowerCase() + ' de la marca NOVAFLEX, formato 1:1.'];
+      cards.forEach(function(h, i){ lines.push('Tarjeta ' + (i + 1) + ': ' + h.text.trim()); });
+      if (p.cta.trim()) lines.push('Última tarjeta, botón: ' + p.cta.trim());
+      if (p.visual.trim()) lines.push('Estilo: ' + p.visual.trim());
+      return lines.join('\n');
+    };
+    var isVid = function(p){ return p.type === 'video'; };
+
+    var setMsg = function(text, kind){ self.setState({ msg: text, msgKind: kind || 'info' }); };
+    var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
+    var update = function(id, fn){
+      if (S.draft && S.draft.id === id) { var d = clone(S.draft); fn(d); self.setState({ draft: d, dirty: true }); return; }
+      var list = S.pieces.map(function(p){ if (p.id !== id) return p; var c = clone(p); fn(c); return c; });
+      self.setState({ pieces: list });
+    };
+    var committed = function(){ return S.pieces.map(function(x){ return (S.draft && x.id === S.draft.id) ? clone(S.draft) : x; }); };
+    var copyText = function(text, label){
+      var done = function(){ setMsg(label + ' copiado.', 'ok'); };
+      var fallback = function(){
+        var el = self.previewEl;
+        try { if (el) { el.focus(); el.select(); } if (document.execCommand('copy')) { done(); return; } } catch (e) {}
+        setMsg('Tu navegador bloqueó el copiado: el texto quedó seleccionado, usa Ctrl+C.', 'warn');
+      };
+      try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, fallback); return; } } catch (e) {}
+      fallback();
+    };
+    var gate = function(p, step){
+      var withText = p.hooks.filter(function(h){ return h.text.trim(); }).length;
+      var pend = p.hooks.filter(function(h){ return h.status === 'pend'; }).length;
+      var notOk = p.hooks.filter(function(h){ return h.status !== 'ok'; }).length;
+      if (step === 0 && !p.title.trim()) return 'Ponle un título a la pieza.';
+      if (step === 1) {
+        if (p.lane === 'Ads' && !p.angle) return 'Elige el ángulo: la idea de venta que usa esta pieza.';
+        if (p.type === 'video') {
+          if (!withText) return 'Escribe al menos un hook.';
+          if (!p.body.trim()) return 'Escribe el body.';
+          if (!p.cta.trim()) return 'Escribe el CTA (o elige uno de los sugeridos).';
+        } else if (p.type === 'static') {
+          if (!withText) return 'Escribe el texto principal de al menos una versión.';
+          if (!p.cta.trim()) return 'Escribe el CTA del botón.';
+          if (!p.copy.trim()) return 'Escribe el copy del anuncio.';
+        } else {
+          if (withText < 2) return 'Un carrusel necesita al menos 2 tarjetas con texto.';
+          if (!p.cta.trim()) return 'Escribe el CTA de la última tarjeta.';
+          if (!p.copy.trim()) return 'Escribe el copy del anuncio.';
+        }
+      }
+      if (step === 2) {
+        if (p.type === 'video' && pend > 0) return 'Faltan grabar ' + pend + ' hook' + (pend > 1 ? 's' : '') + '.';
+        if (p.type !== 'video' && notOk > 0) return 'Faltan diseñar ' + notOk + (p.type === 'carousel' ? ' tarjeta' : ' versión') + (notOk > 1 ? (p.type === 'carousel' ? 's' : 'es') : '') + '.';
+      }
+      if (step === 3 && notOk > 0) return 'Faltan editar ' + notOk + ' versión' + (notOk > 1 ? 'es' : '') + '.';
+      if (step === 4) { var d = p.checks.filter(Boolean).length; if (d < 5) return 'Completa el checklist de revisión (' + d + '/5).'; }
+      return null;
+    };
+    var nextCol = function(p){ return (!isVid(p) && p.col === 2) ? 4 : p.col + 1; };
+    var prevCol = function(p){ return (!isVid(p) && p.col === 4) ? 2 : p.col - 1; };
+    var moveTo = function(id, to, base){
+      var src = base || S.pieces;
+      var mine = S.draft && S.draft.id === id;
+      var p = src.filter(function(x){ return x.id === id; })[0];
+      if (!p) return;
+      var fail = function(text){
+        var st = { msg: text, msgKind: 'warn' };
+        if (base) { st.pieces = src; st.dirty = false; }
+        self.setState(st);
+      };
+      var pre = base ? 'Guardado, pero no' : 'No';
+      if (to === p.col) { if (base) self.setState({ pieces: src, dirty: false, open: false, draft: null, confirm: false, flash: id, msg: p.id + ' guardada.', msgKind: 'ok' }); return; }
+      if (!isVid(p) && to === 3) { fail('Los ' + TYPES[p.type].label.toLowerCase() + 's no pasan por Edición: van de Producción a Revisión.'); return; }
+      if (to > p.col) {
+        for (var s = p.col; s < to; s++) {
+          if (!isVid(p) && s === 3) continue;
+          var g = gate(p, s); if (g) { var dest = (!isVid(p) && s === 2) ? 4 : s + 1; fail(pre + ' puede pasar a ' + defs[dest][0] + ': ' + g); return; }
+        }
+      }
+      var newId = p.id, seq = S.seq;
+      if (p.col === 0 && to > 0 && p.id.indexOf('IDEA-') === 0) { seq = S.seq + 1; newId = (p.lane === 'Ads' ? TYPES[p.type].prefix : 'ORG_0') + seq; }
+      var list = src.map(function(x){
+        if (x.id !== id) return x;
+        var c = clone(x); c.col = to; c.days = 0; c.id = newId;
+        c.hooks = c.hooks.filter(function(h){ return h.text.trim(); });
+        return c;
+      });
+      var moved = list.filter(function(x){ return x.id === newId; })[0];
+      var text = newId !== p.id ? p.id + ' ahora es ' + newId + ' y entra al pipeline.' : newId + ' pasó a ' + defs[to][0] + '.';
+      var st = { pieces: list, sel: (S.sel === id ? newId : S.sel), seq: seq, msg: (base ? 'Guardado. ' : '') + text, msgKind: 'ok' };
+      st.flash = newId;
+      if (mine) { st.draft = null; st.dirty = false; st.open = false; st.confirm = false; }
+      self.setState(st);
+    };
+    var slug = function(t, n){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').trim().split(/\s+/).filter(function(w){ return w.length > 2; }).slice(0, 1).join('').slice(0, n || 6); };
+    var FCODE = { 'UGC': 'UGC', 'POV': 'POV', 'Voz en off': 'VOZOFF', 'Transformacional': 'TRANSF', 'Diálogo': 'DIALOGO', 'Comercial': 'COMERCIAL', 'Celebridad': 'CELEB', 'Variado': 'VARIADO', 'Educativo': 'EDU', 'Comparativo': 'COMPARA', 'Demo / modo de uso': 'DEMO', 'Unboxing': 'UNBOX', 'Entrevista': 'ENTREV', 'Testimonio': 'TESTIM', 'Detrás de cámaras': 'BTS', 'Venta directa': 'VENTA', 'Antes y después': 'ANTDESP', 'Reseña / testimonio': 'RESENA', 'Beneficios': 'BENEF', 'Meme': 'MEME', 'Testimonios': 'TESTIM', 'Paso a paso': 'PASOS', 'Errores comunes': 'ERRORES' };
+    var ACODE = { 'Trabajo de pie': 'PIE', 'Fútbol sin miedo': 'FUTBOL', 'Alternativa a la venda': 'VENDA', 'Recomendado por fisio': 'FISIO', 'Pagas al recibir': 'COD' };
+    var PCODE = { 'Tobillera de compresión': 'TOB', 'Rodillera': 'ROD', 'Muñequera': 'MUN' };
+    var today = new Date();
+    var TOKS = {
+      brand: ['Marca', 'Código corto de la marca', function(){ return 'NFX'; }],
+      product: ['Producto', 'Tobillera → TOB', function(p){ return PCODE[p.product] || slug(p.product, 3); }],
+      id: ['ID de la pieza', 'Con esto Testing encuentra la pieza', function(p){ return p.id.replace(/_/g, ''); }],
+      channel: ['Canal', 'WEB o WA: Testing usa el embudo de ese canal', function(p){ return p.lane === 'Orgánico' ? '' : (p.channel || 'WEB'); }],
+      version: ['Versión', 'H1, H2… en video · V1, V2… en estáticos', function(p, k){ return k; }],
+      format: ['Formato', 'UGC, VOZOFF, UNBOX…', function(p){ return FCODE[p.format] || slug(p.format); }],
+      angle: ['Ángulo', 'Trabajo de pie → PIE', function(p){ return p.angle ? (ACODE[p.angle] || slug(p.angle)) : ''; }],
+      stage: ['Etapa', 'TOFU, MOFU o BOFU', function(p){ return p.stage; }],
+      date: ['Fecha de lanzamiento', 'AAMMDD', function(){ return String(today.getFullYear()).slice(2) + ('0' + (today.getMonth() + 1)).slice(-2) + ('0' + today.getDate()).slice(-2); }]
+    };
+    var nameFor = function(p, k, nom){
+      return nom.toks.filter(function(t){ return t[1]; }).map(function(t){ return TOKS[t[0]][2](p, k); }).filter(Boolean).join(nom.sep);
+    };
+    var adNamesOf = function(p, nom){
+      nom = nom || S.nom;
+      if (p.type === 'carousel') return [nameFor(p, '', nom)];
+      return p.hooks.map(function(h, i){ return nameFor(p, TYPES[p.type].k + (i + 1), nom); });
+    };
+    var launch = function(id, base){
+      var src = base || S.pieces;
+      var p = src.filter(function(x){ return x.id === id; })[0];
+      var ads = adNamesOf(p);
+      self.setState({ pieces: src.filter(function(x){ return x.id !== id; }), sel: null, open: false, draft: null, dirty: false, confirm: false,
+        launched: [{ id: p.id, title: p.title, ads: ads, dest: p.lane === 'Ads' ? 'Testing en Meta' : 'Publicado' }].concat(S.launched),
+        msg: p.lane === 'Ads' ? p.id + ' lanzado: ' + ads.length + ' anuncio' + (ads.length > 1 ? 's' : '') + ' pasan a Testing.' : p.id + ' publicado.', msgKind: 'ok' });
+    };
+    var openPiece = function(id){
+      var x = S.pieces.filter(function(q){ return q.id === id; })[0];
+      if (!x) return;
+      self.setState({ sel: id, open: true, pv: 0, draft: clone(x), dirty: false, confirm: false, flash: null });
+    };
+
+    var pieces = S.pieces.filter(function(p){ return lane === 'Todos' || p.lane === lane; });
+    var mkCard = function(p){
+      var slow = p.days >= 3, g = p.col < 5 ? gate(p, p.col) : null, T = TYPES[p.type];
+      var hooks = p.hooks.map(function(h, i){ var c = STATUS[h.status]; return { label: T.k + (i + 1), style: 'font-family:JetBrains Mono,monospace;font-size:9.5px;font-weight:600;padding:1px 5px;border-radius:4px;background:' + c[1] + ';color:' + c[2] + ';border:1px solid ' + c[3] }; });
+      var files = p.hooks.filter(function(h){ return h.status !== 'pend'; }).length + (isVid(p) ? p.hooks.filter(function(h){ return h.status === 'ok'; }).length : 0);
+      var done = p.checks.filter(Boolean).length;
+      return { id: p.id, stage: p.stage, title: p.title || 'Sin título', format: p.format, product: p.product, ini: p.owner, days: p.days, hooks: hooks, hasHooks: hooks.length > 0, files: files,
+        laneLabel: LANES[p.lane][0], laneChip: 'font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:' + LANES[p.lane][1] + ';color:' + LANES[p.lane][2],
+        angleText: p.angle || (p.lane === 'Ads' ? 'Sin ángulo' : ''),
+        angleStyle: 'font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;' + (p.angle ? 'background:#eef2ff;color:#4338ca' : (p.lane === 'Ads' ? 'border:1px dashed #cbd5e1;color:#94a3b8' : 'display:none')),
+        hasRef: !!p.ref, refText: p.ref ? p.ref.brand + ' · ' + p.ref.hook : '',
+        typeLabel: T.label, typeChip: 'font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;background:' + T.chip[0] + ';color:' + T.chip[1],
+        itemsLabel: p.type === 'video' ? 'Hooks' : (p.type === 'static' ? 'Versiones' : 'Tarjetas'),
+        inReview: p.col === 4, checkText: done + '/5', checkBar: 'display:block;height:100%;border-radius:5px;background:#0d9488;width:' + (done * 20) + '%',
+        next: p.col === 5 ? (p.lane === 'Ads' ? 'Listo' : 'Programado') : (g ? 'Incompleta' : 'Puede avanzar'),
+        nextStyle: 'margin-left:auto;font-size:10px;font-weight:600;' + (p.col === 5 || !g ? 'color:#0f766e' : 'color:#94a3b8'),
+        pick: function(){ openPiece(p.id); },
+        onDrag: function(e){ self.dragId = p.id; try { e.dataTransfer.setData('text/plain', p.id); e.dataTransfer.effectAllowed = 'move'; } catch (err) {} },
+        tag: tagOf(p.stage),
+        daysStyle: 'margin-left:auto;font-family:JetBrains Mono,monospace;font-size:10px;' + (slow ? 'color:#dc2626;font-weight:600' : 'color:#94a3b8'),
+        av: 'width:20px;height:20px;border-radius:10px;font-size:9.5px;font-weight:700;color:#ffffff;display:flex;align-items:center;justify-content:center;background:' + PEOPLE[p.owner][1],
+        style: 'display:flex;flex-direction:column;gap:7px;width:100%;text-align:left;background:#ffffff;border-radius:10px;padding:10px;cursor:grab;' + (S.flash === p.id ? 'border:2px solid #0d9488;box-shadow:0 0 0 4px rgba(13,148,136,.15)' : 'border:1px solid #e2e8f0') };
+    };
+    var cols = defs.map(function(d, i){
+      var cards = pieces.filter(function(p){ return p.col === i; }).map(mkCard);
+      var over = S.over === i;
+      return { n: String(i + 1).padStart(2, '0'), name: d[0], hint: d[1], cards: cards, count: cards.length, empty: cards.length === 0,
+        onOver: function(e){ e.preventDefault(); if (S.over !== i) self.setState({ over: i }); },
+        onLeave: function(){ if (S.over === i) self.setState({ over: -1 }); },
+        onDrop: function(e){ e.preventDefault(); var id = self.dragId; self.dragId = null; self.setState({ over: -1 }); if (id) moveTo(id, i); },
+        style: 'border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:200px;' + (over ? 'background:#f0fdfa;border:1.5px dashed #0d9488' : 'background:#f8fafc;border:1px solid #e2e8f0') };
+    });
+    var health = defs.map(function(d, i){
+      var inCol = pieces.filter(function(p){ return p.col === i; });
+      var avg = inCol.length ? Math.round(10 * inCol.reduce(function(a, p){ return a + p.days; }, 0) / inCol.length) / 10 : 0;
+      var slow = avg >= 2;
+      return { name: d[0], n: inCol.length, days: avg, slow: slow,
+        daysStyle: 'font-size:10.5px;' + (slow ? 'color:#dc2626;font-weight:600' : 'color:#94a3b8'),
+        box: 'border-radius:10px;padding:8px 10px;' + (slow ? 'background:#fef2f2' : 'background:#f8fafc') };
+    });
+
+    var p = (S.open && S.draft) ? S.draft : null;
+    var sel = {}, ctaPresets = [];
+    if (p) {
+      var T = TYPES[p.type], vid = isVid(p), car = p.type === 'carousel';
+      var g = p.col < 5 ? gate(p, p.col) : null;
+      var done = p.checks.filter(Boolean).length;
+      var isLast = p.col === 5;
+      var nh = Math.max(p.hooks.length, 1);
+      var pv = Math.min(S.pv, nh - 1);
+      var out = vid ? vidPara(p, pv) : (car ? carBrief(p) : stBrief(p, pv));
+      var allOut = vid ? p.hooks.map(function(h, i){ return vidPara(p, i); }).filter(Boolean).join('\n\n') : (car ? out : p.hooks.map(function(h, i){ return stBrief(p, i); }).filter(Boolean).join('\n\n'));
+      var words = vid ? out.split(/\s+/).filter(Boolean).length : 0;
+      var used = p.hooks.map(function(h){ return h.text.trim().toLowerCase(); });
+      var suggest = vid ? BANK.filter(function(b){ return used.indexOf(b.toLowerCase()) < 0; }).slice(0, 3).map(function(b){
+        return { text: b, add: function(){ update(p.id, function(x){
+          var empty = x.hooks.filter(function(h){ return !h.text.trim(); })[0];
+          if (empty) empty.text = b; else x.hooks.push({ text: b, status: 'pend' });
+        }); } };
+      }) : [];
+      ctaPresets = CTAS[p.type].map(function(t){ return { text: t, use: function(){ update(p.id, function(x){ x.cta = t; }); } }; });
+      var ST2 = ST[p.stage];
+      var stepIdx = defs.map(function(d, i){ return i; }).filter(function(i){ return vid || i !== 3; });
+      var prodTarget = vid ? (p.col === 2 ? 'rec' : 'ok') : 'ok';
+      var nc = isLast ? null : nextCol(p);
+      var readyRows = vid ? [['Al menos un hook', p.hooks.some(function(h){ return h.text.trim(); })], ['Body escrito', !!p.body.trim()], ['CTA escrito', !!p.cta.trim()]]
+        : (car ? [['Al menos 2 tarjetas', p.hooks.filter(function(h){ return h.text.trim(); }).length >= 2], ['CTA escrito', !!p.cta.trim()], ['Copy del anuncio', !!p.copy.trim()]]
+        : [['Texto principal (1 versión mínimo)', p.hooks.some(function(h){ return h.text.trim(); })], ['CTA del botón', !!p.cta.trim()], ['Copy del anuncio', !!p.copy.trim()]]);
+      readyRows.unshift(['Ángulo elegido', p.lane !== 'Ads' || !!p.angle]);
+      sel = { id: p.id, days: p.days, title: p.title, format: p.format, angle: p.angle,
+        isAds: p.lane === 'Ads',
+        channels: [['WEB','Web'],['WA','WhatsApp']].map(function(c){ var on = (p.channel || 'WEB') === c[0];
+          return { label: c[1], pick: function(){ update(p.id, function(x){ x.channel = c[0]; }); },
+            style: 'height:28px;padding:0 11px;border:none;border-radius:16px;font-size:12px;' + (on ? 'background:#ffffff;color:#0f172a;font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.1)' : 'background:transparent;color:#64748b') }; }),
+        onAngle: function(e){ var v = e.target.value; update(p.id, function(c){ c.angle = v; }); },
+        angleSelect: p.angle ? 'background-color:#eef2ff;color:#4338ca;border-color:#c7d2fe' : 'color:#94a3b8;border-style:dashed', stage: p.stage, product: p.product, owner: p.owner, body: p.body, cta: p.cta, offer: p.offer, copy: p.copy, visual: p.visual,
+        isStaticLike: !vid,
+        lanes: ['Ads','Orgánico'].map(function(l){
+          var on = p.lane === l, c = LANES[l];
+          return { label: l, pick: function(){ update(p.id, function(x){ x.lane = l; }); },
+            style: 'height:28px;padding:0 12px;border:none;border-radius:20px;font-size:12px;' + (on ? 'background:' + c[1] + ';color:' + c[2] + ';font-weight:700' : 'background:transparent;color:#64748b;font-weight:500') };
+        }),
+        hasRef: !!p.ref,
+        ref: p.ref ? { sbOpen: !!S.sbOpen, sbLabel: S.sbOpen ? 'Ocultar storyboard' : 'Ver storyboard · 12 escenas', toggleSb: function(){ self.setState({ sbOpen: !S.sbOpen }); },
+          scenes: [p.ref.hook, p.ref.hook, 'El que lo ha sufrido sabe', 'El que lo ha sufrido sabe', 'El descanso no lo es todo', 'El descanso no lo es todo', 'Sujetarlo bien es clave', 'Sujetarlo bien es clave', 'Se pone en 10 segundos', 'Se pone en 10 segundos', 'Pídela y paga al recibir', 'Pídela y paga al recibir'].map(function(t, i){
+            var tones = ['#78716c','#57534e','#64748b','#475569','#52525b','#334155']; var s = Math.round(i * 1.5);
+            return { n: i + 1, text: t, t: '0:' + (s < 10 ? '0' : '') + s, frame: 'position:relative;aspect-ratio:9/16;border-radius:7px;overflow:hidden;background:linear-gradient(170deg,' + tones[i % 6] + ' 0%,#cbd5e1 55%,' + tones[(i + 2) % 6] + ' 100%)' }; }),
+          brand: p.ref.brand, hook: p.ref.hook, meta: p.ref.concept + ' · ' + p.ref.days + ' días activo · importado con Nova Swipe', structure: p.ref.structure,
+          hooks: p.ref.hooks.map(function(t){ return { text: t, add: function(){ update(p.id, function(x){
+            var empty = x.hooks.filter(function(h){ return !h.text.trim(); })[0];
+            if (empty) empty.text = t; else x.hooks.push({ text: t, status: 'pend' });
+          }); } }; }) } : { brand: '', hook: '', meta: '', structure: [], hooks: [], scenes: [], sbOpen: false },
+        types: Object.keys(TYPES).map(function(k){
+          var on = p.type === k;
+          return { label: TYPES[k].label, pick: function(){ update(p.id, function(c){
+              c.type = k;
+              if (FORMATS[k].indexOf(c.format) < 0) c.format = FORMATS[k][0];
+              if (k !== 'video' && c.col === 3) c.col = 4;
+              c.hooks.forEach(function(h){ if (k !== 'video' && h.status === 'rec') h.status = 'pend'; });
+            }); self.setState({ pv: 0 }); },
+            style: 'height:28px;padding:0 12px;border:none;border-radius:20px;font-size:12px;' + (on ? 'background:#ffffff;color:#0f172a;font-weight:700;box-shadow:0 1px 3px rgba(15,23,42,.12)' : 'background:transparent;color:#64748b;font-weight:500') };
+        }),
+        formats: FORMATS[p.type],
+        stageSelect: 'background-color:' + ST2[0] + ';color:' + ST2[1] + ';border-color:' + ST2[2],
+        steps: stepIdx.map(function(i){
+          var state = i < p.col ? 'done' : (i === p.col ? 'cur' : 'todo');
+          return { name: (i === 2 ? (vid ? 'Grabación' : 'Diseño') : defs[i][0]),
+            bar: 'display:block;height:4px;border-radius:4px;background:' + (state === 'todo' ? '#e2e8f0' : '#0d9488') + (state === 'cur' ? ';box-shadow:0 0 0 2px #ccfbf1' : ''),
+            label: 'font-size:10.5px;' + (state === 'cur' ? 'color:#0f766e;font-weight:700' : (state === 'done' ? 'color:#475569' : 'color:#94a3b8')) };
+        }),
+        onTitle: function(e){ var v = e.target.value; update(p.id, function(c){ c.title = v; }); },
+        onFormat: function(e){ var v = e.target.value; update(p.id, function(c){ c.format = v; }); },
+        onStage: function(e){ var v = e.target.value; update(p.id, function(c){ c.stage = v; }); },
+        onProduct: function(e){ var v = e.target.value; update(p.id, function(c){ c.product = v; }); },
+        onOwner: function(e){ var v = e.target.value; update(p.id, function(c){ c.owner = v; }); },
+        onBody: function(e){ var v = e.target.value; update(p.id, function(c){ c.body = v; }); },
+        onCta: function(e){ var v = e.target.value; update(p.id, function(c){ c.cta = v; }); },
+        onOffer: function(e){ var v = e.target.value; update(p.id, function(c){ c.offer = v; }); },
+        onCopy: function(e){ var v = e.target.value; update(p.id, function(c){ c.copy = v; }); },
+        onVisual: function(e){ var v = e.target.value; update(p.id, function(c){ c.visual = v; }); },
+
+        itemTag: vid ? 'HOOK' : (car ? 'TARJETAS' : 'TEXTO PRINCIPAL'),
+        itemHelp: vid ? '0–3 s · cada versión sale como un anuncio' : (car ? 'una idea por tarjeta · la 1 tiene que enganchar sola' : 'el texto grande de la imagen · cada versión sale como un anuncio'),
+        itemPlaceholder: vid ? 'La frase que para el scroll' : (car ? 'Texto de esta tarjeta' : 'Ej: Tu tobillo protegido todo el día'),
+        addLabel: vid ? '+ Agregar versión de hook' : (car ? '+ Agregar tarjeta' : '+ Agregar versión de imagen'),
+        bodyTag: vid ? 'BODY' : 'TEXTO DE APOYO',
+        bodyHelp: vid ? 'igual para todas las versiones · se graba una vez' : 'beneficios o frase corta debajo del texto principal',
+        bodyPlaceholder: vid ? 'Problema → cómo lo resolvió el producto → prueba o dato concreto' : 'Ej: Compresión firme · No se nota · Talla única',
+        bodyRows: vid ? 5 : 2,
+        ctaHelp: vid ? 'el cierre que pide la acción' : 'el texto del botón',
+        ctaPlaceholder: vid ? 'Qué tiene que hacer y por qué ahora' : 'Ej: Pide aquí',
+        hooks: p.hooks.map(function(h, i){
+          return { k: T.k + (i + 1), text: h.text,
+            onText: function(e){ var v = e.target.value; update(p.id, function(x){ x.hooks[i].text = v; }); },
+            remove: function(){ update(p.id, function(x){ x.hooks.splice(i, 1); }); self.setState({ pv: 0 }); } };
+        }),
+        addHook: function(){ update(p.id, function(x){ x.hooks.push({ text: '', status: 'pend' }); }); },
+        suggest: suggest, hasSuggest: suggest.length > 0 && p.col <= 1,
+
+        outTitle: vid ? 'Guion de corrido' : (car ? 'Brief del carrusel' : 'Brief para diseño / IA'),
+        outSub: vid ? 'listo para ElevenLabs' : 'para el diseñador o Gemini / ChatGPT',
+        outMeta: vid ? words + ' palabras · ~' + Math.round(words / 2.6) + ' s' : (car ? p.hooks.length + ' tarjetas' : p.hooks.length + ' versión' + (p.hooks.length === 1 ? '' : 'es')),
+        multi: !car && p.hooks.length > 1,
+        versions: p.hooks.map(function(h, i){
+          var on = i === pv;
+          return { k: T.k + (i + 1), pick: function(){ self.setState({ pv: i }); },
+            style: 'height:28px;padding:0 11px;border-radius:7px;font-family:JetBrains Mono,monospace;font-size:11px;font-weight:600;' + (on ? 'border:1px solid #0f172a;background:#0f172a;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') };
+        }),
+        paragraph: out || (vid ? 'Escribe hook, body y CTA: aquí aparece el guion completo en un párrafo.' : 'Completa los textos: aquí aparece el brief listo para el diseñador o la IA de imágenes.'),
+        copyOneLabel: vid ? 'Copiar ' + (p.hooks.length ? T.k + (pv + 1) : 'guion') : (car ? 'Copiar brief' : 'Copiar brief ' + (p.hooks.length ? T.k + (pv + 1) : '')),
+        showCopyAll: !car,
+        copyOne: function(){ if (!out) { setMsg('Todavía no hay nada para copiar.', 'warn'); return; } copyText(out, vid ? 'Guion' : 'Brief'); },
+        copyAll: function(){ if (!allOut) { setMsg('Todavía no hay nada para copiar.', 'warn'); return; } copyText(allOut, 'Todas las versiones'); },
+        copyAdCopy: function(){ if (!p.copy.trim()) { setMsg('Escribe primero el copy del anuncio.', 'warn'); return; } copyText(p.copy.trim(), 'Copy para Meta'); },
+        outHint: vid ? 'Une hook + body + CTA en un solo párrafo, sin etiquetas, para pegar directo en ElevenLabs.' : 'Junta textos, oferta, botón y estilo en un brief para pasárselo al diseñador o a la IA de imágenes.',
+
+        showReady: p.col <= 1, showProd: p.col === 2 || (vid && p.col === 3), showChecks: p.col === 4, showLaunch: p.col === 5,
+        panelTitle: p.col <= 1 ? 'Para pasar a ' + (vid ? 'Grabación' : 'Diseño') : (p.col === 2 ? (vid ? 'Grabación por versión' : 'Diseño por ' + (car ? 'tarjeta' : 'versión')) : (p.col === 3 ? 'Edición por versión' : (p.col === 4 ? 'Checklist de revisión' : 'Se van a crear estos anuncios'))),
+        panelCount: p.col === 4 ? done + '/5' : ((p.col === 2 || p.col === 3) ? p.hooks.filter(function(h){ return prodTarget === 'rec' ? h.status !== 'pend' : h.status === 'ok'; }).length + '/' + p.hooks.length : ''),
+        ready: readyRows.map(function(r){ return { label: r[0], ok: r[1],
+          dot: 'width:17px;height:17px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' + (r[1] ? 'background:#0d9488' : 'background:#ffffff;border:1.5px solid #cbd5e1'),
+          textStyle: r[1] ? 'color:#475569' : 'color:#0f172a;font-weight:600' }; }),
+        prod: p.hooks.map(function(h, i){
+          var reached = prodTarget === 'rec' ? h.status !== 'pend' : h.status === 'ok';
+          var c = reached ? STATUS[prodTarget] : STATUS.pend;
+          var doneLabel = vid ? (prodTarget === 'rec' ? 'Grabado' : 'Editado') : 'Diseñado';
+          return { k: T.k + (i + 1), text: h.text || '(sin texto)', label: reached ? doneLabel : 'Marcar ' + doneLabel.toLowerCase(),
+            chip: 'height:28px;padding:0 10px;flex-shrink:0;border-radius:20px;font-size:10.5px;font-weight:700;background:' + c[1] + ';color:' + c[2] + ';border:1px solid ' + c[3],
+            toggle: function(){ update(p.id, function(x){
+              var s0 = x.hooks[i].status;
+              if (prodTarget === 'rec') x.hooks[i].status = s0 === 'pend' ? 'rec' : 'pend';
+              else if (vid) x.hooks[i].status = s0 === 'ok' ? 'rec' : 'ok';
+              else x.hooks[i].status = s0 === 'ok' ? 'pend' : 'ok';
+            }); } };
+        }),
+        prodHint: vid ? (p.col === 2 ? 'Marca cada versión cuando la tengas grabada. El body se graba una sola vez.' : 'Marca cada versión cuando tengas el export final.') : 'Marca cada pieza cuando el diseño esté listo. Copia el brief de arriba para el diseñador o la IA.',
+        checks: CHECKS[p.type].map(function(l, i){
+          var on = p.checks[i];
+          return { label: l, on: on, toggle: function(){ update(p.id, function(x){ x.checks[i] = !x.checks[i]; }); },
+            box: 'width:17px;height:17px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;' + (on ? 'background:#0d9488;border:1px solid #0d9488' : 'background:#ffffff;border:1.5px solid #cbd5e1') };
+        }),
+        adNames: adNamesOf(p).map(function(n){ return { name: n, copy: function(){ copyText(n, 'Nombre'); } }; }),
+        copyNames: function(){ copyText(adNamesOf(p).join('\n'), 'Nombres'); },
+        remove: function(){ self.setState({ pieces: S.pieces.filter(function(x){ return x.id !== p.id; }), sel: null, open: false, draft: null, dirty: false, confirm: false, msg: p.id + ' eliminada.', msgKind: 'info' }); },
+        back: function(){ if (p.col > 0) moveTo(p.id, prevCol(p), committed()); },
+        next: function(){ if (isLast) { launch(p.id, committed()); return; } moveTo(p.id, nc, committed()); },
+        dirty: !!S.dirty, confirm: !!S.confirm, notConfirm: !S.confirm,
+        save: function(){ self.setState({ pieces: committed(), open: false, draft: null, dirty: false, confirm: false, flash: p.id, msg: S.dirty ? p.id + ' guardada.' : '', msgKind: 'ok' }); },
+        saveLabel: 'Guardar',
+        saveStyle: 'height:40px;padding:0 16px;border-radius:9px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid #0d9488;background:#f0fdfa;color:#0f766e',
+        keepEditing: function(){ self.setState({ confirm: false }); },
+        discard: function(){ self.setState({ open: false, draft: null, dirty: false, confirm: false, msg: 'Cambios descartados.', msgKind: 'info' }); },
+        saveClose: function(){ self.setState({ pieces: committed(), open: false, draft: null, dirty: false, confirm: false, msg: p.id + ' guardada.', msgKind: 'ok' }); },
+        backStyle: 'height:40px;padding:0 16px;border-radius:9px;font-size:13px;font-weight:600;border:1px solid #e2e8f0;background:#ffffff;' + (p.col === 0 ? 'color:#cbd5e1;cursor:not-allowed' : 'color:#0f172a'),
+        nextLabel: isLast ? (p.lane === 'Ads' ? 'Guardar y lanzar a Meta' : 'Guardar y publicar') : 'Guardar y pasar a ' + (nc === 2 ? (vid ? 'Grabación' : 'Diseño') : defs[nc][0]) + ' →',
+        nextStyle: 'height:40px;padding:0 18px;border-radius:9px;font-size:13px;font-weight:600;' + (!g ? 'border:none;background:#0d9488;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#94a3b8'),
+        gateText: isLast ? (p.lane === 'Ads' ? (car ? 'Se crea 1 anuncio de carrusel y pasa a Testing.' : 'Se crea un anuncio por cada versión y pasan a Testing.') : 'Al publicar sale del tablero.') : (g ? 'Falta: ' + g : 'Todo listo para avanzar.' + (!vid && p.col === 2 ? ' Salta Edición.' : '')),
+        gateColor: g ? '#b45309' : '#0f766e' };
+    }
+
+    var queue = pieces.filter(function(x){ return isVid(x) && (x.col === 1 || x.col === 2) && x.hooks.some(function(h){ return h.status === 'pend'; }); });
+    var totalPend = 0;
+    var session = queue.map(function(x){
+      var n = x.hooks.filter(function(h){ return h.status === 'pend'; }).length; totalPend += n;
+      return { id: x.id, what: (x.col === 1 ? 'body + ' : '') + n + ' hook' + (n > 1 ? 's' : ''), open: function(){ openPiece(x.id); } };
+    });
+    var addOf = function(type){ return function(){
+      var id = 'IDEA-0' + (S.seq + 20);
+      var np = { id: id, lane: lane === 'Todos' ? 'Ads' : lane, channel: 'WEB', ref: null, col: 0, stage: 'TOFU', type: type, title: 'Nueva pieza', format: FORMATS[type][0], product: 'Tobillera de compresión', owner: 'L', days: 0,
+        hooks: type === 'carousel' ? [{ text: '', status: 'pend' }, { text: '', status: 'pend' }] : [{ text: '', status: 'pend' }],
+        checks: [false,false,false,false,false], body: '', cta: '', offer: '', copy: '', visual: '' };
+      self.setState({ pieces: S.pieces.concat([np]), sel: id, open: true, pv: 0, seq: S.seq + 1, draft: clone(np), dirty: false, confirm: false });
+    }; };
+    var lanes = ['Todos','Ads','Orgánico'].map(function(l){
+      var on = lane === l, n = S.pieces.filter(function(x){ return l === 'Todos' || x.lane === l; }).length;
+      return { label: l, n: n, pick: function(){ self.setState({ lane: l, sel: null, open: false, msg: '' }); },
+        style: 'height:32px;padding:0 14px;border:none;border-radius:20px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'background:#0f172a;color:#ffffff;font-weight:600' : 'background:transparent;color:#64748b') };
+    });
+    var launched = S.launched.filter(function(x){ return lane === 'Todos' ? true : lane === 'Ads' ? x.dest !== 'Publicado' : x.dest === 'Publicado'; });
+    var MSG = { info: ['#0f172a','#ffffff'], ok: ['#0f766e','#ffffff'], warn: ['#92400e','#ffffff'] }[S.msgKind] || ['#0f172a','#ffffff'];
+    var ND = S.nomDraft || S.nom;
+    var EXP = [
+      { label: 'Video', p: { id: 'SCR_046', channel: 'WEB', type: 'video', product: 'Tobillera de compresión', format: 'UGC', angle: 'Trabajo de pie', stage: 'TOFU' }, k: 'H1' },
+      { label: 'Estático', p: { id: 'EST_056', channel: 'WEB', type: 'static', product: 'Tobillera de compresión', format: 'Venta directa', angle: 'Pagas al recibir', stage: 'BOFU' }, k: 'V2' },
+      { label: 'Carrusel', p: { id: 'CAR_057', channel: 'WA', type: 'carousel', product: 'Tobillera de compresión', format: 'Educativo', angle: 'Alternativa a la venda', stage: 'MOFU' }, k: '' }
+    ];
+    var setND = function(fn){ var d = clone(ND); fn(d); self.setState({ nomDraft: d }); };
+    var nomRows = ND.toks.map(function(t, i){
+      var key = t[0], on = !!t[1], locked = key === 'id' || key === 'version' || key === 'channel', last = i === ND.toks.length - 1;
+      var arrow = function(dis){ return 'width:28px;height:28px;border:1px solid #e2e8f0;border-radius:7px;background:#ffffff;display:inline-flex;align-items:center;justify-content:center;' + (dis ? 'color:#e2e8f0;cursor:default' : 'color:#475569'); };
+      return { label: TOKS[key][0], help: TOKS[key][1], ex: TOKS[key][2](EXP[0].p, 'H1') || '—', on: on, locked: locked,
+        labelStyle: 'font-size:13px;font-weight:600;' + (on ? 'color:#0f172a' : 'color:#94a3b8'),
+        box: 'width:20px;height:20px;border-radius:5px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;' + (on ? 'background:#0d9488;border:1px solid #0d9488' : 'background:#ffffff;border:1.5px solid #cbd5e1') + (locked ? ';opacity:.55;cursor:default' : ''),
+        toggle: function(){ if (locked) return; setND(function(d){ d.toks[i][1] = d.toks[i][1] ? 0 : 1; }); },
+        up: function(){ if (i === 0) return; setND(function(d){ var x = d.toks[i]; d.toks[i] = d.toks[i - 1]; d.toks[i - 1] = x; }); },
+        down: function(){ if (last) return; setND(function(d){ var x = d.toks[i]; d.toks[i] = d.toks[i + 1]; d.toks[i + 1] = x; }); },
+        upStyle: arrow(i === 0), downStyle: arrow(last) };
+    });
+    var DEFAULT_NOM = { sep: '_', toks: [['brand',1],['product',1],['id',1],['version',1],['channel',1],['format',1],['angle',1],['stage',1],['date',0]] };
+    var nomExample = nameFor(EXP[0].p, 'H1', S.nom);
+    return { lanes: lanes, cols: cols, health: health,
+      nomExample: nomExample, nomOpen: S.nomOpen,
+      openNom: function(){ self.setState({ nomOpen: true, nomDraft: clone(S.nom) }); },
+      closeNom: function(){ self.setState({ nomOpen: false, nomDraft: null }); },
+      saveNom: function(){ self.setState({ nom: clone(ND), nomOpen: false, nomDraft: null, msg: 'Nomenclatura guardada. Los anuncios que lances desde ahora se llaman así: ' + nameFor(EXP[0].p, 'H1', ND), msgKind: 'ok' }); },
+      resetNom: function(){ self.setState({ nomDraft: clone(DEFAULT_NOM) }); },
+      nomRows: nomRows,
+      nomPreview: EXP.map(function(e){ return { label: e.label, name: nameFor(e.p, e.k, ND) }; }),
+      nomSeps: [['_','Guion bajo  _'],['-','Guion  -'],['|','Barra  |']].map(function(x){ var on = ND.sep === x[0];
+        return { label: x[1], on: on, pick: function(){ setND(function(d){ d.sep = x[0]; }); },
+          style: 'height:30px;padding:0 11px;border-radius:20px;font-size:12px;font-family:"JetBrains Mono",monospace;' + (on ? 'border:1px solid #0d9488;background:#f0fdfa;color:#0f766e;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; }),
+      utmText: 'utm_content=' + '{' + '{ad.name}' + '}',
+      copyUtm: function(){ copyText('utm_content=' + '{' + '{ad.name}' + '}', 'Parámetro'); },
+      newBtns: [{ label: 'Video', add: addOf('video') }, { label: 'Estático', add: addOf('static') }, { label: 'Carrusel', add: addOf('carousel') }],
+      modalOpen: S.open && !!p, sel: sel, ctaPresets: ctaPresets, close: function(){ if (S.dirty) self.setState({ confirm: true }); else self.setState({ open: false, draft: null, confirm: false }); },
+      previewRef: function(el){ self.previewEl = el; },
+      opts: { angles: [{ v: '', label: 'Elegir ángulo' }].concat(['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'].map(function(a){ return { v: a, label: a }; })),
+        stages: ['TOFU','MOFU','BOFU'], products: ['Tobillera de compresión','Rodillera','Muñequera'],
+        owners: [{ v: 'L', label: 'Luchito' }, { v: 'A', label: 'Asesora' }, { v: 'E', label: 'Editor' }] },
+      session: session, sessionEmpty: session.length === 0,
+      sessionSummary: session.length + ' pieza' + (session.length === 1 ? '' : 's') + ' · ' + totalPend + ' hooks',
+      hasMsg: !!S.msg, msg: S.msg, clearMsg: function(){ self.setState({ msg: '' }); },
+      msgStyle: 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;max-width:560px;width:calc(100% - 48px);box-sizing:border-box;display:flex;align-items:flex-start;gap:10px;font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:1.45;padding:12px 14px;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.25);background:' + MSG[0] + ';color:' + MSG[1],
+      launched: launched, hasLaunched: launched.length > 0, launchedTitle: lane === 'Todos' ? 'Lanzados y publicados en esta sesión' : lane === 'Ads' ? 'Lanzados en esta sesión' : 'Publicados en esta sesión' };
+  }
+}
+</script>
+</body>
+</html>

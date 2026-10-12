@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Biblioteca · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+.rc{transition:box-shadow .15s}
+.rc:hover{box-shadow:0 8px 22px rgba(15,23,42,.10)}
+.rc .re{opacity:0}
+.rc:hover .re,.rc:focus-within .re{opacity:1}
+.fc:hover{border-color:#94a3b8}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Biblioteca" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">{{crumb}} / Biblioteca</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Biblioteca</h1>
+</div>
+<label style="margin-left: auto; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; color: #94a3b8; min-width: 260px">
+<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+<input type="search" value="{{q}}" onChange="{{onQ}}" placeholder="Buscar por hook, marca o formato" aria-label="Buscar en la biblioteca" style="border: none; outline: none; background: transparent; font-size: 12.5px; color: #0f172a; width: 100%">
+</label>
+</header>
+
+<sc-if value="{{hasInbox}}" hint-placeholder-val="{{true}}">
+<section style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; background: #0f172a; color: #ffffff; border-radius: 14px; padding: 14px 18px">
+<span style="width: 36px; height: 36px; border-radius: 10px; background: rgba(94,234,212,.15); color: #5eead4; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg></span>
+<div>
+<div style="font-size: 13.5px; font-weight: 700">{{inboxN}} referentes sin asignar</div>
+<div style="font-size: 12px; color: #94a3b8; margin-top: 2px">La IA sugirió marca, producto, etapa y formato. Confirmas o cambias en un clic.</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px">
+<sc-for list="{{inboxByBrand}}" as="ib" hint-placeholder-count="3">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 9px; border-radius: 20px; background: rgba(255,255,255,.08); color: #e2e8f0"><span style="{{ib.dot}}"></span>{{ib.n}} {{ib.name}}</span>
+</sc-for>
+</div>
+</div>
+<button type="button" onClick="{{startQueue}}" style="margin-left: auto; height: 36px; padding: 0 16px; border: none; border-radius: 9px; background: #5eead4; color: #0f172a; font-size: 12.5px; font-weight: 700">Revisar bandeja</button>
+</section>
+</sc-if>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div role="group" aria-label="Estado" style="display: flex; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; padding: 3px; border-radius: 9px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #94a3b8">{{t.n}}</span></button>
+</sc-for>
+</div>
+<select value="{{mbFilter}}" onChange="{{onMbFilter}}" aria-label="Marca" style="height: 36px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 12.5px; color: #0f172a">
+<sc-for list="{{mbOpts}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+</select>
+<div role="group" aria-label="Tipo" style="display: flex; gap: 4px">
+<sc-for list="{{typeChips}}" as="t" hint-placeholder-count="4">
+<button type="button" class="fc" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div role="group" aria-label="Canal" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -6px">
+<span style="font-size: 12px; color: #64748b; margin-right: 2px">Canal</span>
+<sc-for list="{{srcChips}}" as="s" hint-placeholder-count="7">
+<button type="button" class="fc" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="{{s.style}}"><sc-if value="{{s.hasDot}}" hint-placeholder-val="{{true}}"><span style="{{s.dot}}"></span></sc-if>{{s.label}} <span style="opacity: .55">{{s.n}}</span></button>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-items: stretch">
+<sc-for list="{{cards}}" as="c" hint-placeholder-count="12">
+<article class="rc" style="{{c.box}}">
+<a href="Referente.dc.html" style="{{c.thumb}}">
+<span style="position: absolute; top: 8px; left: 8px; font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: rgba(15,23,42,.7); color: #ffffff">{{c.type}}</span>
+<span style="position: absolute; top: 8px; right: 8px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; padding: 2px 7px; border-radius: 5px; background: rgba(255,255,255,.9); color: #0f172a">{{c.days}}d</span>
+<span style="font-size: 12px; font-weight: 700; color: #0f172a; background: rgba(255,255,255,.93); padding: 5px 9px; border-radius: 7px; margin: 0 10px; text-align: center">{{c.hook}}</span>
+<span style="{{c.srcStyle}}"><span style="{{c.srcDot}}"></span>{{c.srcLabel}}</span>
+<sc-if value="{{c.justDone}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; inset: 0; background: rgba(13,148,136,.82); color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12.5px; font-weight: 700">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Asignado</span>
+</sc-if>
+</a>
+<div style="flex: 1; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 128px; box-sizing: border-box">
+<div style="display: flex; align-items: center"><span style="font-size: 12.5px; font-weight: 700">{{c.brand}}</span><span style="margin-left: auto; font-size: 10.5px; color: #94a3b8">{{c.when}}</span></div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #475569; min-width: 0"><span style="{{c.mbDot}}"></span><b style="font-weight: 600; white-space: nowrap">{{c.mbName}}</b><span style="color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">· {{c.prodName}}</span></div>
+<sc-if value="{{c.assigned}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap">
+<span style="{{c.tag}}">{{c.stage}}</span>
+<span style="font-size: 11.5px; color: #475569; overflow: hidden; text-overflow: ellipsis">{{c.format}}</span>
+<sc-if value="{{c.hasAngle}}" hint-placeholder-val="{{false}}"><span style="font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: #eef2ff; color: #4338ca">{{c.angle}}</span></sc-if>
+<button type="button" class="re" onClick="{{c.change}}" style="margin-left: auto; border: none; background: transparent; font-size: 11px; font-weight: 600; color: #0f766e; padding: 2px 0">Cambiar</button>
+</div>
+</sc-if>
+<sc-if value="{{c.inbox}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 5px; min-width: 0; white-space: nowrap">
+<span style="flex-shrink: 0; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: #f5f3ff; color: #6d28d9">IA sugiere</span>
+<span style="{{c.tag}}">{{c.stage}}</span><b style="color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis">{{c.format}}</b>
+</div>
+<div style="display: flex; gap: 6px; margin-top: auto">
+<button type="button" onClick="{{c.accept}}" title="Acepta la sugerencia de la IA" style="flex: 1; height: 32px; border: none; border-radius: 8px; background: #0d9488; color: #ffffff; font-size: 12px; font-weight: 600">Asignar</button>
+<button type="button" onClick="{{c.change}}" style="flex: 1; height: 32px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #475569; font-size: 12px; font-weight: 500">Cambiar</button>
+</div>
+</sc-if>
+</div>
+</article>
+</sc-for>
+</div>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 32px; text-align: center; font-size: 13px; color: #64748b">{{emptyText}}</div>
+</sc-if>
+</main>
+</div>
+
+<!-- MODAL: asignar -->
+<sc-if value="{{mOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.55); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Asignar al embudo" style="position: relative; width: 100%; max-width: 900px; max-height: calc(100vh - 48px); display: flex; flex-direction: column; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid #f1f5f9">
+<h2 style="margin: 0; font-size: 16px; font-weight: 700">Asignar al embudo</h2>
+<sc-if value="{{m.queue}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: #f1f5f9; color: #475569">Bandeja · {{m.pos}}</span>
+</sc-if>
+<button type="button" aria-label="Cerrar" onClick="{{close}}" style="margin-left: auto; width: 32px; height: 32px; border: none; border-radius: 8px; background: transparent; color: #475569; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+</div>
+
+<div style="flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap">
+<!-- left: referente -->
+<div style="flex: 1 1 220px; max-width: 250px; padding: 18px; box-sizing: border-box; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 10px">
+<div style="{{m.thumb}}">
+<span style="font-size: 12.5px; font-weight: 700; background: rgba(255,255,255,.93); padding: 6px 10px; border-radius: 8px; margin: 0 10px; text-align: center">{{m.hook}}</span>
+</div>
+<div style="font-size: 13px; font-weight: 700">{{m.brand}}</div>
+<div style="font-size: 11.5px; color: #64748b">{{m.type}} · {{m.days}} días activo</div>
+<a href="Referente.dc.html" style="font-size: 12px; font-weight: 600; color: #0f766e; text-decoration: none">Ver detalle completo →</a>
+</div>
+
+<!-- right: choice -->
+<div style="flex: 999 1 420px; min-width: 0; padding: 18px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; gap: 10px; align-items: flex-start; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 11px 13px">
+<span style="font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #6d28d9; color: #ffffff; margin-top: 2px">IA</span>
+<div style="flex: 1; font-size: 12.5px; line-height: 1.5; color: #3b0764"><b>Sugerencia: {{m.sugMb}} · {{m.sugProd}} · {{m.sugStage}} · {{m.sugFormat}}.</b> {{m.reason}}</div>
+<sc-if value="{{m.offSug}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{m.useSug}}" style="flex-shrink: 0; height: 28px; padding: 0 10px; border: 1px solid #c4b5fd; border-radius: 7px; background: #ffffff; font-size: 11.5px; font-weight: 600; color: #6d28d9">Usar sugerencia</button>
+</sc-if>
+</div>
+
+<div>
+<div style="font-size: 12px; font-weight: 700; margin-bottom: 8px">1 · Marca y producto</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px">
+<sc-for list="{{m.brands}}" as="b" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="{{b.style}}"><span style="{{b.dot}}"></span>{{b.name}}<sc-if value="{{b.sug}}" hint-placeholder-val="{{false}}"><span style="font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: #6d28d9; color: #ffffff">IA</span></sc-if></button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{m.products}}" as="p" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="font-size: 12px; font-weight: 700; margin-bottom: 8px">2 · Etapa del embudo</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{m.stages}}" as="s" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="{{s.style}}">
+<span style="display: block; font-size: 12px; font-weight: 800; letter-spacing: .04em">{{s.code}}</span>
+<span style="display: block; font-size: 11px; opacity: .8; margin-top: 2px">{{s.sub}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="font-size: 12px; font-weight: 700; margin-bottom: 8px">3 · Formato <span style="font-weight: 500; color: #94a3b8">· {{m.groupLabel}} de {{m.stage}}</span></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px">
+<sc-for list="{{m.formats}}" as="f" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{f.on}}" onClick="{{f.pick}}" style="{{f.style}}">
+<span style="flex: 1; min-width: 0; text-align: left; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{f.name}}</span>
+<sc-if value="{{f.sug}}" hint-placeholder-val="{{false}}"><span style="font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px; background: #6d28d9; color: #ffffff">IA</span></sc-if>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #94a3b8">{{f.n}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="font-size: 12px; font-weight: 700; margin-bottom: 8px">4 · Ángulo <span style="font-weight: 500; color: #94a3b8">· opcional, de {{m.mb}}</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{m.angles}}" as="a" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{a.on}}" onClick="{{a.pick}}" style="{{a.style}}">{{a.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: #475569; background: #f8fafc; border-radius: 10px; padding: 10px 12px">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 9v6l-4 2v-8z"/></svg>
+<span style="{{m.mbDot}}"></span><b style="color: #0f172a">{{m.mb}}</b><span style="color: #cbd5e1">›</span><span>{{m.prodLabel}}</span><span style="color: #cbd5e1">›</span><b style="color: {{m.stageColor}}">{{m.stage}}</b><span style="color: #cbd5e1">›</span><span>{{m.groupLabel}}</span><span style="color: #cbd5e1">›</span><b style="color: #0f172a">{{m.format}}</b>
+<span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px">{{m.countText}}</span>
+</div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #f8fafc">
+<sc-if value="{{m.queue}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{m.skip}}" style="height: 38px; padding: 0 12px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #64748b">Saltar</button>
+</sc-if>
+<button type="button" onClick="{{close}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cancelar</button>
+<button type="button" onClick="{{m.confirm}}" style="height: 38px; padding: 0 18px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{m.cta}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 14px; padding: 11px 14px 11px 16px; border-radius: 10px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13px; box-shadow: 0 12px 30px rgba(15,23,42,.25)">
+<span>{{msg}}</span>
+<sc-if value="{{canUndo}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{undo}}" style="border: none; background: transparent; color: #5eead4; font-size: 13px; font-weight: 700; padding: 0">Deshacer</button></sc-if>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    var R = function(id, tone, brand, hook, type, days, when, sStage, sFormat, aStage, aFormat, angle){
+      return { id: id, tone: tone, brand: brand, hook: hook, type: type, days: days, when: when, sStage: sStage, sFormat: sFormat, stage: aStage || '', format: aFormat || '', angle: angle || '' };
+    };
+    this.state = { tab: 'Todos', type: 'Todos', q: '', modal: null, queue: false, msg: '', undo: null, justDone: null, items: [
+      R(1,0,'Competidor A','Me dolía al caminar','Video',48,'Hoy','TOFU','UGC'),
+      R(2,1,'Competidor B','No es una venda','Video',22,'Hoy','MOFU','Comparativo'),
+      R(3,2,'Competidor C','2x S/ 99','Estático',35,'Hoy','BOFU','Venta'),
+      R(4,3,'Competidor A','Mi fisio me dijo','Video',61,'Ayer','TOFU','UGC'),
+      R(5,4,'Competidor D','Así se pone','Video',14,'Ayer','MOFU','Demo / modo de uso','MOFU','Demo / modo de uso'),
+      R(6,5,'Competidor B','Esguince otra vez','Video',40,'Hace 2 días','TOFU','Voz en off','TOFU','Voz en off'),
+      R(7,0,'Competidor C','Antes y después','Video',73,'Hace 3 días','TOFU','Transformacional','TOFU','Transformacional','Fútbol sin miedo'),
+      R(8,1,'Competidor A','Pagas al recibir','Video',28,'Hace 4 días','BOFU','UGC (Bofu)','BOFU','UGC (Bofu)','Pagas al recibir'),
+      R(9,2,'Competidor D','Lo que llega','Video',9,'Hace 5 días','MOFU','Unboxing','MOFU','Unboxing'),
+      R(10,3,'Competidor B','5 errores','Carrusel',31,'Hace 1 sem','MOFU','Carrusel','MOFU','Carrusel','Alternativa a la venda'),
+      R(11,4,'Competidor A','Fútbol sin miedo','Video',52,'Hace 1 sem','TOFU','POV','TOFU','POV'),
+      R(12,5,'Competidor C','Reseñas reales','Estático',44,'Hace 2 sem','BOFU','Reseñas / prueba social','BOFU','Reseñas / prueba social'),
+      R(13,0,'Competidor E','Cine en casa por S/ 299','Video',19,'Hoy','TOFU','UGC'),
+      R(14,3,'Competidor F','Espalda recta en 21 días','Video',33,'Ayer','TOFU','Transformacional')
+    ].map(function(x){
+      var sMb = x.id === 13 ? 'Nova Shop' : (x.id === 14 ? 'KLYNEA' : 'NOVAFLEX');
+      var sProd = x.id === 13 ? 'Proyector portátil' : (x.id === 14 ? 'Corrector de postura' : (x.id === 1 || x.id === 4 ? 'Tobillera de compresión' : 'General'));
+      var SRC = { 1: 'Biblioteca de anuncios', 2: 'Biblioteca de anuncios', 3: 'Instagram', 4: 'TikTok', 5: 'TikTok', 6: 'Biblioteca de anuncios', 7: 'Instagram', 8: 'Facebook', 9: 'TikTok', 10: 'Instagram', 11: 'YouTube', 12: 'Facebook', 13: 'Biblioteca de anuncios', 14: 'Pinterest' };
+      return Object.assign(x, { sMb: sMb, sProd: sProd, mb: x.stage ? sMb : '', prod: x.stage ? sProd : '', src: SRC[x.id] || 'Biblioteca de anuncios' });
+    }), mbFilter: 'Todas', srcFilter: 'Todos' };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var TONES = ['#64748b','#475569','#78716c','#57534e','#52525b','#334155'];
+    var ST = { TOFU: ['#f0fdf4','#15803d','#bbf7d0','Atraer'], MOFU: ['#fefce8','#a16207','#fde68a','Confiar'], BOFU: ['#fef2f2','#dc2626','#fecaca','Convertir'] };
+    var FMT = {
+      TOFU: { Video: [['Variado (Tofu)',6],['Comercial',4],['Transformacional',32],['POV',4],['Celebridad',20],['Voz en off',86],['Diálogo',13],['UGC',24]], 'Estáticos': [['Venta',5]] },
+      MOFU: { Video: [['Entrevista (Mofu)',3],['Demo / modo de uso',10],['UGC (Mofu)',9],['Unboxing',6]], 'Estáticos': [['Educativo',7],['Comparativo',6],['Carrusel',4]] },
+      BOFU: { Video: [['Testimonio',3],['UGC (Bofu)',2]], 'Estáticos': [['Reseñas / prueba social',5],['Venta',2]] }
+    };
+    var BR = {
+      'NOVAFLEX': { color: '#84cc16', fg: '#0f172a', products: ['Tobillera de compresión','Rodillera','Muñequera'], angles: ['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'] },
+      'KLYNEA': { color: '#0d9488', fg: '#ffffff', products: ['Faja lumbar','Corrector de postura','Rodillera ortopédica'], angles: ['Espalda sin dolor','Trabajo de oficina','Postura en 21 días'] },
+      'Nova Shop': { color: '#4338ca', fg: '#ffffff', products: ['Proyector portátil','Mini proyector','Pantalla de proyección'], angles: ['Cine en casa','Regalo perfecto','Más barato que una TV'] }
+    };
+    var BRANDS = Object.keys(BR);
+    var SOURCES = [['Biblioteca de anuncios','Meta Ads','#2563eb'],['TikTok','TikTok','#0f172a'],['Instagram','Instagram','#db2777'],['Facebook','Facebook','#1d4ed8'],['YouTube','YouTube','#dc2626'],['Pinterest','Pinterest','#be123c']];
+    var srcMeta = function(s){ return SOURCES.filter(function(x){ return x[0] === s; })[0] || SOURCES[0]; };
+    var dot = function(b){ return 'display:inline-block;width:8px;height:8px;border-radius:4px;flex-shrink:0;background:' + BR[b].color; };
+    var REASON = {
+      'UGC': 'Persona común hablando a cámara desde casa, sin producción, contando su dolor.',
+      'Comparativo': 'Pone el producto al lado de la venda común y muestra la diferencia.',
+      'Venta': 'Imagen directa con precio y oferta, para quien ya conoce el producto.'
+    };
+    var groupOf = function(type){ return type === 'Video' ? 'Video' : 'Estáticos'; };
+    var tagOf = function(stage){ var s = ST[stage]; return 'flex-shrink:0;font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:' + s[0] + ';color:' + s[1] + ';border:1px solid ' + s[2]; };
+    var flash = function(text, undo){ self.setState({ msg: text, undo: undo || null }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '', undo: null }); }, 3500); };
+    var setItem = function(id, patch, list){ return (list || S.items).map(function(x){ return x.id === id ? Object.assign({}, x, patch) : x; }); };
+    var pulse = function(id){ clearTimeout(self.jt); self.jt = setTimeout(function(){ self.setState({ justDone: null }); }, 900); return id; };
+    var openModal = function(it, queue){ self.setState({ modal: { id: it.id, stage: it.stage || it.sStage, format: it.format || it.sFormat, angle: it.angle || '', mb: it.mb || it.sMb, prod: it.prod || it.sProd }, queue: !!queue }); };
+
+    var inboxItems = S.items.filter(function(x){ return !x.stage; });
+    var q = (S.q || '').trim().toLowerCase();
+    var vis = S.items.filter(function(x){
+      if (S.tab === 'Sin asignar' && x.stage) return false;
+      if (S.tab === 'Asignados' && !x.stage) return false;
+      if (S.type !== 'Todos' && x.type !== S.type) return false;
+      if (S.mbFilter !== 'Todas' && (x.mb || x.sMb) !== S.mbFilter) return false;
+      if (S.srcFilter !== 'Todos' && x.src !== S.srcFilter) return false;
+      return !q || (x.hook + ' ' + x.brand + ' ' + (x.format || x.sFormat)).toLowerCase().indexOf(q) >= 0;
+    });
+    var cards = vis.map(function(x){
+      var assigned = !!x.stage, stage = assigned ? x.stage : x.sStage, vid = x.type === 'Video';
+      return { brand: x.brand, hook: x.hook, type: x.type, days: x.days, when: x.when, assigned: assigned, inbox: !assigned,
+        stage: stage, format: assigned ? x.format : x.sFormat, angle: x.angle, hasAngle: !!x.angle, tag: tagOf(stage), justDone: S.justDone === x.id,
+        srcLabel: srcMeta(x.src)[1],
+        srcStyle: 'position:absolute;left:8px;bottom:8px;display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;padding:3px 7px;border-radius:5px;background:rgba(255,255,255,.93);color:#0f172a',
+        srcDot: 'width:7px;height:7px;border-radius:4px;background:' + srcMeta(x.src)[2],
+        mbName: assigned ? x.mb : x.sMb, mbDot: dot(assigned ? x.mb : x.sMb), prodName: (assigned ? x.prod : x.sProd) === 'General' ? 'Todos los productos' : (assigned ? x.prod : x.sProd),
+        accept: function(){ self.setState({ items: setItem(x.id, { stage: x.sStage, format: x.sFormat, mb: x.sMb, prod: x.sProd }), justDone: pulse(x.id) }); flash('Asignado a ' + x.sMb + ' · ' + x.sFormat + ' · ' + x.sStage + '.', { id: x.id }); },
+        change: function(){ openModal(x, false); },
+        box: 'height:100%;box-sizing:border-box;background:#ffffff;border:1px solid ' + (assigned ? '#e2e8f0' : '#c4b5fd') + ';border-radius:12px;overflow:hidden;display:flex;flex-direction:column',
+        thumb: 'position:relative;height:220px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(180deg,' + TONES[x.tone] + ',#1e293b)' };
+    });
+    var count = function(t){ return S.items.filter(function(x){ return t === 'Todos' || (t === 'Sin asignar' ? !x.stage : !!x.stage); }).length; };
+    var tabs = ['Todos','Sin asignar','Asignados'].map(function(t){ var on = S.tab === t;
+      return { label: t, n: count(t), on: on, pick: function(){ self.setState({ tab: t }); },
+        style: 'height:30px;padding:0 12px;border:none;border-radius:6px;font-size:12px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'background:#f1f5f9;color:#0f172a;font-weight:600' : 'background:transparent;color:#64748b') }; });
+    var typeChips = ['Todos','Video','Estático','Carrusel'].map(function(t){ var on = S.type === t;
+      return { label: t === 'Todos' ? 'Todo tipo' : t, on: on, pick: function(){ self.setState({ type: t }); },
+        style: 'height:32px;padding:0 12px;border-radius:20px;font-size:12px;' + (on ? 'border:1px solid #0f172a;background:#0f172a;color:#ffffff;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; });
+
+    /* modal */
+    var M = S.modal, it = M ? S.items.filter(function(x){ return x.id === M.id; })[0] : null, m = { stages: [], formats: [], angles: [] };
+    if (M && it) {
+      var grp = groupOf(it.type);
+      var list = FMT[M.stage][grp];
+      var fmtNames = list.map(function(f){ return f[0]; });
+      var curFormat = fmtNames.indexOf(M.format) >= 0 ? M.format : '';
+      var setM = function(patch){ self.setState({ modal: Object.assign({}, M, patch) }); };
+      var queueIds = inboxItems.map(function(x){ return x.id; });
+      var qpos = queueIds.indexOf(it.id);
+      var nextInQueue = function(items){
+        var rest = items.filter(function(x){ return !x.stage && x.id !== it.id; });
+        var after = rest.filter(function(x){ return x.id > it.id; })[0] || rest[0];
+        return after;
+      };
+      var selCount = curFormat ? (list.filter(function(f){ return f[0] === curFormat; })[0] || [0, 0])[1] : 0;
+      m = { queue: S.queue, pos: (qpos >= 0 ? qpos + 1 : 1) + ' de ' + Math.max(queueIds.length, 1),
+        hook: it.hook, brand: it.brand, type: it.type, days: it.days,
+        thumb: 'position:relative;' + (it.type === 'Video' ? 'aspect-ratio:9/14' : 'aspect-ratio:1/1') + ';border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,' + TONES[it.tone] + ',#1e293b)',
+        sugStage: it.sStage, sugFormat: it.sFormat, sugMb: it.sMb, sugProd: it.sProd === 'General' ? 'todos los productos' : it.sProd,
+        mb: M.mb, mbDot: dot(M.mb), prodLabel: M.prod === 'General' ? 'Todos los productos' : M.prod,
+        brands: BRANDS.map(function(b){ var on = M.mb === b;
+          return { name: b, on: on, sug: it.sMb === b, dot: dot(b), pick: function(){ setM({ mb: b, prod: b === it.sMb ? it.sProd : 'General', angle: '' }); },
+            style: 'height:34px;padding:0 12px;border-radius:9px;font-size:12.5px;display:inline-flex;align-items:center;gap:7px;' + (on ? 'border:2px solid #0f172a;background:#ffffff;color:#0f172a;font-weight:700' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; }),
+        products: ['General'].concat(BR[M.mb].products).map(function(p){ var on = M.prod === p;
+          return { label: p === 'General' ? 'Todos los productos' : p, on: on, pick: function(){ setM({ prod: p }); },
+            style: 'height:30px;padding:0 11px;border-radius:20px;font-size:12px;' + (on ? 'border:1px solid #0d9488;background:#f0fdfa;color:#0f766e;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#64748b') }; }),
+        reason: REASON[it.sFormat] || 'El estilo de grabación y la estructura coinciden con este formato.',
+        offSug: M.stage !== it.sStage || M.format !== it.sFormat || M.mb !== it.sMb || M.prod !== it.sProd,
+        useSug: function(){ setM({ stage: it.sStage, format: it.sFormat, mb: it.sMb, prod: it.sProd }); },
+        stage: M.stage, stageColor: ST[M.stage][1], groupLabel: grp, format: curFormat || 'elige un formato',
+        stages: ['TOFU','MOFU','BOFU'].map(function(c){ var on = M.stage === c, s = ST[c];
+          return { code: c, sub: s[3], on: on, pick: function(){ var keep = FMT[c][grp].map(function(f){ return f[0]; }).indexOf(M.format) >= 0; setM({ stage: c, format: keep ? M.format : (c === it.sStage ? it.sFormat : FMT[c][grp][0][0]) }); },
+            style: 'height:52px;border-radius:10px;text-align:center;' + (on ? 'background:' + s[0] + ';color:' + s[1] + ';border:2px solid ' + s[1] : 'background:#ffffff;color:#475569;border:1px solid #e2e8f0') }; }),
+        formats: list.map(function(f){ var on = curFormat === f[0];
+          return { name: f[0], n: f[1], on: on, sug: it.sStage === M.stage && it.sFormat === f[0], pick: function(){ setM({ format: f[0] }); },
+            style: 'display:flex;align-items:center;gap:6px;height:40px;padding:0 10px;border-radius:9px;' + (on ? 'background:#f0fdfa;border:2px solid #0d9488;color:#0f172a' : 'background:#ffffff;border:1px solid #e2e8f0;color:#334155') }; }),
+        angles: BR[M.mb].angles.map(function(a){ var on = M.angle === a;
+          return { label: a, on: on, pick: function(){ setM({ angle: on ? '' : a }); },
+            style: 'height:30px;padding:0 11px;border-radius:20px;font-size:12px;' + (on ? 'border:1px solid #4338ca;background:#eef2ff;color:#4338ca;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#64748b') }; }),
+        countText: curFormat ? selCount + ' → ' + (selCount + (it.stage === M.stage && it.format === curFormat ? 0 : 1)) + ' referencias' : '',
+        cta: S.queue ? (inboxItems.length > 1 ? 'Asignar y siguiente' : 'Asignar y terminar') : 'Asignar',
+        skip: function(){ var n = nextInQueue(S.items); if (n) openModal(n, true); else self.setState({ modal: null, queue: false }); },
+        confirm: function(){
+          if (!curFormat) { flash('Elige un formato.'); return; }
+          var items = setItem(it.id, { stage: M.stage, format: curFormat, angle: M.angle, mb: M.mb, prod: M.prod });
+          var st = { items: items, justDone: pulse(it.id) };
+          if (S.queue) {
+            var n = nextInQueue(items);
+            if (n) { st.modal = { id: n.id, stage: n.sStage, format: n.sFormat, angle: '' }; }
+            else { st.modal = null; st.queue = false; }
+          } else st.modal = null;
+          self.setState(st);
+          flash(S.queue && !st.modal ? 'Bandeja vacía: todo asignado.' : 'Asignado a ' + M.mb + ' · ' + curFormat + ' · ' + M.stage + '.', S.queue ? null : { id: it.id, prev: { stage: it.stage, format: it.format, angle: it.angle, mb: it.mb, prod: it.prod } });
+        } };
+    }
+
+    return {
+      q: S.q, onQ: function(e){ self.setState({ q: e.target.value }); },
+      hasInbox: inboxItems.length > 0, inboxN: inboxItems.length,
+      startQueue: function(){ if (inboxItems[0]) openModal(inboxItems[0], true); },
+      tabs: tabs, typeChips: typeChips, cards: cards,
+      empty: cards.length === 0, emptyText: S.tab === 'Sin asignar' ? 'Todo asignado. La bandeja está vacía.' : 'Nada coincide con esos filtros.',
+      mOpen: !!(M && it), m: m, close: function(){ self.setState({ modal: null, queue: false }); },
+      hasMsg: !!S.msg, msg: S.msg, canUndo: !!S.undo,
+      crumb: S.mbFilter === 'Todas' ? 'Todas las marcas' : S.mbFilter,
+      srcChips: [['Todos','Todos','']].concat(SOURCES).map(function(s){
+        var on = S.srcFilter === s[0];
+        var n = s[0] === 'Todos' ? S.items.length : S.items.filter(function(x){ return x.src === s[0]; }).length;
+        return { label: s[1], n: n, on: on, hasDot: !!s[2], dot: 'width:8px;height:8px;border-radius:4px;background:' + (on ? '#ffffff' : s[2]),
+          pick: function(){ self.setState({ srcFilter: s[0] }); },
+          style: 'height:30px;padding:0 11px;border-radius:20px;font-size:12px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'border:1px solid #0f172a;background:#0f172a;color:#ffffff;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') };
+      }),
+      mbFilter: S.mbFilter, onMbFilter: function(e){ self.setState({ mbFilter: e.target.value }); },
+      mbOpts: [{ v: 'Todas', label: 'Todas las marcas' }].concat(BRANDS.map(function(b){ return { v: b, label: b }; })),
+      inboxByBrand: BRANDS.map(function(b){ var n = inboxItems.filter(function(x){ return x.sMb === b; }).length; return { name: b, n: n, dot: dot(b), has: n > 0 }; }).filter(function(x){ return x.has; }),
+      undo: function(){ var u = S.undo; if (!u) return; var prev = u.prev || { stage: '', format: '', angle: '', mb: '', prod: '' }; self.setState({ items: setItem(u.id, prev), msg: '', undo: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

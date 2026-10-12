@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hooks · mobile · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6;overscroll-behavior-y:none}
+button,a{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+input,textarea{font-family:inherit;font-size:16px}
+.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-direction: column">
+
+<header style="position: sticky; top: 0; z-index: 10; background: #eef2f6; padding: calc(12px + env(safe-area-inset-top)) 16px 8px">
+<div style="font-size: 12px; color: #94a3b8">NOVAFLEX · {{count}} hooks</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 2px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Hooks</h1>
+<button type="button" aria-label="Nuevo hook" onClick="{{openNew}}" style="margin-left: auto; width: 40px; height: 40px; border-radius: 20px; border: none; background: #0d9488; color: #ffffff; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+<label style="display: flex; align-items: center; gap: 8px; height: 44px; margin-top: 10px; padding: 0 12px; border-radius: 12px; background: #ffffff; color: #94a3b8">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+<input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="Buscar hook" aria-label="Buscar hook" style="flex: 1; border: none; outline: none; background: transparent; color: #0f172a">
+</label>
+<div class="hs" style="display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; scrollbar-width: none">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5"><button type="button" aria-pressed="{{c.on}}" onClick="{{c.pick}}" style="{{c.style}}">{{c.label}}</button></sc-for>
+</div>
+</header>
+
+<main style="flex: 1; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{list}}" as="h" hint-placeholder-count="5">
+<div style="background: #ffffff; border-radius: 14px; padding: 12px 14px">
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<div style="flex: 1; min-width: 0; font-size: 15.5px; font-weight: 600; line-height: 1.35">{{h.text}}</div>
+<button type="button" aria-label="Ganador" aria-pressed="{{h.star}}" onClick="{{h.toggleStar}}" style="width: 36px; height: 36px; flex-shrink: 0; border: none; border-radius: 18px; background: transparent; color: {{h.starColor}}; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="{{h.starFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap">
+<sc-if value="{{h.hasAngle}}" hint-placeholder-val="{{true}}"><span style="font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #eef2ff; color: #4338ca">{{h.angle}}</span></sc-if>
+<sc-if value="{{h.hasUsed}}" hint-placeholder-val="{{false}}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 2px 7px; border-radius: 5px; background: #f1f5f9; color: #475569">En {{h.used}}</span></sc-if>
+<sc-if value="{{h.hasHr}}" hint-placeholder-val="{{false}}"><span style="font-size: 11.5px; color: #64748b">Hook rate <b style="font-family: 'JetBrains Mono', monospace; color: #0f172a">{{h.hr}}</b></span></sc-if>
+</div>
+<div style="display: flex; gap: 8px; margin-top: 10px">
+<button type="button" onClick="{{h.copy}}" style="flex: 1; height: 40px; border-radius: 10px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 13.5px; font-weight: 600; color: #0f172a">{{h.copyLabel}}</button>
+<button type="button" onClick="{{h.use}}" style="flex: 1; height: 40px; border-radius: 10px; border: none; background: #0f172a; color: #ffffff; font-size: 13.5px; font-weight: 600">Usar</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="background: #ffffff; border-radius: 14px; padding: 24px; text-align: center; font-size: 14px; color: #64748b">No hay hooks con ese filtro.</div></sc-if>
+</main>
+
+<div style="position: sticky; bottom: 0; z-index: 20"><dc-import name="MobileNav" active="Hooks" hint-size="390px,64px"></dc-import></div>
+</div>
+
+<sc-if value="{{modal}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="{{mTitle}}" style="position: relative; width: 100%; max-width: 380px; max-height: calc(100vh - 32px); overflow-y: auto; background: #ffffff; border-radius: 18px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">{{mTitle}}</h2>
+<sc-if value="{{isNew}}" hint-placeholder-val="{{true}}">
+<textarea rows="3" value="{{draft}}" onInput="{{onDraft}}" placeholder="Escribe el hook" aria-label="Hook" style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; resize: none; outline: none; line-height: 1.45"></textarea>
+<div style="font-size: 12px; color: #94a3b8">Ángulo (opcional)</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{angleOpts}}" as="a" hint-placeholder-count="5"><button type="button" onClick="{{a.pick}}" style="{{a.style}}">{{a.label}}</button></sc-for></div>
+<button type="button" onClick="{{saveNew}}" style="height: 48px; border-radius: 12px; border: none; background: #0d9488; color: #ffffff; font-size: 15px; font-weight: 600">Guardar hook</button>
+</sc-if>
+<sc-if value="{{isUse}}" hint-placeholder-val="{{false}}">
+<div style="background: #f8fafc; border-radius: 12px; padding: 12px; font-size: 14.5px; font-weight: 600">“{{useText}}”</div>
+<div style="font-size: 12px; color: #94a3b8">Agregar como hook nuevo a</div>
+<sc-for list="{{targets}}" as="t" hint-placeholder-count="4">
+<button type="button" onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0; background: #ffffff">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #475569">{{t.id}}</span>
+<span style="flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.title}}</span>
+</button>
+</sc-for>
+<button type="button" onClick="{{newPiece}}" style="height: 46px; border-radius: 12px; border: 1px dashed #99f6e4; background: #f0fdfa; color: #0f766e; font-size: 14px; font-weight: 600">+ Crear pieza nueva con este hook</button>
+</sc-if>
+<button type="button" onClick="{{close}}" style="height: 40px; border: none; background: transparent; font-size: 14px; font-weight: 600; color: #64748b">Cancelar</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 16px; right: 16px; bottom: 84px; z-index: 70; padding: 12px 14px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13.5px; line-height: 1.4">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    var H = function(id, text, angle, star, used, hr){ return { id: id, text: text, angle: angle || '', star: !!star, used: used || '', hr: hr || null }; };
+    this.state = { filter: 'Todos', q: '', modal: null, draft: '', dAngle: '', useId: null, copied: null, msg: '',
+      hooks: [
+        H(1, 'Trabajo 10 horas de pie', 'Trabajo de pie', true, 'SCR_046', 31),
+        H(2, 'Si trabajas de pie todo el día, mira esto', 'Trabajo de pie', false, 'SCR_050'),
+        H(3, 'Mi fisio me dijo esto', 'Recomendado por fisio', false, '', null),
+        H(4, 'Tercer esguince del año', '', false, 'SCR_049'),
+        H(5, 'Esto es lo que te llega', 'Pagas al recibir', true, 'SCR_045', 27),
+        H(6, 'No es una venda común', 'Alternativa a la venda'),
+        H(7, '¿Vendas tu tobillo así?', 'Alternativa a la venda', false, 'CAR_057'),
+        H(8, 'Volví a jugar fútbol sin miedo', 'Fútbol sin miedo')
+      ] };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var ANG = ['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'];
+    var flash = function(m){ self.setState({ msg: m }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 2400); };
+    var pill = function(on){ return 'flex-shrink:0;height:36px;padding:0 14px;border-radius:18px;font-size:13px;font-weight:600;' + (on ? 'border:none;background:#0f172a;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569'); };
+    var q = S.q.toLowerCase();
+    var list = S.hooks.filter(function(h){
+      if (S.filter === 'Ganadores' && !h.star) return false;
+      if (S.filter !== 'Todos' && S.filter !== 'Ganadores' && h.angle !== S.filter) return false;
+      return !q || h.text.toLowerCase().indexOf(q) > -1;
+    }).map(function(h){
+      return { text: h.text, angle: h.angle, hasAngle: !!h.angle, used: h.used, hasUsed: !!h.used, hr: h.hr + '%', hasHr: h.hr !== null, star: h.star,
+        starColor: h.star ? '#eab308' : '#cbd5e1', starFill: h.star ? '#eab308' : 'none',
+        toggleStar: function(){ self.setState({ hooks: S.hooks.map(function(x){ return x.id === h.id ? Object.assign({}, x, { star: !x.star }) : x; }) }); },
+        copyLabel: S.copied === h.id ? '✓ Copiado' : 'Copiar',
+        copy: function(){
+          var done = function(){ self.setState({ copied: h.id }); clearTimeout(self.ct); self.ct = setTimeout(function(){ self.setState({ copied: null }); }, 1600); };
+          try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(h.text).then(done, function(){ flash('No se pudo copiar.'); }); return; } } catch (e) {}
+          flash('No se pudo copiar.'); },
+        use: function(){ self.setState({ modal: 'use', useId: h.id }); } };
+    });
+    var U = S.useId ? S.hooks.filter(function(x){ return x.id === S.useId; })[0] : null;
+    return {
+      count: S.hooks.length, q: S.q, onQ: function(e){ self.setState({ q: e.target.value }); },
+      chips: ['Todos','Ganadores'].concat(ANG).map(function(a){ return { label: a, on: S.filter === a, style: pill(S.filter === a), pick: function(){ self.setState({ filter: a }); } }; }),
+      list: list, empty: list.length === 0,
+      modal: !!S.modal, isNew: S.modal === 'new', isUse: S.modal === 'use',
+      mTitle: S.modal === 'new' ? 'Nuevo hook' : 'Usar hook',
+      close: function(){ self.setState({ modal: null }); },
+      openNew: function(){ self.setState({ modal: 'new', draft: '', dAngle: '' }); },
+      draft: S.draft, onDraft: function(e){ self.setState({ draft: e.target.value }); },
+      angleOpts: ANG.map(function(a){ var on = S.dAngle === a; return { label: a, pick: function(){ self.setState({ dAngle: on ? '' : a }); },
+        style: 'height:34px;padding:0 12px;border-radius:17px;font-size:12.5px;font-weight:600;' + (on ? 'border:1.5px solid #4338ca;background:#eef2ff;color:#4338ca' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; }),
+      saveNew: function(){ if (!S.draft.trim()) return; self.setState({ modal: null, hooks: [{ id: Date.now(), text: S.draft.trim(), angle: S.dAngle, star: false, used: '', hr: null }].concat(S.hooks) }); flash('Hook guardado.'); },
+      useText: U ? U.text : '',
+      targets: [['IDEA-064','Me dolía al caminar'],['SCR_050','Si trabajas de pie, mira esto'],['SCR_049','El error con mis esguinces'],['SCR_046','Trabajo 10 horas de pie (ganador)']].map(function(t){
+        return { id: t[0], title: t[1], pick: function(){ self.setState({ modal: null, hooks: S.hooks.map(function(x){ return x.id === S.useId ? Object.assign({}, x, { used: t[0] }) : x; }) }); flash('Agregado como hook nuevo en ' + t[0] + '.'); } }; }),
+      newPiece: function(){ self.setState({ modal: null, hooks: S.hooks.map(function(x){ return x.id === S.useId ? Object.assign({}, x, { used: 'IDEA-090' }) : x; }) }); flash('Pieza IDEA-090 creada en Idea con este hook.'); },
+      hasMsg: !!S.msg, msg: S.msg
+    };
+  }
+}
+</script>
+</body>
+</html>

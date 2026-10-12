@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Concepto UGC · Studio de Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+a{color:#0f766e}a:hover{color:#115e59}
+button{font-family:inherit;cursor:pointer}
+.rc:hover{box-shadow:0 8px 22px rgba(15,23,42,.12);transform:translateY(-2px)}
+.rc{transition:box-shadow .15s,transform .15s}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Embudo" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 6px; display: flex; gap: 6px; align-items: center"><a href="Main.dc.html" style="color: #94a3b8; text-decoration: none">Embudo</a><span>/</span><span>Top Of The Funnel</span><span>/</span><span style="color: #475569">UGC</span></div>
+<div style="display: flex; align-items: center; gap: 10px">
+<a href="Main.dc.html" aria-label="Volver al embudo" style="width: 34px; height: 34px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; display: flex; align-items: center; justify-content: center; color: #475569"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>
+<h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">UGC</h1>
+<span style="font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 3px 8px; border-radius: 6px; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0">TOFU</span>
+<span style="font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: #0f172a; color: #ffffff">Video</span>
+</div>
+</div>
+<div style="margin-left: auto; display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 12.5px; font-weight: 600; color: #0f172a; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>Importar de Nova Swipe</button>
+<button type="button" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nuevo guion SCR</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px">
+<section style="flex: 1 1 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 18px">
+<h2 style="margin: 0 0 8px; font-size: 11.5px; font-weight: 600; color: #94a3b8">Por qué funciona</h2>
+<p style="margin: 0; font-size: 13px; line-height: 1.6; color: #334155">Una persona común le habla al celular como si le contara a una amiga. No parece anuncio: parece recomendación, y por eso la gente lo cree y se queda.</p>
+</section>
+<section style="flex: 1 1 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 18px">
+<h2 style="margin: 0 0 8px; font-size: 11.5px; font-weight: 600; color: #94a3b8">Cómo se hace</h2>
+<ol style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #334155">
+<li>Gancho (0–3 s): una frase de dolor o sorpresa hablada, sin logo.</li>
+<li>Contexto real: cocina, carro o cuarto. Cámara en mano, sin producción.</li>
+<li>El problema y cómo lo resolvió el producto, en primera persona.</li>
+<li>Producto en mano y un dato concreto que dé credibilidad.</li>
+<li>Cierre: qué pasó después y dónde pedirlo, pago contraentrega.</li>
+</ol>
+</section>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<div role="tablist" aria-label="Contenido del concepto" style="display: flex; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; padding: 3px; border-radius: 9px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" role="tab" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #94a3b8">{{t.n}}</span></button>
+</sc-for>
+</div>
+<span style="margin-left: auto; font-size: 11.5px; color: #94a3b8">Competidor A · Competidor B · Competidor C</span>
+</div>
+
+<sc-if value="{{showRefs}}" hint-placeholder-val="{{true}}">
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px">
+<sc-for list="{{refs}}" as="r" hint-placeholder-count="10">
+<a class="rc" href="Referente.dc.html" style="display: flex; flex-direction: column; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; text-decoration: none; color: #0f172a; background: #ffffff">
+<div style="{{r.thumb}}">
+<span style="position: absolute; top: 16%; left: 8px; right: 8px; text-align: center; font-size: 11px; font-weight: 700; color: #0f172a; background: rgba(255,255,255,.92); padding: 4px 6px; border-radius: 6px">{{r.overlay}}</span>
+<span style="width: 34px; height: 34px; border-radius: 17px; background: rgba(15,23,42,.55); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="#ffffff"><path d="M7 4l13 8-13 8z"/></svg></span>
+</div>
+<div style="padding: 8px 10px 10px">
+<div style="font-size: 12px; font-weight: 700">{{r.brand}}</div>
+<div style="font-size: 10.5px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.cap}}</div>
+</div>
+</a>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{showMade}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 720px">
+<thead><tr style="text-align: left; color: #94a3b8; font-size: 11px">
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Guion</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Hook</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Etapa</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Hook rate</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">CPA</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Basado en</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{made}}" as="m" hint-placeholder-count="6">
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; font-weight: 600">{{m.id}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9">{{m.hook}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9"><span style="{{m.chip}}">{{m.stage}}</span></td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace">{{m.hr}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace">{{m.cpa}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #64748b">{{m.base}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</sc-if>
+
+<sc-if value="{{showHooks}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 8px 16px">
+<sc-for list="{{hooks}}" as="h" hint-placeholder-count="5">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9">
+<span style="font-size: 13.5px; flex: 1">“{{h.text}}”</span>
+<span style="font-size: 10.5px; color: #64748b">{{h.type}}</span>
+<span style="{{h.chip}}">{{h.tag}}</span>
+</div>
+</sc-for>
+<a href="Hooks.dc.html" style="display: block; padding: 12px 0 6px; font-size: 12px; font-weight: 600; text-decoration: none">Abrir banco de hooks completo</a>
+</div>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { tab: 'refs' }; }
+  renderVals() {
+    var self = this;
+    var tones = ['#64748b','#475569','#78716c','#57534e','#52525b','#334155'];
+    var data = [
+      ['Competidor A','Me dolía al caminar','Volví a caminar sin dolor…'],
+      ['Competidor A','Esguince otra vez','El tercer esguince del año…'],
+      ['Competidor B','Esto me salvó','Trabajo 10 horas de pie y…'],
+      ['Competidor B','No lo sabía','Nadie me dijo que existía…'],
+      ['Competidor C','Antes de correr','Mi rutina antes de salir…'],
+      ['Competidor A','Mi fisio me dijo','Me lo recomendó mi fisio…'],
+      ['Competidor C','Se dobla mi tobillo','Si se te dobla el tobillo…'],
+      ['Competidor B','Lo uso a diario','Ya no salgo sin ella…'],
+      ['Competidor A','Fútbol los domingos','Jugaba con miedo hasta…'],
+      ['Competidor C','Pie hinchado','Llegaba con el pie hinchado…'],
+      ['Competidor B','3 cosas que cambié','3 cosas que mejoraron…'],
+      ['Competidor A','Regalo para papá','Se la regalé a mi papá…'],
+      ['Competidor C','Unboxing rápido','Lo que llega en la caja…'],
+      ['Competidor B','Subir escaleras','Subir escaleras ya no duele…'],
+      ['Competidor A','No es una venda','No es una venda común…']
+    ];
+    var refs = data.map(function(d, i){
+      return { brand: d[0], overlay: d[1], cap: d[2],
+        thumb: 'position:relative;aspect-ratio:9/14;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,' + tones[i % 6] + ',#1e293b)' };
+    });
+    var chip = function(st){
+      var m = { 'Ganador':['#ccfbf1','#0f766e'], 'Testing':['#fef3c7','#a16207'], 'Lanzado':['#e0e7ff','#4338ca'], 'Edición':['#f1f5f9','#475569'], 'Voz/VO':['#f1f5f9','#475569'], 'Guión':['#f1f5f9','#475569'], 'Nuevo':['#f1f5f9','#475569'] }[st];
+      return 'font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;background:' + m[0] + ';color:' + m[1];
+    };
+    var M = function(id, hook, stage, hr, cpa, base){ return { id: id, hook: hook, stage: stage, hr: hr, cpa: cpa, base: base, chip: chip(stage) }; };
+    var made = [
+      M('SCR_041','Volví a correr sin miedo','Ganador','[—]','[—]','Competidor A'),
+      M('SCR_044','Nadie me dijo que esto existía','Testing','[—]','[—]','Competidor B'),
+      M('SCR_046','Trabajo 10 horas de pie','Lanzado','—','—','Competidor B'),
+      M('SCR_047','Mi tobillo ya no se dobla','Edición','—','—','Hook propio'),
+      M('SCR_049','El error con mis esguinces','Voz/VO','—','—','Competidor C'),
+      M('SCR_050','Si trabajas de pie, mira esto','Guión','—','—','Hook propio')
+    ];
+    var H = function(text, type, tag){ return { text: text, type: type, tag: tag, chip: chip(tag) }; };
+    var hooks = [
+      H('Volví a correr sin miedo a doblarme el tobillo', 'Resultado', 'Ganador'),
+      H('Nadie me dijo que esto existía', 'Curiosidad', 'Testing'),
+      H('Si trabajas de pie todo el día, mira esto', 'Llamado al avatar', 'Nuevo'),
+      H('El error que yo cometía con mis esguinces', 'Error común', 'Nuevo'),
+      H('Mi fisio me recomendó esto y no le creí', 'Autoridad', 'Nuevo')
+    ];
+    var tabs = [['refs','Referentes',15],['made','Creados',6],['hooks','Hooks',5]].map(function(t){
+      var on = self.state.tab === t[0];
+      return { label: t[1], n: t[2], pick: function(){ self.setState({ tab: t[0] }); },
+        style: 'height:30px;padding:0 12px;border:none;border-radius:6px;font-size:12px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'background:#f1f5f9;color:#0f172a;font-weight:600' : 'background:transparent;color:#64748b') };
+    });
+    return { refs: refs, made: made, hooks: hooks, tabs: tabs,
+      showRefs: this.state.tab === 'refs', showMade: this.state.tab === 'made', showHooks: this.state.tab === 'hooks' };
+  }
+}
+</script>
+</body>
+</html>

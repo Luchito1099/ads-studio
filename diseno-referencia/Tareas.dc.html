@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tareas · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button,a{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+.tr:hover{background:#f8fafc}
+.tr:hover .snz{opacity:1}
+.snz{opacity:0;transition:opacity .15s}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Tareas" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; max-width: 980px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Operación</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Tareas</h1>
+</div>
+<div style="margin-left: auto; display: flex; gap: 8px">
+<button type="button" onClick="{{openRules}}" style="height: 36px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 12.5px; font-weight: 600; color: #475569">Reglas</button>
+<button type="button" onClick="{{openNew}}" style="height: 36px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 12.5px; font-weight: 600; color: #0f172a">+ Tarea</button>
+</div>
+</header>
+
+<!-- meta semanal, una línea -->
+<a href="Main.dc.html" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; text-decoration: none; color: inherit; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px">
+<span style="font-size: 12px; font-weight: 700">Meta de la semana</span>
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="4">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #475569">{{g.label}} <b style="font-family: 'JetBrains Mono', monospace; color: {{g.color}}">{{g.n}}</b></span>
+</sc-for>
+<span style="margin-left: auto; font-size: 11.5px; color: #94a3b8">{{goalSub}}</span>
+</a>
+
+<!-- filtros -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<div role="group" aria-label="Tiempo disponible" style="display: flex; align-items: center; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; padding: 3px; border-radius: 10px">
+<span style="font-size: 12px; color: #64748b; padding: 0 8px">Tengo</span>
+<sc-for list="{{timeTabs}}" as="w" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{w.on}}" onClick="{{w.pick}}" style="{{w.style}}">{{w.label}}</button>
+</sc-for>
+</div>
+<span style="margin-left: auto; font-size: 12px; color: #64748b">{{summary}}</span>
+</div>
+
+<!-- prioridades -->
+<sc-for list="{{groups}}" as="gr" hint-placeholder-count="3">
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid #f1f5f9">
+<span style="{{gr.dot}}"></span>
+<span style="font-size: 13.5px; font-weight: 700">{{gr.title}}</span>
+<span style="font-size: 12px; color: #94a3b8">{{gr.meta}}</span>
+</div>
+<sc-for list="{{gr.tasks}}" as="t" hint-placeholder-count="3">
+<div class="tr" style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid #f8fafc">
+<sc-if value="{{t.manual}}" hint-placeholder-val="{{false}}">
+<button type="button" role="checkbox" aria-checked="false" aria-label="Marcar hecha" onClick="{{t.done}}" style="width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: #ffffff; flex-shrink: 0; padding: 0"></button>
+</sc-if>
+<span style="{{t.timeChip}}">{{t.time}}</span>
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.title}}</div>
+<div title="{{t.tip}}" style="font-size: 11.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.why}}</div>
+</div>
+<button type="button" class="snz" onClick="{{t.snooze}}" style="border: none; background: transparent; font-size: 11.5px; font-weight: 600; color: #94a3b8">Mañana</button>
+<sc-if value="{{t.hasGo}}" hint-placeholder-val="{{true}}"><a href="{{t.href}}" style="flex-shrink: 0; width: 64px; height: 30px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; background: #ffffff; color: #0f172a">Ir →</a></sc-if>
+<sc-if value="{{t.manual}}" hint-placeholder-val="{{false}}"><span style="width: 64px; flex-shrink: 0"></span></sc-if>
+</div>
+</sc-for>
+</section>
+</sc-for>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center; font-size: 13px; color: #64748b">{{emptyText}}</div>
+</sc-if>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: #94a3b8">
+<button type="button" onClick="{{toggleLater}}" style="border: none; background: transparent; padding: 0; font-size: 12px; font-weight: 600; color: #64748b">{{laterLabel}}</button>
+<span>{{doneText}}</span>
+</div>
+<sc-if value="{{showLater}}" hint-placeholder-val="{{false}}">
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden">
+<sc-for list="{{later}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-top: 1px solid #f8fafc">
+<span style="{{t.timeChip}}">{{t.time}}</span>
+<span style="flex: 1; min-width: 0; font-size: 13px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.title}}</span>
+<button type="button" onClick="{{t.unsnooze}}" style="border: none; background: transparent; font-size: 11.5px; font-weight: 600; color: #0f766e">Traer a hoy</button>
+</div>
+</sc-for>
+</section>
+</sc-if>
+</main>
+</div>
+
+<!-- REGLAS -->
+<sc-if value="{{rulesOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeRules}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Reglas" style="position: relative; width: 100%; max-width: 520px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 6px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Reglas que crean tareas</h2>
+<p style="margin: 6px 0 0; font-size: 12.5px; color: #64748b">Cada tarea automática se cierra sola cuando haces lo que pide. Apaga las que te metan ruido.</p>
+</div>
+<div style="padding: 6px 20px 14px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #f1f5f9">
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 11.5px; color: #64748b">{{r.when}}</div>
+<div style="font-size: 13px; font-weight: 600">{{r.then}}</div>
+</div>
+<span style="{{r.prioChip}}">{{r.prio}}</span>
+<span style="{{r.timeChip}}">{{r.time}}</span>
+<button type="button" role="switch" aria-checked="{{r.on}}" aria-label="{{r.then}}" onClick="{{r.toggle}}" style="{{r.track}}"><span style="{{r.knob}}"></span></button>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- NUEVA TAREA -->
+<sc-if value="{{newOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeNew}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Nueva tarea" style="position: relative; width: 100%; max-width: 440px; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden">
+<div style="padding: 18px 20px 4px"><h2 style="margin: 0; font-size: 17px; font-weight: 700">Nueva tarea</h2></div>
+<div style="padding: 10px 20px 16px; display: flex; flex-direction: column; gap: 12px">
+<input type="text" value="{{nt.title}}" onInput="{{nt.onTitle}}" placeholder="Qué hay que hacer" aria-label="Qué hay que hacer" style="height: 40px; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 9px; padding: 0 12px; font-size: 14px; outline: none">
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Prioridad</div>
+<div style="display: flex; gap: 6px"><sc-for list="{{nt.prios}}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div>
+</div>
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Tiempo</div>
+<div style="display: flex; gap: 6px"><sc-for list="{{nt.times}}" as="o" hint-placeholder-count="3"><button type="button" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div>
+</div>
+<sc-if value="{{nt.hasErr}}" hint-placeholder-val="{{false}}"><div style="font-size: 12px; color: #b91c1c">Escribe qué hay que hacer.</div></sc-if>
+</div>
+<div style="display: flex; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9">
+<button type="button" onClick="{{closeNew}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600">Cancelar</button>
+<button type="button" onClick="{{saveNew}}" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">Crear</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; max-width: 520px; width: calc(100% - 48px); box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13px; line-height: 1.45; box-shadow: 0 12px 30px rgba(15,23,42,.25)">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    // t(id, prio, min, rule, owner, title, why, closes, href)
+    var t = function(id, prio, min, rule, owner, title, why, closes, href, manual){
+      return { id: id, prio: prio, min: min, rule: rule, owner: owner, title: title, why: why, closes: closes, href: href || '', manual: !!manual };
+    };
+    this.state = { who: 'Todos', time: 0, snoozed: {}, doneIds: {}, showLater: false, rulesOpen: false, newOpen: false, nt: null, msg: '',
+      rulesOn: { decide: true, burn: true, launch: true, prod: true, stuck: true, quota: true, vars: true, link: true, inbox: true, sync: true },
+      tasks: [
+        t('t1', 'alta', 10, 'decide', 'L', 'Decidir 4 anuncios en Testing', '2 ya gastaron US$ 38 sin compras', 'marques Ganador o Apagar', 'Testing.dc.html'),
+        t('t3', 'alta', 30, 'launch', 'L', 'Subir SCR_045 a Meta', 'Lleva 1 día lista para lanzar', 'la marques lanzada', 'Pipeline.dc.html'),
+        t('t2', 'alta', 90, 'burn', 'L', 'Preparar reemplazo de EST_056', 'Ganador con frecuencia 2.9: se está quemando', 'lances el reemplazo', 'Pipeline.dc.html'),
+        t('t8', 'media', 30, 'stuck', 'L', 'Terminar guion de SCR_050', '4 días en Guion: frena la grabación', 'pase a Producción', 'Pipeline.dc.html'),
+        t('t7', 'media', 30, 'vars', 'L', 'Escribir 2 hooks nuevos para SCR_046', 'Ganador: lleva 1 de 3 variaciones', 'haya 3 variaciones', 'Hooks.dc.html'),
+        t('t6', 'media', 90, 'quota', 'L', 'Crear 2 piezas BOFU', 'BOFU va 0/2 esta semana · prueba Reseñas', 'entren 2 BOFU al Pipeline', 'Main.dc.html'),
+        t('t4', 'media', 90, 'prod', 'L', 'Grabar VO de SCR_049', '3 hooks + body · vencía ayer', 'pase a Edición', 'Pipeline.dc.html'),
+        t('t5', 'media', 90, 'prod', 'L', 'Editar SCR_047', '2 versiones grabadas', 'pase a Revisión', 'Pipeline.dc.html'),
+        t('t11', 'baja', 10, 'sync', 'L', 'Sincronizar Excel de Meta', 'Última carga: ayer', 'subas el export de hoy', 'Testing.dc.html'),
+        t('t9', 'baja', 10, 'link', 'L', 'Vincular 4 anuncios sin ID', 'No suman en formato ni ángulo', 'les des etapa y formato', 'Testing.dc.html'),
+        t('m2', 'baja', 10, '', 'L', 'Guardar utm_content en el formulario', 'Tarea manual', '', '', true),
+        t('t10', 'baja', 30, 'inbox', 'L', 'Asignar 12 referentes de la bandeja', 'Guardados con Nova Swipe', 'la bandeja quede vacía', 'Referentes.dc.html'),
+        t('m1', 'baja', 30, '', 'L', 'Configurar Pagos iniciados en el formulario', 'Tarea manual · para el paso Pedido', '', '', true)
+      ] };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var PEOPLE = { L: ['Luchito', '#0d9488'], A: ['Asesora', '#4338ca'], E: ['Editor', '#a16207'] };
+    var PRIO = { alta: ['Alta', '#dc2626', 'Plata en juego o algo que traba un lanzamiento'], media: ['Media', '#d97706', 'Para llegar a la meta de la semana'], baja: ['Baja', '#94a3b8', 'Mantenimiento'] };
+    var TIME = { 10: ['10 min', '#f0fdfa', '#0f766e'], 30: ['30 min', '#eff6ff', '#1d4ed8'], 90: ['90 min', '#f5f3ff', '#6d28d9'] };
+    var flash = function(m){ self.setState({ msg: m }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 3200); };
+    var avatar = function(o){ return 'width:24px;height:24px;border-radius:12px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#ffffff;background:' + PEOPLE[o][1]; };
+    var chip = function(m){ var x = TIME[m]; return "flex-shrink:0;width:52px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:3px 0;border-radius:6px;background:" + x[1] + ';color:' + x[2]; };
+    var hm = function(min){ var h = Math.floor(min / 60), m = min % 60; return h ? h + ' h' + (m ? ' ' + m : '') : m + ' min'; };
+    var live = S.tasks.filter(function(x){ return !S.doneIds[x.id] && (x.manual || S.rulesOn[x.rule]); });
+    var mine = function(){ return true; };
+    var fits = function(x){ return !S.time || x.min <= S.time; };
+    var today = live.filter(function(x){ return !S.snoozed[x.id] && mine(x) && fits(x); });
+    var build = function(x){
+      return { title: x.title, why: x.why, tip: x.manual ? 'Tarea manual: se marca a mano' : 'Se cierra sola cuando ' + x.closes, time: TIME[x.min][0], timeChip: chip(x.min),
+        manual: x.manual, hasGo: !x.manual, href: x.href, owner: x.owner, ownerName: PEOPLE[x.owner][0], avatar: avatar(x.owner),
+        snooze: function(){ var s = Object.assign({}, S.snoozed); s[x.id] = 1; self.setState({ snoozed: s }); flash('Pasó a mañana: ' + x.title); },
+        unsnooze: function(){ var s = Object.assign({}, S.snoozed); delete s[x.id]; self.setState({ snoozed: s }); },
+        done: function(){ var d = Object.assign({}, S.doneIds); d[x.id] = 1; self.setState({ doneIds: d }); flash('Hecho: ' + x.title); } };
+    };
+    var groups = ['alta', 'media', 'baja'].map(function(k){
+      var ts = today.filter(function(x){ return x.prio === k; }).sort(function(a, b){ return a.min - b.min; });
+      var mins = ts.reduce(function(a, x){ return a + x.min; }, 0);
+      return { title: PRIO[k][0], meta: ts.length + (ts.length === 1 ? ' tarea' : ' tareas') + ' · ~' + hm(mins) + ' · ' + PRIO[k][2], tasks: ts.map(build), n: ts.length,
+        dot: 'width:9px;height:9px;border-radius:5px;flex-shrink:0;background:' + PRIO[k][1] };
+    }).filter(function(g){ return g.n > 0; });
+    var totalMin = today.reduce(function(a, x){ return a + x.min; }, 0);
+    var timeTabs = [[0, 'Todo'], [10, '10 min'], [30, '30 min'], [90, '90 min']].map(function(w){ var on = S.time === w[0];
+      return { label: w[1], on: on, pick: function(){ self.setState({ time: w[0] }); },
+        style: 'height:30px;padding:0 11px;border:none;border-radius:7px;font-size:12px;' + (on ? 'background:#0f172a;color:#ffffff;font-weight:600' : 'background:transparent;color:#64748b') }; });
+    var whoTabs = ['Todos', 'Luchito', 'Asesora', 'Editor'].map(function(w){ var on = S.who === w;
+      return { label: w, on: on, pick: function(){ self.setState({ who: w }); },
+        style: 'height:30px;padding:0 11px;border:none;border-radius:7px;font-size:12px;' + (on ? 'background:#f1f5f9;color:#0f172a;font-weight:600' : 'background:transparent;color:#64748b') }; });
+    var later = live.filter(function(x){ return S.snoozed[x.id] && mine(x); }).map(build);
+    var nDone = Object.keys(S.doneIds).length + 3;
+    var GOALS = [['TOFU', 3, 6], ['MOFU', 2, 3], ['BOFU', 0, 2], ['Ganadores', 1, 2]];
+
+    var RULES = [
+      ['decide', 'Cuando hay anuncios con sugerencia en Testing', 'Decidir anuncios', 'alta', 10],
+      ['launch', 'Cuando una pieza llega a Listo para lanzar', 'Subir a Meta', 'alta', 30],
+      ['burn', 'Cuando un ganador pasa la frecuencia máxima', 'Preparar reemplazo', 'alta', 90],
+      ['stuck', 'Cuando una pieza lleva más de 3 días en la misma etapa', 'Destrabar pieza', 'media', 30],
+      ['vars', 'Cuando marcas un Ganador', 'Hooks nuevos para sus variaciones', 'media', 30],
+      ['quota', 'Cuando una etapa va bajo su cuota', 'Crear piezas que faltan', 'media', 90],
+      ['prod', 'Cuando una pieza pasa a Producción o Edición', 'Grabar / Editar', 'media', 90],
+      ['sync', 'Cuando pasa un día sin subir el Excel de Meta', 'Sincronizar', 'baja', 10],
+      ['link', 'Cuando entran anuncios sin ID', 'Vincular anuncios', 'baja', 10],
+      ['inbox', 'Cuando la bandeja de la Biblioteca pasa de 10', 'Asignar referentes', 'baja', 30]
+    ];
+    var rules = RULES.map(function(r){ var on = !!S.rulesOn[r[0]];
+      return { when: r[1], then: r[2], on: on, prio: PRIO[r[3]][0], time: TIME[r[4]][0], timeChip: chip(r[4]),
+        prioChip: 'font-size:10.5px;font-weight:700;color:' + PRIO[r[3]][1],
+        toggle: function(){ var ro = Object.assign({}, S.rulesOn); ro[r[0]] = !on; self.setState({ rulesOn: ro }); },
+        track: 'width:34px;height:20px;border-radius:10px;border:none;padding:2px;flex-shrink:0;display:flex;align-items:center;' + (on ? 'background:#0d9488;justify-content:flex-end' : 'background:#e2e8f0;justify-content:flex-start'),
+        knob: 'width:16px;height:16px;border-radius:8px;background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,.2)' }; });
+
+    var N = S.nt || { title: '', prio: 'media', min: 30, owner: 'L' };
+    var setNt = function(k, v){ var n = Object.assign({}, N); n[k] = v; n.err = false; self.setState({ nt: n }); };
+    var opt = function(on){ return 'flex:1;height:34px;border-radius:8px;font-size:12.5px;font-weight:600;' + (on ? 'border:1.5px solid #0d9488;background:#f0fdfa;color:#0f766e' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569'); };
+
+    return {
+      goals: GOALS.map(function(g){ return { label: g[0], n: g[1] + '/' + g[2], color: g[1] / g[2] < 0.5 ? '#dc2626' : (g[1] >= g[2] ? '#0f766e' : '#0f172a') }; }),
+      goalSub: 'Semana 5–11 oct · cierra hoy',
+      timeTabs: timeTabs, whoTabs: whoTabs,
+      summary: today.length + ' tareas · ~' + hm(totalMin),
+      groups: groups, empty: groups.length === 0,
+      emptyText: S.time ? 'No hay tareas de ' + S.time + ' min o menos.' : 'Nada pendiente hoy.',
+      later: later, showLater: S.showLater && later.length > 0,
+      laterLabel: later.length ? (S.showLater ? 'Ocultar pospuestas' : 'Pospuestas (' + later.length + ')') : 'Sin pospuestas',
+      toggleLater: function(){ self.setState({ showLater: !S.showLater }); },
+      doneText: nDone + ' hechas hoy · las automáticas se cierran solas',
+      rulesOpen: S.rulesOpen, rules: rules,
+      openRules: function(){ self.setState({ rulesOpen: true }); }, closeRules: function(){ self.setState({ rulesOpen: false }); },
+      newOpen: S.newOpen,
+      nt: { title: N.title, hasErr: !!N.err, onTitle: function(e){ setNt('title', e.target.value); },
+        prios: ['alta', 'media', 'baja'].map(function(k){ return { label: PRIO[k][0], style: opt(N.prio === k), pick: function(){ setNt('prio', k); } }; }),
+        times: [10, 30, 90].map(function(m){ return { label: TIME[m][0], style: opt(N.min === m), pick: function(){ setNt('min', m); } }; }) },
+      openNew: function(){ self.setState({ newOpen: true, nt: { title: '', prio: 'media', min: 30, owner: 'L' } }); },
+      closeNew: function(){ self.setState({ newOpen: false }); },
+      saveNew: function(){
+        if (!N.title.trim()) { self.setState({ nt: Object.assign({}, N, { err: true }) }); return; }
+        var nt = { id: 'm' + Date.now(), prio: N.prio, min: N.min, rule: '', owner: N.owner, title: N.title.trim(), why: 'Tarea manual', closes: '', href: '', manual: true };
+        self.setState({ tasks: S.tasks.concat([nt]), newOpen: false, nt: null }); flash('Tarea creada.');
+      },
+      hasMsg: !!S.msg, msg: S.msg
+    };
+  }
+}
+</script>
+</body>
+</html>

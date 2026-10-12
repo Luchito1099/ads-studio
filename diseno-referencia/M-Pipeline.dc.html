@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Content Pipeline · mobile · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6;overscroll-behavior-y:none}
+button,a{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+textarea{font-family:inherit;font-size:16px}
+.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-direction: column">
+
+<header style="position: sticky; top: 0; z-index: 10; background: #eef2f6; padding: calc(12px + env(safe-area-inset-top)) 16px 8px">
+<div style="font-size: 12px; color: #94a3b8">NOVAFLEX · Ads</div>
+<h1 style="margin: 2px 0 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Content Pipeline</h1>
+<div class="hs" style="display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; scrollbar-width: none">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="6">
+<button type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: .65">{{s.n}}</span></button>
+</sc-for>
+</div>
+</header>
+
+<main style="flex: 1; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12.5px; color: #64748b; padding: 0 2px 2px">{{stageHint}}</div>
+<sc-for list="{{list}}" as="p" hint-placeholder-count="3">
+<button type="button" onClick="{{p.open}}" style="display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: #ffffff; border: none; border-radius: 14px; padding: 12px 14px">
+<span style="{{p.thumb}}"></span>
+<span style="flex: 1; min-width: 0">
+<span style="display: flex; align-items: center; gap: 6px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569">{{p.id}}</span><span style="{{p.tag}}">{{p.stage}}</span><span style="font-size: 11.5px; color: #94a3b8">{{p.format}}</span></span>
+<span style="display: block; font-size: 15px; font-weight: 600; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.title}}</span>
+<span style="display: block; font-size: 12px; color: {{p.noteColor}}; margin-top: 2px">{{p.note}}</span>
+</span>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2.2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="background: #ffffff; border-radius: 14px; padding: 24px; text-align: center; font-size: 14px; color: #64748b">Nada en esta etapa.</div></sc-if>
+<a href="Pipeline.dc.html" style="font-size: 12.5px; color: #0f766e; font-weight: 600; text-align: center; text-decoration: none; padding: 8px">Crear piezas y nomenclatura: en la versión web →</a>
+</main>
+
+<div style="position: sticky; bottom: 0; z-index: 20"><dc-import name="MobileNav" active="Pipeline" hint-size="390px,64px"></dc-import></div>
+</div>
+
+<sc-if value="{{pOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{pm.close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.55); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Pieza" style="position: relative; width: 100%; max-width: 400px; max-height: calc(100vh - 24px); background: #ffffff; border-radius: 18px; display: flex; flex-direction: column; overflow: hidden">
+<div style="padding: 14px 16px 10px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px">
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; align-items: center; gap: 6px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #475569">{{pm.id}}</span><span style="{{pm.tag}}">{{pm.stage}}</span><span style="font-size: 12px; color: #64748b">{{pm.col}}</span></div>
+<div style="font-size: 17px; font-weight: 700; margin-top: 3px; line-height: 1.25">{{pm.title}}</div>
+</div>
+<button type="button" aria-label="Cerrar" onClick="{{pm.close}}" style="width: 36px; height: 36px; border: none; border-radius: 18px; background: #f1f5f9; color: #475569; font-size: 18px; line-height: 1">×</button>
+</div>
+
+<div style="flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 12px">
+<sc-if value="{{pm.isVideo}}" hint-placeholder-val="{{true}}">
+<div class="hs" style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none">
+<sc-for list="{{pm.versions}}" as="v" hint-placeholder-count="3"><button type="button" onClick="{{v.pick}}" style="{{v.style}}">{{v.label}}</button></sc-for>
+</div>
+<label style="display: flex; flex-direction: column; gap: 5px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #0d9488">HOOK · {{pm.vk}}</span>
+<textarea rows="2" value="{{pm.hook}}" onInput="{{pm.onHook}}" style="border: 1px solid #e2e8f0; border-radius: 11px; padding: 10px 12px; resize: none; outline: none; line-height: 1.45"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 5px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #475569">BODY</span>
+<textarea rows="5" value="{{pm.body}}" onInput="{{pm.onBody}}" style="border: 1px solid #e2e8f0; border-radius: 11px; padding: 10px 12px; resize: none; outline: none; line-height: 1.45"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 5px"><span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #475569">CTA</span>
+<textarea rows="2" value="{{pm.cta}}" onInput="{{pm.onCta}}" style="border: 1px solid #e2e8f0; border-radius: 11px; padding: 10px 12px; resize: none; outline: none; line-height: 1.45"></textarea></label>
+<button type="button" onClick="{{pm.copyScript}}" style="height: 48px; border-radius: 12px; border: none; background: #0f172a; color: #ffffff; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>{{pm.copyLabel}}</button>
+<div style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: -4px">{{pm.words}}</div>
+</sc-if>
+<sc-if value="{{pm.isStatic}}" hint-placeholder-val="{{false}}">
+<div style="background: #f8fafc; border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.5; white-space: pre-line">{{pm.brief}}</div>
+<button type="button" onClick="{{pm.copyBrief}}" style="height: 48px; border-radius: 12px; border: none; background: #0f172a; color: #ffffff; font-size: 15px; font-weight: 600">Copiar brief</button>
+</sc-if>
+<sc-if value="{{pm.isReady}}" hint-placeholder-val="{{false}}">
+<div style="font-size: 12.5px; font-weight: 700">Nombres para Meta</div>
+<sc-for list="{{pm.names}}" as="n" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; background: #f0fdfa; border-radius: 10px; padding: 8px 8px 8px 12px">
+<span style="flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #0f766e; word-break: break-all">{{n.name}}</span>
+<button type="button" onClick="{{n.copy}}" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #99f6e4; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f766e">Copiar</button>
+</div>
+</sc-for>
+</sc-if>
+</div>
+
+<div style="padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid #f1f5f9; display: flex; gap: 8px">
+<button type="button" onClick="{{pm.save}}" style="height: 48px; padding: 0 16px; border-radius: 12px; border: 1px solid #0d9488; background: #f0fdfa; color: #0f766e; font-size: 14px; font-weight: 600">Guardar</button>
+<button type="button" onClick="{{pm.next}}" style="flex: 1; height: 48px; border-radius: 12px; border: none; background: #0d9488; color: #ffffff; font-size: 14px; font-weight: 600">{{pm.nextLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 16px; right: 16px; bottom: 84px; z-index: 70; padding: 12px 14px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13.5px; line-height: 1.4">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    var B = 'Trabajo de pie todo el día y al llegar a casa tenía el tobillo hinchado. Me la puse bajo la zapatilla, no se nota, y por primera vez terminé el turno sin dolor.';
+    var C = 'Pídela hoy y paga cuando te llegue a casa.';
+    var P = function(id, col, type, stage, title, format, hooks, body, cta, days, ch){ return { id: id, col: col, type: type, stage: stage, title: title, format: format, hooks: hooks, body: body || '', cta: cta || '', days: days || 0, ch: ch || 'WEB' }; };
+    this.state = { col: 1, open: null, v: 0, msg: '',
+      pieces: [
+        P('IDEA-064', 0, 'video', 'TOFU', 'Me dolía al caminar · versión NOVAFLEX', 'UGC', [''], '', '', 0),
+        P('IDEA-063', 0, 'static', 'BOFU', 'Reseñas reales de clientes', 'Reseña / testimonio', ['Lo que dicen nuestras clientas'], 'Fotos reales + 3 reseñas cortas', 'Pide aquí', 2),
+        P('SCR_050', 1, 'video', 'TOFU', 'Si trabajas de pie todo el día, mira esto', 'UGC', ['Si trabajas de pie todo el día, mira esto', 'Llegaba con el pie hinchado a casa'], B, '', 4),
+        P('SCR_049', 2, 'video', 'TOFU', 'El error que cometía con mis esguinces', 'Voz en off', ['El error que cometía con mis esguinces', 'Tercer esguince del año', 'Mi fisio me dijo esto'], B, C, 3),
+        P('SCR_047', 3, 'video', 'TOFU', 'Mi tobillo ya no se dobla', 'Transformacional', ['Mi tobillo ya no se dobla', 'Antes y después de un mes'], B, C, 2),
+        P('EST_058', 4, 'static', 'BOFU', '2x S/ 99 · versión 2', 'Venta directa', ['Tu tobillo protegido: 2 por S/ 99'], 'Compresión firme · No se nota · Talla única', 'Pide aquí', 1),
+        P('SCR_045', 5, 'video', 'MOFU', 'Lo que llega en la caja', 'Unboxing', ['Abre la caja conmigo', 'Esto es lo que te llega'], B, C, 1, 'WA')
+      ] };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var COLS = [['Idea','Referente o insight'],['Guion','Escribe hook, body y CTA'],['Producción','Graba o diseña'],['Edición','Solo video'],['Revisión','Checklist antes de subir'],['Listo','Copia los nombres y súbelo a Meta']];
+    var STC = { TOFU: ['#f0fdf4','#15803d'], MOFU: ['#fefce8','#a16207'], BOFU: ['#fef2f2','#dc2626'] };
+    var FC = { 'UGC': 'UGC', 'Voz en off': 'VOZOFF', 'Transformacional': 'TRANSF', 'Unboxing': 'UNBOX', 'Venta directa': 'VENTA', 'Reseña / testimonio': 'RESENA' };
+    var flash = function(m){ self.setState({ msg: m }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 2400); };
+    var copy = function(text, label){
+      var ok = function(){ flash(label + ' copiado.'); };
+      try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(ok, function(){ flash('No se pudo copiar en este navegador.'); }); return; } } catch (e) {}
+      flash('No se pudo copiar en este navegador.');
+    };
+    var tag = function(st){ return 'font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;background:' + STC[st][0] + ';color:' + STC[st][1]; };
+    var upd = function(id, fn){ self.setState({ pieces: S.pieces.map(function(x){ if (x.id !== id) return x; var c = JSON.parse(JSON.stringify(x)); fn(c); return c; }) }); };
+    var stages = COLS.map(function(c, i){ var on = S.col === i, n = S.pieces.filter(function(x){ return x.col === i; }).length;
+      return { label: c[0], n: n, on: on, pick: function(){ self.setState({ col: i }); },
+        style: 'flex-shrink:0;height:38px;padding:0 14px;border-radius:19px;font-size:13.5px;font-weight:600;' + (on ? 'border:none;background:#0f172a;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; });
+    var list = S.pieces.filter(function(x){ return x.col === S.col; }).map(function(x){
+      var vid = x.type === 'video';
+      return { id: x.id, stage: x.stage, title: x.title, format: x.format, tag: tag(x.stage),
+        note: (vid ? x.hooks.length + ' hook' + (x.hooks.length > 1 ? 's' : '') : 'Estático') + ' · ' + x.days + ' d en esta etapa' + (x.days > 3 ? ' · estancada' : ''),
+        noteColor: x.days > 3 ? '#b91c1c' : '#94a3b8',
+        thumb: 'width:40px;height:' + (vid ? 54 : 40) + 'px;border-radius:8px;flex-shrink:0;background:linear-gradient(180deg,#64748b,#1e293b)',
+        open: function(){ self.setState({ open: x.id, v: 0 }); } };
+    });
+    var X = S.open ? S.pieces.filter(function(q){ return q.id === S.open; })[0] : null, pm = {};
+    if (X) {
+      var vid = X.type === 'video', vi = Math.min(S.v, X.hooks.length - 1), K = vid ? 'H' : 'V';
+      var para = [X.hooks[vi], X.body, X.cta].filter(function(t){ return t && t.trim(); }).map(function(t){ t = t.trim(); return /[.!?…]$/.test(t) ? t : t + '.'; }).join(' ');
+      var words = para ? para.split(/\s+/).length : 0;
+      var names = X.hooks.map(function(h, i){ return ['NFX','TOB', X.id.replace('_',''), K + (i + 1), X.ch, FC[X.format] || 'UGC', X.stage].join('_'); });
+      var nextCol = (!vid && X.col === 2) ? 4 : X.col + 1;
+      pm = { id: X.id, title: X.title, stage: X.stage, tag: tag(X.stage), col: COLS[X.col][0],
+        isVideo: vid && X.col < 5, isStatic: !vid && X.col < 5, isReady: X.col === 5,
+        versions: X.hooks.map(function(h, i){ var on = i === vi; return { label: K + (i + 1), pick: function(){ self.setState({ v: i }); },
+          style: 'flex-shrink:0;height:36px;padding:0 16px;border-radius:18px;font-size:13.5px;font-weight:700;font-family:"JetBrains Mono",monospace;' + (on ? 'border:none;background:#0d9488;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569') }; }),
+        vk: K + (vi + 1), hook: X.hooks[vi], body: X.body, cta: X.cta,
+        onHook: function(e){ var val = e.target.value; upd(X.id, function(c){ c.hooks[vi] = val; }); },
+        onBody: function(e){ var val = e.target.value; upd(X.id, function(c){ c.body = val; }); },
+        onCta: function(e){ var val = e.target.value; upd(X.id, function(c){ c.cta = val; }); },
+        copyLabel: 'Copiar guion ' + K + (vi + 1) + ' de corrido',
+        copyScript: function(){ if (!para) { flash('Escribe primero el guion.'); return; } copy(para, 'Guion'); },
+        words: words ? words + ' palabras · ~' + Math.round(words / 2.6) + ' s de voz' : 'Une hook + body + CTA en un párrafo para ElevenLabs',
+        brief: 'Texto: ' + X.hooks[vi] + '\nApoyo: ' + X.body + '\nCTA: ' + X.cta,
+        copyBrief: function(){ copy('Texto: ' + X.hooks[vi] + '\nApoyo: ' + X.body + '\nCTA: ' + X.cta, 'Brief'); },
+        names: names.map(function(n){ return { name: n, copy: function(){ copy(n, 'Nombre'); } }; }),
+        save: function(){ self.setState({ open: null }); flash(X.id + ' guardada.'); },
+        nextLabel: X.col === 5 ? 'Marcar lanzado' : 'Guardar y pasar a ' + COLS[nextCol][0],
+        next: function(){ if (X.col === 5) { self.setState({ open: null, pieces: S.pieces.filter(function(q){ return q.id !== X.id; }) }); flash(X.id + ' lanzado: pasa a Testing.'); return; }
+          upd(X.id, function(c){ c.col = nextCol; c.days = 0; }); self.setState({ open: null }); flash(X.id + ' pasó a ' + COLS[nextCol][0] + '.'); },
+        close: function(){ self.setState({ open: null }); } };
+    }
+    return { stages: stages, stageHint: COLS[S.col][1], list: list, empty: list.length === 0, pOpen: !!X, pm: pm, hasMsg: !!S.msg, msg: S.msg };
+  }
+}
+</script>
+</body>
+</html>

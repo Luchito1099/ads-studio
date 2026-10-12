@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ganadores · Studio de Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Ganadores" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; max-width: 1220px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Ganadores</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Ganadores</h1>
+<p style="margin: 4px 0 0; font-size: 12.5px; color: #64748b">Anuncios que pasaron el testing. Cada uno vuelve a su formato como referente propio y genera variaciones con otros ángulos.</p>
+</div>
+<span style="margin-left: auto; font-size: 11.5px; color: #64748b; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 12px">Criterio: CPA bajo meta por 5 días · editable</span>
+</header>
+
+<sc-for list="{{wins}}" as="w" hint-placeholder-count="3">
+<article style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; display: flex; flex-wrap: wrap; gap: 18px">
+<div style="{{w.thumb}}">
+<span style="position: absolute; top: 10px; left: 10px; font-size: 9.5px; font-weight: 800; letter-spacing: .05em; padding: 3px 8px; border-radius: 20px; background: #0d9488; color: #ffffff">GANADOR</span>
+<span style="font-size: 12px; font-weight: 700; background: rgba(255,255,255,.92); padding: 5px 9px; border-radius: 7px; margin: 0 12px; text-align: center">{{w.overlay}}</span>
+</div>
+<div style="flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #475569">{{w.id}}</span>
+<span style="{{w.tag}}">{{w.stage}}</span>
+<span style="font-size: 12px; color: #475569">{{w.concept}}</span>
+<span style="margin-left: auto; font-size: 11.5px; color: #64748b">{{w.since}}</span>
+</div>
+<h2 style="margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em">“{{w.hook}}”</h2>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{w.metrics}}" as="m" hint-placeholder-count="5">
+<div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px">
+<div style="font-size: 10.5px; color: #64748b">{{m.k}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; margin-top: 2px">{{m.v}}</div>
+</div>
+</sc-for>
+</div>
+<div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px 12px">
+<div style="font-size: 11px; font-weight: 700; color: #0f766e; margin-bottom: 3px">Por qué ganó</div>
+<div style="font-size: 12.5px; line-height: 1.5; color: #334155">{{w.why}}</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<button type="button" style="height: 36px; padding: 0 14px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 12.5px; font-weight: 600">Crear 3 variaciones</button>
+<a href="Concepto.dc.html" style="height: 36px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #0f172a; text-decoration: none; display: inline-flex; align-items: center">Ver su formato</a>
+<span style="font-size: 11.5px; color: #64748b">{{w.vars}}</span>
+</div>
+</div>
+</article>
+</sc-for>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var st = { TOFU: ['#f0fdf4','#15803d','#bbf7d0'], MOFU: ['#fefce8','#a16207','#fde68a'], BOFU: ['#fef2f2','#dc2626','#fecaca'] };
+    var metrics = function(){ return [ { k: 'Gasto', v: '[—]' }, { k: 'CPA', v: '[—]' }, { k: 'Hook rate', v: '[—]' }, { k: 'CTR', v: '[—]' }, { k: 'Pedidos', v: '[—]' } ]; };
+    var W = function(id, stage, concept, hook, overlay, since, why, vars, tone){
+      var s = st[stage];
+      return { id: id, stage: stage, concept: concept, hook: hook, overlay: overlay, since: since, why: why, vars: vars, metrics: metrics(),
+        tag: 'font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:' + s[0] + ';color:' + s[1] + ';border:1px solid ' + s[2],
+        thumb: 'position:relative;flex:0 0 170px;height:300px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,' + tone + ',#1e293b)' };
+    };
+    return { wins: [
+      W('SCR_041','TOFU','UGC · Fútbol sin miedo','Volví a correr sin miedo','Volví a correr','Ganador desde hace 12 días','Hook de resultado dicho en primera persona y producto visible desde el segundo 4. La demo bajo la zapatilla responde la duda de si se nota.','2 variaciones en edición','#64748b'),
+      W('SCR_032','TOFU','Voz en off · Alternativa a la venda','Tu tobillo no está débil, está sin soporte','Sin soporte','Ganador desde hace 21 días','Reencuadra el problema sin culpar al cliente. Las tomas de deporte real le dan estatus frente al uso médico.','1 variación en testing','#57534e'),
+      W('SCR_027','BOFU','Venta directa · Pagas al recibir','2 por S/ 99 y pagas al recibir','2x S/ 99','Ganador desde hace 30 días','Une la oferta del pack con el pago contraentrega en una sola frase. Quita precio y riesgo de una vez para quien ya conoce el producto.','Sin variaciones','#475569')
+    ] };
+  }
+}
+</script>
+</body>
+</html>

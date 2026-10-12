@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Testing · mobile · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6;overscroll-behavior-y:none}
+button,a,label{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-direction: column">
+
+<header style="position: sticky; top: 0; z-index: 10; background: #eef2f6; padding: calc(12px + env(safe-area-inset-top)) 16px 8px">
+<div style="font-size: 12px; color: #94a3b8">NOVAFLEX · {{lastSync}}</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 2px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Testing</h1>
+<button type="button" onClick="{{openSync}}" style="margin-left: auto; height: 40px; padding: 0 14px; border-radius: 20px; border: none; background: #0d9488; color: #ffffff; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>Excel</button>
+</div>
+<div style="display: flex; gap: 2px; background: #ffffff; border-radius: 12px; padding: 3px; margin-top: 10px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; opacity: .6">{{t.n}}</span></button>
+</sc-for>
+</div>
+</header>
+
+<main style="flex: 1; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 14px">
+<sc-for list="{{pieces}}" as="p" hint-placeholder-count="2">
+<section>
+<div style="display: flex; align-items: center; gap: 7px; padding: 4px 2px 8px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #475569">{{p.id}}</span>
+<span style="{{p.tag}}">{{p.stage}}</span>
+<span style="font-size: 14px; font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.title}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{p.vars}}" as="v" hint-placeholder-count="2">
+<div style="{{v.card}}">
+<div style="display: flex; align-items: flex-start; gap: 8px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: #475569; padding-top: 1px">{{v.k}}</span>
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 14.5px; font-weight: 600; line-height: 1.3">“{{v.hook}}”</div>
+<div style="display: flex; align-items: center; gap: 6px; margin-top: 3px"><span style="{{v.chStyle}}">{{v.ch}}</span><span style="font-size: 12px; color: #64748b">{{v.spend}} · día {{v.day}} · frec. {{v.freq}}</span></div>
+</div>
+<div style="text-align: right"><div style="font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; color: {{v.costColor}}">{{v.cost}}</div><div style="font-size: 10.5px; color: #94a3b8">{{v.costType}}</div></div>
+</div>
+<div class="hs" style="display: flex; gap: 4px; overflow-x: auto; margin-top: 10px; scrollbar-width: none">
+<sc-for list="{{v.steps}}" as="s" hint-placeholder-count="5"><span style="{{s.style}}"><span style="display: block; font-size: 9.5px; font-weight: 600; opacity: .75">{{s.label}}</span><span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600">{{s.val}}</span></span></sc-for>
+</div>
+<div style="margin-top: 10px"><span style="{{v.sugChip}}">{{v.sug}}</span><span style="font-size: 12.5px; color: #475569; margin-left: 6px">{{v.reason}}</span></div>
+<sc-if value="{{v.hasDiag}}" hint-placeholder-val="{{false}}"><div style="font-size: 12.5px; color: #b91c1c; margin-top: 4px">{{v.diag}}</div></sc-if>
+<sc-if value="{{v.open}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; gap: 8px; margin-top: 10px">
+<button type="button" onClick="{{v.off}}" style="{{v.offStyle}}">Apagar</button>
+<button type="button" onClick="{{v.win}}" style="{{v.winStyle}}">Ganador</button>
+</div>
+</sc-if>
+<sc-if value="{{v.closed}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 10px"><span style="{{v.decChip}}">{{v.decLabel}}</span><button type="button" onClick="{{v.undo}}" style="margin-left: auto; height: 36px; padding: 0 12px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #64748b">Deshacer</button></div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="background: #ffffff; border-radius: 14px; padding: 28px 16px; text-align: center; font-size: 14px; color: #64748b">Nada por decidir. Mira la pestaña Todas.</div></sc-if>
+<a href="Testing.dc.html" style="font-size: 12.5px; color: #0f766e; font-weight: 600; text-align: center; text-decoration: none; padding: 6px">Regla, vincular anuncios y detalle: en la versión web →</a>
+</main>
+
+<div style="position: sticky; bottom: 0; z-index: 20"><dc-import name="MobileNav" active="Testing" hint-size="390px,64px"></dc-import></div>
+</div>
+
+<sc-if value="{{syncOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeSync}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Sincronizar Excel" style="position: relative; width: 100%; max-width: 380px; background: #ffffff; border-radius: 18px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Sincronizar Excel de Meta</h2>
+<sc-if value="{{noPick}}" hint-placeholder-val="{{true}}">
+<label style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 12px; border: 2px dashed #cbd5e1; border-radius: 14px; background: #f8fafc; text-align: center">
+<input type="file" accept=".csv,.xlsx" onChange="{{onFile}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></svg>
+<span style="font-size: 15px; font-weight: 600">Elegir archivo</span>
+<span style="font-size: 12.5px; color: #64748b">.xlsx o .csv desde Archivos o Drive</span>
+</label>
+<button type="button" onClick="{{tryDemo}}" style="height: 44px; border-radius: 11px; border: 1px solid #e2e8f0; background: #ffffff; font-size: 14px; font-weight: 600">Probar con un ejemplo</button>
+</sc-if>
+<sc-if value="{{hasPick}}" hint-placeholder-val="{{false}}">
+<div style="background: #f8fafc; border-radius: 12px; padding: 12px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; word-break: break-all">{{pickName}}</div>
+<div style="display: flex; gap: 14px; margin-top: 8px">
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #0f766e">9</div><div style="font-size: 11.5px; color: #64748b">filas nuevas</div></div>
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #a16207">8</div><div style="font-size: 11.5px; color: #64748b">se reemplazan</div></div>
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: #a16207">1</div><div style="font-size: 11.5px; color: #64748b">sin ID</div></div>
+</div>
+</div>
+<button type="button" onClick="{{confirmSync}}" style="height: 48px; border-radius: 12px; border: none; background: #0d9488; color: #ffffff; font-size: 15px; font-weight: 600">Sincronizar 17 filas</button>
+</sc-if>
+<button type="button" onClick="{{closeSync}}" style="height: 40px; border: none; background: transparent; font-size: 14px; font-weight: 600; color: #64748b">Cancelar</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 16px; right: 16px; bottom: 84px; z-index: 60; padding: 12px 14px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13.5px; line-height: 1.4">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    // [k, hook, canal, gasto, día, frec, costo, tipo costo, sug, motivo, diag, steps[[label,val,state]]]  state: ok/mid/bad/low
+    this.state = { tab: 'decidir', dec: {}, syncOpen: false, pick: '', msg: '', lastSync: 'última carga: ayer 21:45',
+      pieces: [
+        { id: 'SCR_046', stage: 'TOFU', title: 'Trabajo 10 horas de pie', vars: [
+          ['H1','Trabajo 10 horas de pie','WEB','US$ 24','5','1.53','US$ 6.00','por compra','win','Bajo la meta de US$ 7 con US$ 24','Para escalar, mejora Cierre: el formulario traba.',[['Hook','31%','ok'],['Hold','14%','ok'],['CTR','1.9%','ok'],['Carga','77%','ok'],['Pedido','20%','ok'],['Cierre','40%','bad']]],
+          ['H2','Si trabajas de pie, mira esto','WEB','US$ 18','5','1.53','US$ 18.00','por compra','off','Hook 16% bajo 25% al día 5','Se cae en Cierre: el formulario traba.',[['Hook','16%','bad'],['Hold','8.5%','mid'],['CTR','1.2%','ok'],['Carga','83%','ok'],['Pedido','20%','ok'],['Cierre','20%','bad']]],
+          ['H3','Nadie en mi trabajo la conocía','WEB','US$ 12','5','1.53','US$ 12.00','por compra','keep','Falta gasto: US$ 12 de US$ 15','Se cae en Carga: la página carga lento.',[['Hook','26%','ok'],['Hold','13%','ok'],['CTR','1.5%','ok'],['Carga','60%','bad'],['Pedido','6.7%','low'],['Cierre','100%','low']]] ] },
+        { id: 'EST_056', stage: 'BOFU', title: '2 tobilleras por S/ 99', vars: [
+          ['V1','Tu tobillo protegido: 2 por S/ 99','WEB','US$ 26','6','2.65','US$ 6.49','por compra','win','Bajo la meta con US$ 26','Frecuencia 2.65: rinde, pero se está quemando.',[['CTR','2.7%','ok'],['Carga','82%','ok'],['Pedido','14%','ok'],['Cierre','33%','bad']]],
+          ['V2','Paga al recibir · 2x S/ 99','WEB','US$ 20','6','2.65','US$ 19.98','por compra','off','Más del doble de la meta','Se cae en Pedido: la página no convence.',[['CTR','1.3%','ok'],['Carga','83%','ok'],['Pedido','3.3%','bad'],['Cierre','100%','low']]] ] },
+        { id: 'SCR_045', stage: 'MOFU', title: 'Lo que llega en la caja', vars: [
+          ['H1','Abre la caja conmigo','WA','US$ 10','3','1.29','US$ 1.11','por conversación','off','Hook 22% bajo 25% al día 3','Se cae en Hold: el body no retiene.',[['Hook','22%','mid'],['Hold','7.6%','bad'],['CTR','1.5%','ok'],['Conv.','43%','ok'],['Nuevos','67%','ok']]],
+          ['H2','Esto es lo que te llega','WA','US$ 12','3','1.29','US$ 0.57','por conversación','keep','Falta gasto: US$ 12 de US$ 15','',[['Hook','27%','ok'],['Hold','12%','ok'],['CTR','2.3%','ok'],['Conv.','54%','ok'],['Nuevos','86%','ok']]] ] }
+      ] };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var ST = { TOFU: ['#f0fdf4','#15803d'], MOFU: ['#fefce8','#a16207'], BOFU: ['#fef2f2','#dc2626'] };
+    var SUG = { win: ['Candidato a ganador','#ccfbf1','#0f766e'], off: ['Candidato a apagar','#fef2f2','#b91c1c'], keep: ['Seguir probando','#f1f5f9','#475569'] };
+    var STEP = { ok: 'background:#f0fdfa;color:#0f766e;border:1px solid #ccfbf1', mid: 'background:#fffbeb;color:#a16207;border:1px solid #fde68a', bad: 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca', low: 'background:#f8fafc;color:#94a3b8;border:1px dashed #e2e8f0' };
+    var flash = function(m){ self.setState({ msg: m }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 2800); };
+    var built = S.pieces.map(function(p){
+      var pend = 0, open = 0;
+      var vars = p.vars.map(function(v){
+        var key = p.id + '-' + v[0], d = S.dec[key], s = SUG[v[8]];
+        if (!d) { open++; if (v[8] !== 'keep') pend++; }
+        var setD = function(val, t){ var o = Object.assign({}, S.dec); if (val) o[key] = val; else delete o[key]; self.setState({ dec: o }); if (t) flash(t); };
+        return { k: v[0], hook: v[1], ch: v[2] === 'WA' ? 'WhatsApp' : 'Web', spend: v[3], day: v[4], freq: v[5], cost: v[6], costType: v[7],
+          costColor: v[8] === 'win' ? '#0f766e' : (v[8] === 'off' ? '#b91c1c' : '#0f172a'),
+          chStyle: 'font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;' + (v[2] === 'WA' ? 'background:#f0fdf4;color:#15803d' : 'background:#eff6ff;color:#1d4ed8'),
+          sug: s[0], reason: v[9], diag: v[10], hasDiag: !!v[10],
+          sugChip: 'font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:' + s[1] + ';color:' + s[2],
+          steps: v[11].map(function(x){ return { label: x[0], val: x[1], style: 'flex-shrink:0;min-width:52px;padding:5px 8px;border-radius:9px;text-align:center;' + STEP[x[2]] }; }),
+          open: !d, closed: !!d, decLabel: d === 'win' ? 'En Ganadores' : 'Apagado',
+          decChip: 'font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;' + (d === 'win' ? 'background:#0d9488;color:#ffffff' : 'background:#fef2f2;color:#b91c1c'),
+          win: function(){ setD('win', key + ' pasa a Ganadores.'); }, off: function(){ setD('off', key + ' marcado para apagar.'); }, undo: function(){ setD(null); },
+          winStyle: 'flex:1;height:44px;border-radius:11px;font-size:14px;font-weight:600;' + (v[8] === 'win' ? 'border:none;background:#0d9488;color:#ffffff' : 'border:1px solid #99f6e4;background:#ffffff;color:#0f766e'),
+          offStyle: 'flex:1;height:44px;border-radius:11px;font-size:14px;font-weight:600;' + (v[8] === 'off' ? 'border:none;background:#dc2626;color:#ffffff' : 'border:1px solid #fecaca;background:#ffffff;color:#b91c1c'),
+          card: 'background:#ffffff;border-radius:14px;padding:12px 14px;' + (d === 'off' ? 'opacity:.5' : (d === 'win' ? 'outline:2px solid #99f6e4' : '')) };
+      });
+      return { id: p.id, stage: p.stage, title: p.title, vars: vars, pend: pend, open: open,
+        tag: 'font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:5px;background:' + ST[p.stage][0] + ';color:' + ST[p.stage][1] };
+    });
+    var T = [['decidir','Decidir', function(p){ return p.pend > 0; }], ['corriendo','Corriendo', function(p){ return p.open > 0; }], ['todas','Todas', function(){ return true; }]];
+    var f = T.filter(function(t){ return t[0] === S.tab; })[0][2];
+    var pieces = built.filter(f);
+    return {
+      lastSync: S.lastSync,
+      tabs: T.map(function(t){ var on = S.tab === t[0]; return { label: t[1], n: built.filter(t[2]).length, on: on, pick: function(){ self.setState({ tab: t[0] }); },
+        style: 'flex:1;height:38px;border:none;border-radius:9px;font-size:13.5px;' + (on ? 'background:#0f172a;color:#ffffff;font-weight:600' : 'background:transparent;color:#64748b') }; }),
+      pieces: pieces, empty: pieces.length === 0,
+      syncOpen: S.syncOpen, noPick: !S.pick, hasPick: !!S.pick, pickName: S.pick,
+      openSync: function(){ self.setState({ syncOpen: true, pick: '' }); }, closeSync: function(){ self.setState({ syncOpen: false, pick: '' }); },
+      onFile: function(e){ var fl = e.target.files && e.target.files[0]; if (fl) self.setState({ pick: fl.name }); },
+      tryDemo: function(){ self.setState({ pick: 'nova-shop-Anuncios-11-oct-2026.xlsx' }); },
+      confirmSync: function(){ var n = new Date(); self.setState({ syncOpen: false, pick: '', lastSync: 'última carga: hoy ' + ('0' + n.getHours()).slice(-2) + ':' + ('0' + n.getMinutes()).slice(-2) }); flash('Sincronizado. Las sugerencias se recalcularon.'); },
+      hasMsg: !!S.msg, msg: S.msg
+    };
+  }
+}
+</script>
+</body>
+</html>

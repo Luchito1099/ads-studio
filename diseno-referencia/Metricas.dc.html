@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Métricas · Studio de Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Métricas" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; max-width: 1220px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Métricas</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Métricas por formato y ángulo</h1>
+</div>
+<div role="group" aria-label="Rango" style="margin-left: auto; display: flex; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; padding: 3px; border-radius: 9px">
+<sc-for list="{{ranges}}" as="r" hint-placeholder-count="4">
+<button type="button" onClick="{{r.pick}}" style="{{r.style}}">{{r.label}}</button>
+</sc-for>
+</div>
+</header>
+
+<section style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 12px 16px">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a16207" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+<span style="font-size: 12.5px; color: #713f12">Gasto, CPA y hook rate se llenan al conectar la cuenta de Meta Ads. Los conteos de tests y ganadores salen del pipeline.</span>
+<button type="button" style="margin-left: auto; height: 32px; padding: 0 12px; border: 1px solid #fde68a; border-radius: 8px; background: #ffffff; font-size: 12px; font-weight: 600; color: #713f12">Conectar Meta Ads</button>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px">
+<div style="font-size: 11.5px; color: #64748b">{{k.k}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 600; margin-top: 4px">{{k.v}}</div>
+<div style="font-size: 11px; color: #94a3b8; margin-top: 2px">{{k.sub}}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="3">
+<div style="{{s.box}}">
+<div style="display: flex; align-items: center"><h2 style="margin: 0; font-size: 15px; font-weight: 800; color: {{s.color}}">{{s.name}}</h2><span style="margin-left: auto; font-size: 11px; color: #64748b">{{s.sub}}</span></div>
+<div style="display: flex; gap: 18px; margin-top: 10px">
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600">{{s.tests}}</div><div style="font-size: 10.5px; color: #64748b">Probados</div></div>
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600">{{s.wins}}</div><div style="font-size: 10.5px; color: #64748b">Ganadores</div></div>
+<div><div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: {{s.color}}">{{s.rate}}</div><div style="font-size: 10.5px; color: #64748b">Acierto</div></div>
+</div>
+<div style="height: 6px; border-radius: 6px; background: rgba(255,255,255,.8); margin-top: 12px; overflow: hidden"><div style="{{s.bar}}"></div></div>
+</div>
+</sc-for>
+</div>
+
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 700">Formato × Ángulo</h2>
+<span style="font-size: 12px; color: #64748b">Qué combinación gana. Cada celda: tests · ganadores.</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 10px 12px">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/></svg>
+<span style="font-size: 12.5px; color: #134e4a"><b>Mejor combinación:</b> {{best}}. <b>Hueco a probar:</b> {{gap}}.</span>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: separate; border-spacing: 4px; font-size: 12px; min-width: 760px">
+<thead><tr>
+<th style="text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; padding: 4px 8px">Formato ↓ · Ángulo →</th>
+<sc-for list="{{angles}}" as="a" hint-placeholder-count="5">
+<th style="font-size: 11px; font-weight: 700; color: #4338ca; padding: 6px 8px; background: #eef2ff; border-radius: 7px">{{a}}</th>
+</sc-for>
+</tr></thead>
+<tbody>
+<sc-for list="{{matrix}}" as="row" hint-placeholder-count="6">
+<tr>
+<th style="text-align: left; font-size: 12px; font-weight: 700; padding: 6px 8px; white-space: nowrap">{{row.format}}</th>
+<sc-for list="{{row.cells}}" as="cell" hint-placeholder-count="5">
+<td title="{{cell.tip}}" style="{{cell.style}}">{{cell.text}}</td>
+</sc-for>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: #475569">
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #0d9488"></span>Con ganador</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #fde68a"></span>En prueba</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #fecaca"></span>3+ tests sin ganar</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #f8fafc; border: 1px dashed #cbd5e1"></span>Sin probar</span>
+</div>
+</section>
+
+<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 860px">
+<thead><tr style="text-align: left; color: #94a3b8; font-size: 11px">
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Formato</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Etapa</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Probados</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Ganadores</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Acierto</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Gasto</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">CPA</th>
+<th style="padding: 12px 16px; font-weight: 600; border-bottom: 1px solid #e2e8f0">Hook rate</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<tr>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-weight: 600"><a href="Concepto.dc.html" style="color: #0f172a; text-decoration: none">{{r.name}}</a></td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9"><span style="{{r.tag}}">{{r.stage}}</span></td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace">{{r.tests}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; color: #0f766e; font-weight: 600">{{r.wins}}</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9">
+<div style="display: flex; align-items: center; gap: 8px"><span style="width: 70px; height: 6px; border-radius: 6px; background: #f1f5f9; overflow: hidden"><span style="{{r.bar}}"></span></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px">{{r.rate}}</span></div>
+</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; color: #94a3b8">[—]</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; color: #94a3b8">[—]</td>
+<td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; font-family: 'JetBrains Mono', monospace; color: #94a3b8">[—]</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { range: '30 días' }; }
+  renderVals() {
+    var self = this;
+    var ranges = ['7 días','30 días','90 días','Todo'].map(function(r){
+      var on = self.state.range === r;
+      return { label: r, pick: function(){ self.setState({ range: r }); },
+        style: 'height:30px;padding:0 12px;border:none;border-radius:6px;font-size:12px;' + (on ? 'background:#f1f5f9;color:#0f172a;font-weight:600' : 'background:transparent;color:#64748b') };
+    });
+    var S = { TOFU: ['#f0fdf4','#15803d','#bbf7d0','Top Of The Funnel'], MOFU: ['#fefce8','#a16207','#fde68a','Middle Of The Funnel'], BOFU: ['#fef2f2','#dc2626','#fecaca','Bottom Of The Funnel'] };
+    var pct = function(w, t){ return t ? Math.round(100 * w / t) : 0; };
+    var data = [
+      ['UGC','TOFU',8,2],['Voz en off','TOFU',5,1],['Transformacional','TOFU',3,0],['POV','TOFU',2,0],
+      ['Comparativo','MOFU',3,0],['Demo / modo de uso','MOFU',2,0],['Unboxing','MOFU',1,0],
+      ['Reseñas / prueba social','BOFU',3,1],['Testimonio','BOFU',1,0]
+    ];
+    var ANG = ['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'];
+    var MX = [
+      ['UGC', [[3,1],[2,0],[1,0],[0,0],[2,1]]],
+      ['Voz en off', [[1,0],[0,0],[3,1],[1,0],[0,0]]],
+      ['Transformacional', [[0,0],[2,0],[1,0],[0,0],[0,0]]],
+      ['Comparativo', [[0,0],[0,0],[3,0],[0,0],[0,0]]],
+      ['Demo / modo de uso', [[1,0],[0,0],[0,0],[0,0],[1,0]]],
+      ['Testimonio', [[0,0],[0,0],[0,0],[1,0],[0,0]]]
+    ];
+    var bestScore = -1, best = '', gap = '';
+    var matrix = MX.map(function(r){
+      return { format: r[0], cells: r[1].map(function(c, i){
+        var t = c[0], w = c[1];
+        if (w > 0 && (w * 10 - t) > bestScore) { bestScore = w * 10 - t; best = r[0] + ' + ' + ANG[i]; }
+        if (!gap && t === 0 && r[0] === 'UGC') gap = 'UGC + ' + ANG[i];
+        var bg = w > 0 ? 'background:#0d9488;color:#ffffff;font-weight:700' : (t >= 3 ? 'background:#fecaca;color:#7f1d1d;font-weight:600' : (t > 0 ? 'background:#fde68a;color:#713f12;font-weight:600' : 'background:#f8fafc;color:#cbd5e1;border:1px dashed #e2e8f0'));
+        return { text: t ? t + ' · ' + w : '—', tip: r[0] + ' + ' + ANG[i] + ': ' + t + ' tests, ' + w + ' ganadores',
+          style: 'text-align:center;padding:10px 6px;border-radius:8px;font-family:JetBrains Mono,monospace;font-size:12px;' + bg };
+      }) };
+    });
+    var rows = data.map(function(d){
+      var s = S[d[1]], p = pct(d[3], d[2]);
+      return { name: d[0], stage: d[1], tests: d[2], wins: d[3], rate: p + '%',
+        tag: 'font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:' + s[0] + ';color:' + s[1] + ';border:1px solid ' + s[2],
+        bar: 'display:block;height:100%;border-radius:6px;background:' + s[1] + ';width:' + p + '%' };
+    });
+    var stages = ['TOFU','MOFU','BOFU'].map(function(k){
+      var s = S[k], t = 0, w = 0;
+      data.forEach(function(d){ if (d[1] === k) { t += d[2]; w += d[3]; } });
+      var p = pct(w, t);
+      return { name: s[3], sub: k, color: s[1], tests: t, wins: w, rate: p + '%',
+        box: 'border-radius:16px;padding:16px 18px;border:1px solid ' + s[2] + ';background:' + s[0],
+        bar: 'height:100%;border-radius:6px;background:' + s[1] + ';width:' + p + '%' };
+    });
+    var tt = 0, ww = 0;
+    data.forEach(function(d){ tt += d[2]; ww += d[3]; });
+    var kpis = [
+      { k: 'Anuncios probados', v: String(tt), sub: 'desde el pipeline' },
+      { k: 'Ganadores', v: String(ww), sub: pct(ww, tt) + '% de acierto' },
+      { k: 'Gasto total', v: '[—]', sub: 'Meta Ads' },
+      { k: 'CPA promedio', v: '[—]', sub: 'Meta Ads' },
+      { k: 'Hook rate promedio', v: '[—]', sub: 'Meta Ads' }
+    ];
+    return { ranges: ranges, rows: rows, stages: stages, kpis: kpis, angles: ANG, matrix: matrix, best: best, gap: gap || 'todo probado' };
+  }
+}
+</script>
+</body>
+</html>

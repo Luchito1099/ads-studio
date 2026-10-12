@@ -12,7 +12,7 @@ export function counts(){return {ideas:mine(S.ideas).filter(i=>['nueva','aprobad
 export function renderSide(){
   const c=counts();
   $('#side').innerHTML=`
-   <div class="logo"><div class="mk">${ic('funnel')}</div><div><b>novitools</b><span>STUDIO ADS</span></div></div>
+   <div class="logo"><div class="mk">${ic('funnel')}</div><div><b>noviitools</b><span>STUDIO ADS</span></div></div>
    <div class="marca"><span class="mk">${esc((S.marca||'NOVA').charAt(0))}</span><div style="min-width:0"><b>${esc(S.marca||'NOVA')}</b><span>${S.products.length} producto${S.products.length===1?'':'s'}</span></div></div>
    <div class="prod"><label for="prodsel">Producto</label>
      <select id="prodsel">${S.products.map(p=>`<option value="${p.id}" ${p.id===PID()?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="__new">+ Agregar producto</option></select></div>

@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Testing · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+.vr:hover{background:#f8fafc}
+.ab:hover{filter:brightness(.97)}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Testing" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Resultados</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Testing</h1>
+<sc-if value="{{isSample}}" hint-placeholder-val="{{true}}"><span style="font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; background: #fef3c7; color: #92400e">Datos de ejemplo</span></sc-if>
+</div>
+<div style="font-size: 12.5px; color: #64748b; margin-top: 3px">{{summary}}</div>
+</div>
+<button type="button" onClick="{{openRule}}" style="margin-left: auto; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; font-size: 12.5px; color: #334155">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+<span>{{ruleText}}</span>
+<span style="font-weight: 600; color: #0f766e">Editar regla</span>
+</button>
+<button type="button" onClick="{{openSync}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: none; border-radius: 10px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>
+Sincronizar Excel</button>
+</header>
+
+<!-- sync status -->
+<section aria-label="Estado de la data" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 11px 16px; font-size: 12.5px">
+<span style="font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #eff6ff; color: #1d4ed8">Meta Ads</span>
+<span style="font-weight: 600">{{range}}</span>
+<span style="color: #94a3b8">{{rowsText}}</span>
+<span style="color: #94a3b8">{{resultText}}</span>
+<span style="margin-left: auto; color: #94a3b8">{{lastSync}}</span>
+</section>
+
+<!-- how it works -->
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: #475569">
+<span style="font-weight: 600">Content Pipeline</span><span style="color: #cbd5e1">→</span>
+<span style="font-weight: 700; color: #0f766e">Testing</span><span style="color: #cbd5e1">→</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #0d9488"></span>Ganador → Ganadores</span>
+<span style="color: #cbd5e1">·</span>
+<span style="display: inline-flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #f87171"></span>Apagar → Apagados</span>
+<span style="color: #cbd5e1">·</span>
+<span>La plataforma sugiere, tú decides.</span>
+</div>
+
+<div role="group" aria-label="Filtro" style="display: flex; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; padding: 3px; border-radius: 9px; align-self: flex-start">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+<button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #94a3b8">{{t.n}}</span></button>
+</sc-for>
+</div>
+
+<sc-for list="{{pieces}}" as="p" hint-placeholder-count="3">
+<section style="{{p.box}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #f1f5f9">
+<sc-if value="{{p.linked}}" hint-placeholder-val="{{true}}">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #475569">{{p.id}}</span>
+<span style="{{p.tag}}">{{p.stage}}</span>
+<span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: #0f172a; color: #ffffff">{{p.type}}</span>
+<h2 style="margin: 0; font-size: 15px; font-weight: 700">{{p.title}}</h2>
+<span style="font-size: 12px; color: #64748b">{{p.format}}</span>
+<sc-if value="{{p.hasAngle}}" hint-placeholder-val="{{true}}"><span style="font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #eef2ff; color: #4338ca">{{p.angle}}</span></sc-if>
+<sc-if value="{{p.hasRef}}" hint-placeholder-val="{{false}}"><span title="Referente de la Biblioteca" style="font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: #f1f5f9; color: #475569">Ref: {{p.ref}}</span></sc-if>
+<sc-if value="{{p.isExt}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{p.edit}}" style="border: none; background: transparent; font-size: 11.5px; font-weight: 600; color: #0f766e">Editar ficha</button></sc-if>
+</sc-if>
+<sc-if value="{{p.unlinked}}" hint-placeholder-val="{{false}}">
+<h2 style="margin: 0; font-size: 15px; font-weight: 700; color: #92400e">Sin vincular a una pieza</h2>
+<span style="font-size: 12px; color: #a16207">Anuncios que ya estaban circulando. Dales etapa, formato y ángulo para que sumen en el embudo y en Métricas.</span>
+<button type="button" onClick="{{p.selAll}}" style="height: 28px; padding: 0 10px; border: 1px solid #fde68a; border-radius: 7px; background: #ffffff; font-size: 11.5px; font-weight: 600; color: #92400e">{{p.selAllLabel}}</button>
+<sc-if value="{{p.hasSel}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{p.linkSel}}" style="height: 28px; padding: 0 12px; border: none; border-radius: 7px; background: #0d9488; color: #ffffff; font-size: 11.5px; font-weight: 600">{{p.linkSelLabel}}</button></sc-if>
+</sc-if>
+<span style="margin-left: auto; font-size: 12px; color: #64748b">Día <b style="font-family: 'JetBrains Mono', monospace; color: #0f172a">{{p.day}}</b> · <b style="font-family: 'JetBrains Mono', monospace; color: #0f172a">{{p.spendT}}</b> gastados</span>
+<sc-if value="{{p.pending}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: #fef3c7; color: #92400e">{{p.pendingText}}</span></sc-if>
+</div>
+<div style="overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1200px">
+<thead><tr style="text-align: left; color: #94a3b8; font-size: 11px">
+<th style="padding: 9px 16px; font-weight: 600">Variación</th>
+<th style="padding: 9px 8px; font-weight: 600; text-align: right">Gasto</th>
+<th style="padding: 9px 8px; font-weight: 600; text-align: right">Frecuencia</th>
+<th style="padding: 9px 8px; font-weight: 600">Embudo · en rojo donde se cae</th>
+<th style="padding: 9px 8px; font-weight: 600; text-align: right">Resultado</th>
+<th style="padding: 9px 8px; font-weight: 600; text-align: right">Costo</th>
+<th style="padding: 9px 16px; font-weight: 600">Sugerencia</th>
+<th style="padding: 9px 16px; font-weight: 600; text-align: right">Decisión</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{p.vars}}" as="v" hint-placeholder-count="3">
+<tr class="vr" style="{{v.row}}">
+<td style="padding: 10px 16px; border-top: 1px solid #f1f5f9">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="{{v.thumb}}"></span>
+<div style="min-width: 0">
+<sc-if value="{{v.linked}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 6px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569">{{v.k}}</span>
+<span style="{{v.chStyle}}">{{v.ch}}</span>
+<sc-if value="{{v.best}}" hint-placeholder-val="{{false}}"><span style="font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px; background: #0d9488; color: #ffffff">MEJOR COSTO</span></sc-if></div>
+<div style="font-size: 13px; font-weight: 600; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">“{{v.hook}}”</div>
+</sc-if>
+<div title="{{v.name}}" style="{{v.nameStyle}}">{{v.name}}</div>
+<sc-if value="{{v.unlinked}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 5px">
+<button type="button" role="checkbox" aria-checked="{{v.picked}}" aria-label="Seleccionar" onClick="{{v.togglePick}}" style="{{v.pickBox}}"><sc-if value="{{v.picked}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if></button>
+<span style="{{v.chStyle}}">{{v.ch}}</span>
+<button type="button" onClick="{{v.linkOne}}" style="height: 28px; padding: 0 11px; border: 1px solid #fcd34d; border-radius: 7px; background: #ffffff; font-size: 11.5px; font-weight: 600; color: #92400e">Vincular…</button>
+<button type="button" onClick="{{v.hide}}" style="border: none; background: transparent; font-size: 11.5px; font-weight: 600; color: #94a3b8">Ocultar</button>
+</div>
+</sc-if>
+</div>
+</div>
+</td>
+<td style="padding: 10px 8px; border-top: 1px solid #f1f5f9; text-align: right; font-family: 'JetBrains Mono', monospace">{{v.spendT}}</td>
+<td title="{{v.freqTip}}" style="padding: 10px 8px; border-top: 1px solid #f1f5f9; text-align: right"><div style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: {{v.freqColor}}">{{v.freq}}</div><div style="font-size: 10px; color: #94a3b8">{{v.freqSub}}</div></td>
+<td style="padding: 10px 8px; border-top: 1px solid #f1f5f9">
+<div style="display: flex; align-items: center; gap: 3px">
+<sc-for list="{{v.steps}}" as="st" hint-placeholder-count="5">
+<span title="{{st.tip}}" style="{{st.style}}"><span style="display: block; font-size: 9.5px; font-weight: 600; opacity: .75">{{st.label}}</span><span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600">{{st.val}}</span></span>
+</sc-for>
+</div>
+</td>
+<td style="padding: 10px 8px; border-top: 1px solid #f1f5f9; text-align: right"><div style="font-family: 'JetBrains Mono', monospace; font-weight: 600">{{v.res}}</div><div style="font-size: 10px; color: #94a3b8">{{v.resType}}</div></td>
+<td style="padding: 10px 8px; border-top: 1px solid #f1f5f9; text-align: right"><div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: {{v.cprColor}}">{{v.cpr}}</div><div style="font-size: 10px; color: #94a3b8">{{v.costType}}</div></td>
+<td style="padding: 10px 16px; border-top: 1px solid #f1f5f9; max-width: 240px">
+<span style="{{v.sugChip}}">{{v.sugLabel}}</span>
+<div style="font-size: 11px; color: #64748b; margin-top: 3px; line-height: 1.4">{{v.reason}}</div>
+<sc-if value="{{v.hasDiag}}" hint-placeholder-val="{{false}}"><div style="font-size: 11px; color: #b91c1c; margin-top: 2px; line-height: 1.4">{{v.diag}}</div></sc-if>
+</td>
+<td style="padding: 10px 16px; border-top: 1px solid #f1f5f9; text-align: right; white-space: nowrap">
+<sc-if value="{{v.open}}" hint-placeholder-val="{{true}}">
+<button type="button" class="ab" onClick="{{v.win}}" style="{{v.winStyle}}">Ganador</button>
+<button type="button" class="ab" onClick="{{v.off}}" style="{{v.offStyle}}">Apagar</button>
+</sc-if>
+<sc-if value="{{v.closed}}" hint-placeholder-val="{{false}}">
+<span style="{{v.decChip}}">{{v.decLabel}}</span>
+<button type="button" onClick="{{v.undo}}" style="margin-left: 8px; border: none; background: transparent; font-size: 11.5px; font-weight: 600; color: #64748b">Deshacer</button>
+</sc-if>
+</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</sc-for>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 32px; text-align: center; font-size: 13px; color: #64748b">{{emptyText}}</div>
+</sc-if>
+
+<!-- decided -->
+<div style="display: flex; flex-wrap: wrap; gap: 14px">
+<section style="flex: 1 1 340px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #0d9488"></span><h2 style="margin: 0; font-size: 13.5px; font-weight: 700">Enviados a Ganadores</h2><a href="Ganadores.dc.html" style="margin-left: auto; font-size: 12px; font-weight: 600; color: #0f766e; text-decoration: none">Ver Ganadores →</a></div>
+<sc-for list="{{wonList}}" as="w" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #f1f5f9; font-size: 12.5px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600">{{w.id}}</span><span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{w.hook}}</span><span style="font-family: 'JetBrains Mono', monospace; color: #0f766e; font-weight: 600">{{w.cpr}}</span></div>
+</sc-for>
+<sc-if value="{{noWon}}" hint-placeholder-val="{{true}}"><div style="font-size: 12px; color: #94a3b8; padding-top: 4px">Todavía ninguno esta semana.</div></sc-if>
+</section>
+<section style="flex: 1 1 340px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px 16px">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #f87171"></span><h2 style="margin: 0; font-size: 13.5px; font-weight: 700">Apagados</h2><span style="margin-left: auto; font-size: 11.5px; color: #94a3b8">Quedan como aprendizaje en Métricas</span></div>
+<sc-for list="{{offList}}" as="w" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #f1f5f9; font-size: 12.5px; color: #64748b"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600">{{w.id}}</span><span style="flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: line-through">{{w.hook}}</span><span style="font-family: 'JetBrains Mono', monospace">{{w.cpr}}</span></div>
+</sc-for>
+<sc-if value="{{noOff}}" hint-placeholder-val="{{true}}"><div style="font-size: 12px; color: #94a3b8; padding-top: 4px">Nada apagado todavía.</div></sc-if>
+</section>
+</div>
+</main>
+</div>
+
+<!-- RULE MODAL -->
+<sc-if value="{{ruleOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeRule}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Regla de decisión" style="position: relative; width: 100%; max-width: 500px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 4px">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Regla de decisión</h2>
+<p style="margin: 6px 0 0; font-size: 12.5px; color: #64748b; line-height: 1.5">La meta de costo decide ganador o apagar. Los umbrales del embudo marcan en rojo el paso donde se cae cada anuncio. Cuando tengas historial, ponlos en tu promedio.</p>
+</div>
+<div style="padding: 10px 20px">
+<sc-for list="{{ruleRows}}" as="r" hint-placeholder-count="4">
+<sc-if value="{{r.hasHead}}" hint-placeholder-val="{{false}}"><div style="font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #0f766e; padding: 12px 0 4px">{{r.head}}</div></sc-if>
+<label style="display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid #f1f5f9">
+<span style="flex: 1"><span style="display: block; font-size: 13px; font-weight: 600">{{r.label}}</span><span style="display: block; font-size: 11.5px; color: #94a3b8">{{r.help}}</span></span>
+<span style="font-size: 12px; color: #64748b">{{r.pre}}</span>
+<input type="number" value="{{r.value}}" onChange="{{r.onInput}}" min="0" step="{{r.step}}" style="width: 76px; height: 34px; box-sizing: border-box; text-align: center; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; outline: none">
+<span style="font-size: 12px; color: #64748b; width: 22px">{{r.post}}</span>
+</label>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; position: sticky; bottom: 0">
+<button type="button" onClick="{{closeRule}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cancelar</button>
+<button type="button" onClick="{{saveRule}}" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">Guardar</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- LINK MODAL -->
+<sc-if value="{{lkOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 55; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{lk.close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Vincular anuncios" style="position: relative; width: 100%; max-width: 600px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 8px; display: flex; gap: 10px">
+<div style="flex: 1; min-width: 0">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">{{lk.title}}</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px">
+<sc-for list="{{lk.names}}" as="n" hint-placeholder-count="3"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; padding: 2px 7px; border-radius: 5px; background: #fef3c7; color: #92400e">{{n}}</span></sc-for>
+</div>
+</div>
+<button type="button" aria-label="Cerrar" onClick="{{lk.close}}" style="border: none; background: transparent; font-size: 20px; line-height: 1; color: #94a3b8; align-self: flex-start">×</button>
+</div>
+
+<div style="padding: 4px 20px 0">
+<div role="group" aria-label="Cómo vincular" style="display: flex; gap: 2px; background: #f1f5f9; padding: 3px; border-radius: 10px">
+<sc-for list="{{lk.modes}}" as="m" hint-placeholder-count="2">
+<button type="button" onClick="{{m.pick}}" style="{{m.style}}">{{m.label}}<span style="display: block; font-size: 10.5px; font-weight: 500; color: #94a3b8">{{m.sub}}</span></button>
+</sc-for>
+</div>
+</div>
+
+<div style="padding: 14px 20px; display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{lk.isNew}}" hint-placeholder-val="{{true}}">
+
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Etapa del embudo <span style="color: #b91c1c">*</span></div>
+<div style="display: flex; gap: 6px">
+<sc-for list="{{lk.stages}}" as="s" hint-placeholder-count="3"><button type="button" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}<span style="display: block; font-size: 10.5px; font-weight: 500; opacity: .8">{{s.sub}}</span></button></sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px">
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Tipo</div>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{lk.types}}" as="t" hint-placeholder-count="3"><button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for>
+</div>
+</div>
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Lleva a</div>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{lk.chans}}" as="t" hint-placeholder-count="2"><button type="button" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for>
+</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px">
+<label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600">Formato
+<select value="{{lk.format}}" onChange="{{lk.onFormat}}" style="{{lk.selStyle}}"><sc-for list="{{lk.formats}}" as="o" hint-placeholder-count="4"><option value="{{o}}">{{o}}</option></sc-for></select></label>
+<label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600">Ángulo <span style="font-weight: 500; color: #94a3b8; font-size: 11px">opcional</span>
+<select value="{{lk.angle}}" onChange="{{lk.onAngle}}" style="{{lk.selStyle}}"><sc-for list="{{lk.angles}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></label>
+<label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600">Producto
+<select value="{{lk.product}}" onChange="{{lk.onProduct}}" style="{{lk.selStyle}}"><sc-for list="{{lk.products}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for></select></label>
+</div>
+
+<label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600">Nombre de la pieza
+<input type="text" value="{{lk.name}}" onInput="{{lk.onName}}" style="{{lk.inputStyle}}"></label>
+
+<label style="display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600">Referente de la Biblioteca <span style="font-weight: 500; color: #94a3b8; font-size: 11px">opcional · el anuncio en el que te inspiraste</span>
+<select value="{{lk.ref}}" onChange="{{lk.onRef}}" style="{{lk.selStyle}}"><sc-for list="{{lk.refs}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for></select></label>
+
+<sc-if value="{{lk.multi}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">¿Cómo se agrupan estos {{lk.count}} anuncios?</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{lk.groups}}" as="g" hint-placeholder-count="2"><button type="button" onClick="{{g.pick}}" style="{{g.style}}"><b style="display: block; font-size: 12.5px">{{g.label}}</b><span style="font-size: 11.5px; color: #64748b">{{g.sub}}</span></button></sc-for>
+</div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{lk.isPiece}}" hint-placeholder-val="{{false}}">
+<input type="search" value="{{lk.q}}" onInput="{{lk.onQ}}" placeholder="Buscar por ID, nombre o formato" style="{{lk.inputStyle}}">
+<div style="display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto">
+<sc-for list="{{lk.pieces}}" as="x" hint-placeholder-count="5">
+<button type="button" onClick="{{x.pick}}" style="{{x.style}}">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569; width: 70px; flex-shrink: 0">{{x.id}}</span>
+<span style="flex: 1; min-width: 0"><span style="display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{x.title}}</span><span style="display: block; font-size: 11px; color: #94a3b8">{{x.meta}}</span></span>
+<span style="{{x.tagStyle}}">{{x.where}}</span>
+</button>
+</sc-for>
+</div>
+<div style="font-size: 11.5px; color: #64748b">{{lk.pieceHint}}</div>
+</sc-if>
+
+<sc-if value="{{lk.hasErr}}" hint-placeholder-val="{{false}}"><div style="font-size: 12.5px; color: #b91c1c">{{lk.err}}</div></sc-if>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; position: sticky; bottom: 0">
+<span style="font-size: 11.5px; color: #94a3b8; flex: 1">Se recuerda por nombre: en las próximas cargas se unen solos.</span>
+<button type="button" onClick="{{lk.close}}" style="height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cancelar</button>
+<button type="button" onClick="{{lk.save}}" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">{{lk.saveLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<!-- SYNC MODAL -->
+<sc-if value="{{syncOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeSync}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Sincronizar Excel" style="position: relative; width: 100%; max-width: 620px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 6px; display: flex; align-items: flex-start; gap: 10px">
+<div style="flex: 1">
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Sincronizar Excel de Meta</h2>
+<p style="margin: 6px 0 0; font-size: 12.5px; color: #64748b; line-height: 1.5">Cada fila se une a su pieza por el <b style="color: #0f172a">nombre del anuncio</b>: Testing busca ahí el ID y la versión (SCR046 · H1). Si no los tiene, igual se muestra y lo vinculas a mano.</p>
+</div>
+<button type="button" aria-label="Cerrar" onClick="{{closeSync}}" style="border: none; background: transparent; font-size: 20px; line-height: 1; color: #94a3b8">×</button>
+</div>
+
+<div style="padding: 10px 20px 16px; display: flex; flex-direction: column; gap: 12px">
+
+<sc-if value="{{noPending}}" hint-placeholder-val="{{true}}">
+<label onDragOver="{{onDragOver}}" onDragLeave="{{onDragLeave}}" onDrop="{{onDrop}}" style="{{dropStyle}}">
+<input type="file" accept=".csv,.xlsx" onChange="{{onFile}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+<svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></svg>
+<span style="font-size: 13.5px; font-weight: 600">{{dropTitle}}</span>
+<span style="font-size: 12px; color: #64748b">.xlsx o .csv exportado del Administrador de anuncios</span>
+</label>
+<sc-if value="{{hasError}}" hint-placeholder-val="{{false}}"><div style="font-size: 12.5px; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 12px; line-height: 1.5">{{error}}</div></sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: #64748b">
+<span>¿Sin archivo a mano?</span>
+<button type="button" onClick="{{tryMeta}}" style="height: 30px; padding: 0 11px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 12px; font-weight: 600; color: #0f172a">Probar con un export de ejemplo</button>
+</div>
+<div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 11px 13px">
+<div style="font-size: 12px; font-weight: 600; margin-bottom: 6px">Cómo exportar de Meta</div>
+<sc-for list="{{guide}}" as="st" hint-placeholder-count="4">
+<div style="display: flex; gap: 7px; font-size: 11.5px; color: #475569; line-height: 1.45; padding: 2px 0"><span style="font-family: 'JetBrains Mono', monospace; color: #94a3b8">{{st.n}}</span><span>{{st.t}}</span></div>
+</sc-for>
+</div>
+<div style="font-size: 11.5px; color: #64748b; line-height: 1.5; background: #f8fafc; border-radius: 10px; padding: 9px 12px"><b style="color: #0f172a">¿Por día o por rango?</b> El rango que quieras, pero con desglose por día. Cada fila es anuncio + día: si vuelves a subir un día que ya estaba, se reemplaza, no se suma dos veces.</div>
+</sc-if>
+
+<sc-if value="{{hasPending}}" hint-placeholder-val="{{false}}">
+<div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 11px 13px; background: #f8fafc; border-bottom: 1px solid #f1f5f9">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{pv.file}}</span>
+<span style="margin-left: auto; font-size: 12px; color: #475569">{{pv.range}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<sc-for list="{{pv.stats}}" as="s" hint-placeholder-count="3">
+<div style="padding: 11px 13px; border-right: 1px solid #f1f5f9">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 600; color: {{s.color}}">{{s.n}}</div>
+<div style="font-size: 11.5px; color: #64748b">{{s.label}}</div>
+</div>
+</sc-for>
+</div>
+<div style="padding: 10px 13px; border-top: 1px solid #f1f5f9">
+<div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px">Columnas que se usan</div>
+<sc-for list="{{pv.cols}}" as="c" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 8px; padding: 2px 0; font-size: 11.5px">
+<span style="{{c.dot}}"></span><span style="width: 110px; color: #64748b">{{c.use}}</span><span style="font-family: 'JetBrains Mono', monospace; color: {{c.color}}">{{c.col}}</span>
+</div>
+</sc-for>
+</div>
+<div style="padding: 10px 13px; border-top: 1px solid #f1f5f9">
+<div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px">Anuncios en el archivo</div>
+<div style="display: flex; flex-wrap: wrap; gap: 4px">
+<sc-for list="{{pv.ads}}" as="m" hint-placeholder-count="5">
+<span style="{{m.style}}">{{m.label}}</span>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{pv.hasNote}}" hint-placeholder-val="{{false}}">
+<div style="padding: 9px 13px; border-top: 1px solid #f1f5f9; font-size: 11.5px; color: #64748b; line-height: 1.5">{{pv.note}}</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{hasHistory}}" hint-placeholder-val="{{false}}">
+<div>
+<div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px">Historial</div>
+<sc-for list="{{history}}" as="h" hint-placeholder-count="2">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #f1f5f9; font-size: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px">{{h.file}}</span>
+<span style="color: #64748b">{{h.range}}</span>
+<span style="margin-left: auto; color: #94a3b8">{{h.result}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9">
+<sc-if value="{{hasPending}}" hint-placeholder-val="{{false}}">
+<button type="button" onClick="{{discardPending}}" style="height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Elegir otro archivo</button>
+<button type="button" onClick="{{confirmSync}}" style="margin-left: auto; height: 38px; padding: 0 18px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">{{confirmLabel}}</button>
+</sc-if>
+<sc-if value="{{noPending}}" hint-placeholder-val="{{true}}">
+<span style="font-size: 11.5px; color: #94a3b8">{{loadingText}}</span>
+<button type="button" onClick="{{closeSync}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cerrar</button>
+</sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; max-width: 620px; width: calc(100% - 48px); box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13px; line-height: 1.45; box-shadow: 0 12px 30px rgba(15,23,42,.25)">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    // Metadata that comes from the Content Pipeline when a piece is launched
+    this.META = {
+      SCR_046: { stage: 'TOFU', type: 'Video', title: 'Trabajo 10 horas de pie', format: 'UGC', fcode: 'UGC', angle: 'Trabajo de pie', acode: 'PIE', tone: 0, ch: 'WEB',
+        hooks: { H1: 'Trabajo 10 horas de pie', H2: 'Si trabajas de pie, mira esto', H3: 'Nadie en mi trabajo la conocía' } },
+      EST_056: { stage: 'BOFU', type: 'Estático', title: '2 tobilleras por S/ 99', format: 'Venta directa', fcode: 'VENTA', angle: 'Pagas al recibir', acode: 'COD', tone: 2, ch: 'WEB',
+        hooks: { V1: 'Tu tobillo protegido: 2 por S/ 99', V2: 'Paga al recibir · 2x S/ 99' } },
+      SCR_045: { stage: 'MOFU', type: 'Video', title: 'Lo que llega en la caja', format: 'Unboxing', fcode: 'UNBOX', angle: 'Pagas al recibir', acode: 'COD', tone: 4, ch: 'WA',
+        hooks: { H1: 'Abre la caja conmigo', H2: 'Esto es lo que te llega' } },
+      CAR_057: { stage: 'MOFU', type: 'Carrusel', title: '4 errores al vendar un esguince', format: 'Educativo', fcode: 'EDU', angle: 'Alternativa a la venda', acode: 'VENDA', tone: 1, ch: 'WEB',
+        hooks: { C: '¿Vendas tu tobillo así?' } }
+    };
+    var M = this.META;
+    var nameOf = function(id, k){ var m = M[id]; return ['NFX','TOB', id.replace('_',''), k === 'C' ? '' : k, m.ch, m.fcode, m.acode, m.stage].filter(Boolean).join('_'); };
+    // Sample (US$). Web: [id,k,spend,hook%,hold%,ctr%,carga%,pedido%,compras,days] · WA: [id,k,spend,hook%,hold%,ctr%,conv%,nuevos%,0,days]
+    var SAMPLE = [
+      ['SCR_046','H1',24,31,14,1.9,80,18,4,5], ['SCR_046','H2',18,16,9,1.1,78,12,1,5], ['SCR_046','H3',12,26,13,1.5,52,15,1,5],
+      ['EST_056','V1',26,null,null,2.8,82,16,4,6], ['EST_056','V2',20,null,null,1.2,79,8,1,6],
+      ['SCR_045','H1',10,22,8,1.4,38,70,0,3], ['SCR_045','H2',12,27,12,2.2,55,80,0,3],
+      ['CAR_057','C',8,null,null,1.6,76,10,0,2]
+    ];
+    var rows = {};
+    var END = Date.UTC(2026, 9, 10);
+    SAMPLE.forEach(function(s){
+      var days = s[9], wa = M[s[0]].ch === 'WA';
+      var spl = function(tot, i){ return Math.floor((i + 1) * tot / days) - Math.floor(i * tot / days); };
+      for (var i = 0; i < days; i++) {
+        var date = new Date(END - (days - 1 - i) * 864e5).toISOString().slice(0, 10);
+        var name = nameOf(s[0], s[1]);
+        var sp = Math.round(s[2] / days * 100) / 100;
+        var impr = Math.round(sp / 7 * 1000);
+        var p3 = s[3] === null ? 0 : Math.round(impr * s[3] / 100);
+        var clk = Math.round(impr * s[5] / 100);
+        var fq = 1.05 + i * (s[0] === 'EST_056' ? 0.32 : 0.12);
+        var r = { ad: name, date: date, spend: sp, impr: impr, p3: p3, thru: s[4] === null ? 0 : Math.round(p3 * s[4] / 100), clicks: clk, reach: Math.round(impr / fq), freq: Math.round(fq * 100) / 100 };
+        if (wa) { r.conv = Math.round(clk * s[6] / 100); r.newc = Math.round(r.conv * s[7] / 100); r.res = r.conv; r.rt = 'Conversaciones'; }
+        else { var lpv = Math.round(clk * s[6] / 100), b = spl(s[8], i); r.lpv = lpv; r.ic = Math.max(b, Math.round(lpv * s[7] / 100)); r.buys = b; r.res = b; r.rt = 'Compras'; }
+        rows[name + '|' + date] = r;
+      }
+    });
+    this.state = { tab: 'decidir', dec: {}, msg: '', ruleOpen: false, draft: null,
+      rule: { cprWeb: 7, cprWa: 1.5, minSpend: 15, day: 3, freq: 2.5, hook: 25, hold: 10, ctr: 1, carga: 70, pedido: 12, cierre: 50, conv: 40, nuevos: 60 },
+      rows: rows, sample: true, hidden: {}, alias: {}, cur: 'US$', extra: {}, seq: 90, picked: {}, lk: null,
+      syncOpen: false, pending: null, error: '', drag: false, loading: false, history: [], lastSync: 'Datos de ejemplo' };
+  }
+
+  // ---------- parsing helpers ----------
+  norm(s){ return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+  num(v){
+    if (typeof v === 'number') return v;
+    var s = String(v == null ? '' : v).replace(/[^\d.,eE-]/g, '');
+    if (!s) return 0;
+    var c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+    if (c > -1 && d > -1) s = c > d ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    else if (c > -1) s = (s.length - c - 1) <= 2 ? s.replace(',', '.') : s.replace(/,/g, '');
+    var n = parseFloat(s); return isNaN(n) ? 0 : n;
+  }
+  date(v){
+    if (v instanceof Date && !isNaN(v)) return new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate())).toISOString().slice(0, 10);
+    var n = typeof v === 'number' ? v : (/^\d{5}(\.\d+)?$/.test(String(v).trim()) ? parseFloat(v) : NaN);
+    if (!isNaN(n) && n > 30000 && n < 80000) return new Date(Date.UTC(1899, 11, 30) + Math.floor(n) * 864e5).toISOString().slice(0, 10);
+    var s = String(v == null ? '' : v).trim(), m;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+    if ((m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/))) { var y = m[3].length === 2 ? '20' + m[3] : m[3]; return y + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2); }
+    return '';
+  }
+  csv(text){
+    var first = text.split(/\r?\n/)[0] || '';
+    var sep = (first.split(';').length > first.split(',').length) ? ';' : (first.indexOf('\t') > -1 ? '\t' : ',');
+    var out = [], row = [], cur = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === sep) { row.push(cur); cur = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(function(c){ return c !== ''; })) out.push(row); row = []; }
+      else cur += ch;
+    }
+    row.push(cur); if (row.some(function(c){ return c !== ''; })) out.push(row);
+    return out;
+  }
+  // Native .xlsx reader (zip + XML), no external library
+  readXlsx(buf){
+    var u8 = new Uint8Array(buf), dv = new DataView(buf);
+    var eocd = -1;
+    for (var i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) return Promise.reject(new Error('zip'));
+    var n = dv.getUint16(eocd + 10, true), off = dv.getUint32(eocd + 16, true), files = {};
+    var dec = new TextDecoder('utf-8');
+    for (var k = 0; k < n; k++) {
+      var method = dv.getUint16(off + 10, true), csize = dv.getUint32(off + 20, true);
+      var nl = dv.getUint16(off + 28, true), el = dv.getUint16(off + 30, true), cl = dv.getUint16(off + 32, true), lo = dv.getUint32(off + 42, true);
+      var name = dec.decode(u8.subarray(off + 46, off + 46 + nl));
+      var start = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true);
+      files[name] = { method: method, data: u8.subarray(start, start + csize) };
+      off += 46 + nl + el + cl;
+    }
+    var get = function(name){
+      var f = files[name]; if (!f) return Promise.resolve(null);
+      if (f.method === 0) return Promise.resolve(dec.decode(f.data));
+      if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('inflate'));
+      var stream = new Blob([f.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Response(stream).text();
+    };
+    var sheetName = Object.keys(files).filter(function(x){ return /^xl\/worksheets\/sheet\d*\.xml$/.test(x); }).sort()[0];
+    if (!sheetName) return Promise.reject(new Error('sheet'));
+    return Promise.all([get('xl/sharedStrings.xml'), get(sheetName)]).then(function(r){
+      var P = new DOMParser();
+      var ss = [];
+      if (r[0]) { var sx = P.parseFromString(r[0], 'application/xml').getElementsByTagName('si');
+        for (var a = 0; a < sx.length; a++) { var ts = sx[a].getElementsByTagName('t'), t = ''; for (var b = 0; b < ts.length; b++) t += ts[b].textContent; ss.push(t); } }
+      var doc = P.parseFromString(r[1], 'application/xml');
+      var rowsX = doc.getElementsByTagName('row'), table = [];
+      var colIdx = function(ref){ var L = ref.replace(/\d+/g, ''), c = 0; for (var q = 0; q < L.length; q++) c = c * 26 + (L.charCodeAt(q) - 64); return c - 1; };
+      for (var y = 0; y < rowsX.length; y++) {
+        var cells = rowsX[y].getElementsByTagName('c'), row = [];
+        for (var x = 0; x < cells.length; x++) {
+          var c = cells[x], t2 = c.getAttribute('t'), ref = c.getAttribute('r'), ci = ref ? colIdx(ref) : row.length;
+          var vEl = c.getElementsByTagName('v')[0], val = vEl ? vEl.textContent : '';
+          if (t2 === 's') val = ss[parseInt(val, 10)] || '';
+          else if (t2 === 'inlineStr') { var it = c.getElementsByTagName('t'); val = ''; for (var z = 0; z < it.length; z++) val += it[z].textContent; }
+          else if (t2 !== 'str' && val !== '' && !isNaN(val)) val = parseFloat(val);
+          while (row.length < ci) row.push('');
+          row[ci] = val;
+        }
+        if (row.some(function(v){ return v !== '' && v != null; })) table.push(row);
+      }
+      return table;
+    });
+  }
+  parseId(name){
+    var al = (this.state && this.state.alias) || {};
+    if (al[name]) return al[name];
+    var m = String(name).match(/(SCR|EST|CAR|ORG)[ _-]?(\d{3})/i);
+    if (!m) return null;
+    var id = m[1].toUpperCase() + '_' + m[2];
+    var toks = String(name).toUpperCase().split(/[^A-Z0-9]+/);
+    var k = null;
+    for (var i = 0; i < toks.length; i++) if (/^[HVT]\d{1,2}$/.test(toks[i])) { k = toks[i]; break; }
+    if (!k) k = id.indexOf('CAR') === 0 ? 'C' : 'H1';
+    return { id: id, k: k };
+  }
+  resName(ind){
+    var s = this.norm(ind);
+    if (!s) return '';
+    if (s.indexOf('purchase') > -1 || s.indexOf('compra') > -1) return 'Compras';
+    if (s.indexOf('messag') > -1 || s.indexOf('mensaje') > -1 || s.indexOf('conversa') > -1) return 'Conversaciones';
+    if (s.indexOf('initiate_checkout') > -1 || s.indexOf('pago') > -1) return 'Pagos iniciados';
+    if (s.indexOf('landing_page') > -1 || s.indexOf('pagina de destino') > -1) return 'Visitas LP';
+    if (s.indexOf('lead') > -1 || s.indexOf('cliente potencial') > -1) return 'Leads';
+    if (s.indexOf('link_click') > -1 || s.indexOf('clic') > -1) return 'Clics';
+    return 'Resultados';
+  }
+  analyze(table, file, demo){
+    var self = this, S = this.state;
+    if (!table || table.length < 2) return { error: 'El archivo está vacío o no tiene filas.' };
+    var raw = table[0], H = raw.map(function(h){ return self.norm(h); });
+    var find = function(tests){ for (var j = 0; j < tests.length; j++) for (var i = 0; i < H.length; i++) if (H[i].indexOf(tests[j]) === 0) return i; return -1; };
+    var findIn = function(tests){ for (var j = 0; j < tests.length; j++) for (var i = 0; i < H.length; i++) if (H[i].indexOf(tests[j]) > -1 && H[i].indexOf('costo') !== 0 && H[i].indexOf('cost ') !== 0) return i; return -1; };
+    var cName = find(['nombre del anuncio', 'ad name']);
+    var cSpend = find(['importe gastado', 'monto gastado', 'amount spent']);
+    if (cName < 0 || cSpend < 0) return { error: 'No reconocí el archivo. Necesito al menos las columnas “Nombre del anuncio” e “Importe/Monto gastado”. Revisa que el export sea a nivel de anuncio.' };
+    var cDay = find(['dia', 'day', 'fecha']);
+    var cStart = find(['inicio del informe', 'reporting starts']);
+    var cEnd = find(['fin del informe', 'reporting ends']);
+    var cImpr = find(['impresiones', 'impressions']);
+    var cP3 = findIn(['3 segundos', '3-second', '3 second']);
+    var cHook = find(['hook rate', 'tasa de gancho']);
+    var cThru = findIn(['thruplay']);
+    var cClk = find(['clics en el enlace', 'clics unicos en el enlace', 'link clicks', 'unique link clicks']);
+    var cRes = find(['resultados', 'results']);
+    if (cRes > -1 && /iniciales/.test(H[cRes])) cRes = -1;
+    var cInd = find(['indicador de resultado', 'result indicator']);
+    var cReach = find(['alcance', 'reach']);
+    var cFreq = find(['frecuencia', 'frequency']);
+    var cBuy = -1;
+    for (var hb = 0; hb < H.length; hb++) if (/^(compras|purchases|compras en el sitio web|website purchases)( |$|\()/.test(H[hb])) { cBuy = hb; break; }
+    var cLpv = find(['visitas a la pagina de destino', 'landing page views']);
+    var cIc = find(['pagos iniciados', 'inicios del pago', 'inicios de pago', 'checkouts initiated']);
+    var cConv = find(['conversaciones con mensajes iniciadas', 'conversaciones iniciadas', 'messaging conversations started']);
+    var cNew = find(['contactos de mensajes nuevos', 'contactos nuevos de mensajes', 'nuevos contactos de mensajes', 'new messaging contacts']);
+    var cur = /\(usd\)/.test(H[cSpend]) ? 'US$' : (/\(pen\)/.test(H[cSpend]) ? 'S/' : (/\(eur\)/.test(H[cSpend]) ? '€' : (S.cur || 'US$')));
+    var info = function(use, c, extra){ return { use: use, col: c > -1 ? String(raw[c]) + (extra || '') : 'No vino', ok: c > -1 }; };
+    var opt = function(c){ return function(r){ return c > -1 ? self.num(r[c]) : null; }; };
+    var gReach = opt(cReach), gFreq = opt(cFreq), gThru = opt(cThru), gLpv = opt(cLpv), gIc = opt(cIc), gConv = opt(cConv), gNew = opt(cNew), gBuy = opt(cBuy);
+    var parsed = [], bad = 0, nWa = 0, nWeb = 0;
+    for (var i = 1; i < table.length; i++) {
+      var r = table[i], name = String(r[cName] == null ? '' : r[cName]).trim();
+      if (!name || /^total/i.test(name)) continue;
+      var d = '';
+      if (cDay > -1) d = self.date(r[cDay]);
+      else if (cStart > -1 && cEnd > -1) { var a = self.date(r[cStart]), b = self.date(r[cEnd]); d = a && a === b ? a : (a && b ? 'RANGE' : ''); }
+      if (d === 'RANGE') return { error: 'Este export trae totales de varios días juntos (Inicio y Fin del informe son distintos). En el Administrador de anuncios ve a Desglose → Por tiempo → Día y vuelve a exportar. Así cada día se guarda una sola vez y nada se duplica.' };
+      if (!d) { bad++; continue; }
+      var impr = cImpr > -1 ? self.num(r[cImpr]) : 0, hk = cHook > -1 ? self.num(r[cHook]) : 0;
+      if (hk > 1) hk = hk / 100;
+      var rt = cInd > -1 ? self.resName(r[cInd]) : '';
+      var resN = cRes > -1 ? self.num(r[cRes]) : 0;
+      var row = { ad: name, date: d, spend: self.num(r[cSpend]), impr: impr, p3: cP3 > -1 ? self.num(r[cP3]) : Math.round(hk * impr), thru: gThru(r), clicks: cClk > -1 ? self.num(r[cClk]) : 0,
+        reach: gReach(r), freq: gFreq(r), res: resN, rt: rt, lpv: gLpv(r), ic: gIc(r), buys: gBuy(r), conv: gConv(r), newc: gNew(r) };
+      if (row.buys === null && rt === 'Compras') row.buys = resN;
+      if (row.conv === null && rt === 'Conversaciones') row.conv = resN;
+      if (self.chOf(name, row) === 'WA') nWa++; else nWeb++;
+      parsed.push(row);
+    }
+    if (!parsed.length) return { error: 'No encontré filas con fecha. Exporta con Desglose → Por tiempo → Día, o con un solo día de rango.' };
+    var cols = [
+      info('Anuncio', cName),
+      { use: 'Fecha', col: cDay > -1 ? String(raw[cDay]) : 'Inicio = Fin del informe (1 día por fila)', ok: true },
+      info('Gasto', cSpend, ' · ' + cur),
+      info('Impresiones', cImpr),
+      cP3 > -1 ? info('Hook', cP3, ' ÷ impresiones') : info('Hook', cHook, ' (ya calculado)'),
+      cFreq > -1 ? info('Frecuencia', cFreq) : info('Frecuencia', cReach, ' → impresiones ÷ alcance'),
+      info('Hold', cThru, ' ÷ reproducciones 3 s'),
+      info('CTR', cClk, ' ÷ impresiones')
+    ];
+    if (nWeb) cols = cols.concat([
+      info('Web · Carga', cLpv, ' ÷ clics'),
+      info('Web · Pedido', cIc, ' ÷ visitas'),
+      cBuy > -1 ? info('Web · Compras', cBuy) : { use: 'Web · Compras', col: 'No vino: agrega la columna “Compras”', ok: false }
+    ]);
+    if (nWa) cols = cols.concat([
+      cConv > -1 ? info('WA · Conversación', cConv, ' ÷ clics') : { use: 'WA · Conversación', col: cRes > -1 ? 'Desde Resultados' : 'No vino', ok: cRes > -1 },
+      info('WA · Nuevos', cNew, ' ÷ conversaciones')
+    ]);
+    var nNew = 0, nRep = 0, ads = {}, dates = [];
+    parsed.forEach(function(x){
+      var key = x.ad + '|' + x.date;
+      if (!(S.sample && !demo) && S.rows[key] !== undefined) nRep++; else nNew++;
+      dates.push(x.date);
+      ads[x.ad] = self.parseId(x.ad);
+    });
+    dates.sort();
+    var nUnk = Object.keys(ads).filter(function(a){ return !ads[a]; }).length;
+    var note = (S.sample && !demo ? 'Es tu primera carga real: se borran los datos de ejemplo. ' : '') + (bad ? bad + ' fila' + (bad > 1 ? 's' : '') + ' sin fecha se saltaron. ' : '')
+      + 'Canal detectado: ' + (nWeb ? nWeb + ' fila' + (nWeb > 1 ? 's' : '') + ' Web' : '') + (nWeb && nWa ? ' · ' : '') + (nWa ? nWa + ' WhatsApp' : '') + '.';
+    return { demo: !!demo, file: file, list: parsed, from: dates[0], to: dates[dates.length - 1], nNew: nNew, nRep: nRep, nUnk: nUnk,
+      ads: Object.keys(ads).map(function(a){ return { name: a, pid: ads[a] }; }), cols: cols, cur: cur, note: note };
+  }
+  // Channel: name token first (WA / WEB), then the data
+  chOf(name, r){
+    var t = String(name).toUpperCase().split(/[^A-Z0-9]+/);
+    if (t.indexOf('WA') > -1 || t.indexOf('WSP') > -1 || t.indexOf('WHATSAPP') > -1) return 'WA';
+    if (t.indexOf('WEB') > -1) return 'WEB';
+    var pid = this.parseId(name);
+    var ex = (this.state && this.state.extra) || {};
+    if (pid && ex[pid.id] && ex[pid.id].ch) return ex[pid.id].ch;
+    if (pid && this.META[pid.id] && this.META[pid.id].ch) return this.META[pid.id].ch;
+    if (r && ((r.conv || 0) > 0 || r.rt === 'Conversaciones' || r.newc !== null && r.newc !== undefined && r.lpv === null)) return 'WA';
+    return 'WEB';
+  }
+  loadFile(f){
+    var self = this;
+    if (!f) return;
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    var done = function(table){ var res = self.analyze(table, f.name); if (res.error) self.setState({ error: res.error, pending: null, drag: false, loading: false }); else self.setState({ pending: res, error: '', drag: false, loading: false }); };
+    var fail = function(t){ self.setState({ error: t, drag: false, loading: false }); };
+    if (ext === 'xls') { fail('Ese es el formato antiguo de Excel (.xls). Exporta desde Meta como .xlsx o .csv.'); return; }
+    if (ext !== 'csv' && ext !== 'txt' && ext !== 'xlsx') { fail('Formato no soportado. Sube un .xlsx o .csv.'); return; }
+    self.setState({ loading: true, error: '', drag: false });
+    var rd = new FileReader();
+    rd.onerror = function(){ fail('No pude leer el archivo.'); };
+    if (ext === 'xlsx') {
+      rd.onload = function(){ self.readXlsx(rd.result).then(done, function(){ fail('No pude abrir el Excel en este navegador. Exporta el mismo reporte como .csv y súbelo.'); }); };
+      rd.readAsArrayBuffer(f);
+    } else {
+      rd.onload = function(){ done(self.csv(String(rd.result).replace(/^﻿/, ''))); };
+      rd.readAsText(f);
+    }
+  }
+
+  lkConst(){
+    return {
+      FORMATS: {
+        video: ['UGC','POV','Voz en off','Transformacional','Diálogo','Comercial','Celebridad','Variado','Educativo','Comparativo','Demo / modo de uso','Unboxing','Entrevista','Testimonio','Detrás de cámaras'],
+        static: ['Venta directa','Comparativo','Antes y después','Reseña / testimonio','Beneficios','Educativo','Meme'],
+        carousel: ['Educativo','Beneficios','Comparativo','Testimonios','Paso a paso','Errores comunes']
+      },
+      TYPES: { video: ['Video','SCR_0','H'], static: ['Estático','EST_0','V'], carousel: ['Carrusel','CAR_0','T'] },
+      ANGLES: ['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'],
+      PRODUCTS: ['Tobillera de compresión','Rodillera','Muñequera'],
+      REFS: [
+        ['R1','Competidor A · Me dolía al caminar','UGC','TOFU'], ['R2','Competidor B · No es una venda','Comparativo','MOFU'], ['R3','Competidor C · 2x S/ 99','Venta directa','BOFU'],
+        ['R4','Competidor A · Mi fisio me dijo','UGC','TOFU'], ['R5','Competidor D · Así se pone','Demo / modo de uso','MOFU'], ['R6','Competidor B · Esguince otra vez','Voz en off','TOFU'],
+        ['R7','Competidor C · Antes y después','Transformacional','TOFU'], ['R8','Competidor A · Pagas al recibir','UGC','BOFU'], ['R9','Competidor D · Lo que llega','Unboxing','MOFU'],
+        ['R10','Competidor B · 5 errores','Errores comunes','MOFU'], ['R11','Competidor A · Fútbol sin miedo','POV','TOFU'], ['R12','Competidor C · Reseñas reales','Reseña / testimonio','BOFU']
+      ],
+      // pieces still in the Content Pipeline (not launched yet)
+      PIPE: [
+        ['IDEA-064','Me dolía al caminar · versión NOVAFLEX','video','UGC','TOFU','Alternativa a la venda','Idea'],
+        ['IDEA-063','Reseñas reales de clientes','static','Reseña / testimonio','BOFU','Pagas al recibir','Idea'],
+        ['SCR_050','Si trabajas de pie todo el día, mira esto','video','UGC','TOFU','Trabajo de pie','Guion'],
+        ['SCR_049','El error que cometía con mis esguinces','video','Voz en off','TOFU','Recomendado por fisio','Producción'],
+        ['SCR_047','Mi tobillo ya no se dobla','video','Transformacional','TOFU','Fútbol sin miedo','Edición']
+      ]
+    };
+  }
+  newLk(names, ads, editId){
+    var K = this.lkConst(), S = this.state;
+    if (editId) {
+      var e = S.extra[editId];
+      var nm = Object.keys(S.alias).filter(function(n){ return S.alias[n].id === editId; });
+      return { names: nm, mode: 'new', stage: e.stage, type: e.tkey, format: e.format, angle: e.angle || '', product: e.product, ch: e.ch, ref: e.ref || '', group: 'one', name: e.title, q: '', piece: '', err: '', editId: editId };
+    }
+    var all = names.join(' ').toLowerCase();
+    var a0 = null; Object.keys(ads).forEach(function(k){ if (ads[k].name === names[0]) a0 = ads[k]; });
+    var type = /carrusel|carousel|car_/.test(all) ? 'carousel' : (/imagen|image|img|estatico|static|est_|foto/.test(all) ? 'static' : (a0 && a0.p3 > 0 ? 'video' : 'static'));
+    var clean = names[0].replace(/\(.*?\)/g, '').replace(/[_-]+/g, ' ').replace(/\s+\d+\s*$/, '').trim();
+    return { names: names, mode: 'new', stage: '', type: type, format: K.FORMATS[type][0], angle: '', product: K.PRODUCTS[0], ch: this.chOf(names[0], a0 ? { conv: a0.conv, rt: '' } : null),
+      ref: '', group: names.length > 1 ? 'one' : 'each', name: clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Anuncio en circulación', q: '', piece: '', err: '' };
+  }
+  lkVals(M, ads, flash){
+    var self = this, S = this.state, L = S.lk, K = this.lkConst();
+    if (!L) return {};
+    var set = function(o){ self.setState({ lk: Object.assign({}, S.lk, o, { err: '' }) }); };
+    var chip = function(on, extra){ return 'flex:1;padding:8px 10px;border-radius:9px;font-size:12.5px;font-weight:600;text-align:center;' + (extra || '') + (on ? 'border:1.5px solid #0d9488;background:#f0fdfa;color:#0f766e' : 'border:1px solid #e2e8f0;background:#ffffff;color:#334155'); };
+    var small = function(on){ return 'height:32px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:600;' + (on ? 'border:1.5px solid #0d9488;background:#f0fdfa;color:#0f766e' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569'); };
+    var n = L.names.length;
+    // piece list (launched + extra + still in pipeline)
+    var list = [];
+    Object.keys(M).forEach(function(id){ var m = M[id]; list.push({ id: id, title: m.title, meta: m.stage + ' · ' + m.format + (m.angle ? ' · ' + m.angle : ''), where: S.extra[id] ? 'Registrada' : 'En Testing', inMeta: true }); });
+    K.PIPE.forEach(function(p){ if (!M[p[0]]) list.push({ id: p[0], title: p[1], meta: p[4] + ' · ' + p[3] + ' · ' + p[5], where: 'Content · ' + p[6], pipe: p }); });
+    var q = (L.q || '').toLowerCase();
+    list = list.filter(function(x){ return !q || (x.id + ' ' + x.title + ' ' + x.meta).toLowerCase().indexOf(q) > -1; });
+    var nextK = function(m, pref){ var i = 1; while (m.hooks[pref + i]) i++; return pref + i; };
+    var save = function(){
+      var alias = Object.assign({}, S.alias), extra = Object.assign({}, S.extra), seq = S.seq, msg = '';
+      if (L.mode === 'piece') {
+        if (!L.piece) { self.setState({ lk: Object.assign({}, L, { err: 'Elige la pieza a la que pertenecen.' }) }); return; }
+        var target = list.filter(function(x){ return x.id === L.piece; })[0] || { id: L.piece };
+        var m = extra[L.piece] ? JSON.parse(JSON.stringify(extra[L.piece])) : null;
+        if (!m && M[L.piece]) m = JSON.parse(JSON.stringify(M[L.piece]));
+        if (!m && target.pipe) { var p = target.pipe; m = { stage: p[4], type: K.TYPES[p[2]][0], tkey: p[2], title: p[1], format: p[3], angle: p[5], tone: 3, ch: 'WEB', product: K.PRODUCTS[0], hooks: {} }; }
+        var pref = (m.tkey && K.TYPES[m.tkey]) ? K.TYPES[m.tkey][2] : (m.type === 'Video' ? 'H' : m.type === 'Carrusel' ? 'T' : 'V');
+        L.names.forEach(function(nm){ var k = nextK(m, pref); m.hooks[k] = nm; alias[nm] = { id: L.piece, k: k }; });
+        extra[L.piece] = m;
+        msg = n + ' anuncio' + (n > 1 ? 's' : '') + ' unido' + (n > 1 ? 's' : '') + ' a ' + L.piece + ' · ' + m.stage + ' · ' + m.format + '.';
+      } else {
+        if (!L.stage) { self.setState({ lk: Object.assign({}, L, { err: 'Elige la etapa del embudo: TOFU, MOFU o BOFU.' }) }); return; }
+        var T = K.TYPES[L.type], refRow = K.REFS.filter(function(r){ return r[0] === L.ref; })[0];
+        var base = { stage: L.stage, type: T[0], tkey: L.type, format: L.format, angle: L.angle, product: L.product, ch: L.ch, ref: L.ref, refLabel: refRow ? refRow[1] : '', tone: seq % 6 };
+        var made = [];
+        if (L.editId) {
+          var ed = Object.assign({}, extra[L.editId], base, { title: L.name || extra[L.editId].title });
+          extra[L.editId] = ed; made.push(L.editId);
+        } else if (L.group === 'one') {
+          var id = T[1] + (seq++);
+          var mm = Object.assign({}, base, { title: L.name || 'Anuncio en circulación', hooks: {} });
+          L.names.forEach(function(nm, i){ var k = T[2] + (i + 1); mm.hooks[k] = nm; alias[nm] = { id: id, k: k }; });
+          extra[id] = mm; made.push(id);
+        } else {
+          L.names.forEach(function(nm){
+            var id2 = T[1] + (seq++);
+            var cl = nm.replace(/\(.*?\)/g, '').replace(/[_-]+/g, ' ').trim();
+            extra[id2] = Object.assign({}, base, { title: n > 1 ? cl : (L.name || cl), hooks: {} });
+            extra[id2].hooks[T[2] + '1'] = nm; alias[nm] = { id: id2, k: T[2] + '1' }; made.push(id2);
+          });
+        }
+        msg = L.editId ? 'Ficha de ' + L.editId + ' actualizada.' : n + ' anuncio' + (n > 1 ? 's' : '') + ' registrado' + (n > 1 ? 's' : '') + ' como ' + made.join(', ') + ' · ' + L.stage + ' · ' + L.format + (L.angle ? ' · ' + L.angle : '') + '. Ya suman en Métricas por formato y ángulo.';
+      }
+      var pk = Object.assign({}, S.picked); L.names.forEach(function(nm){ delete pk[nm]; });
+      self.setState({ alias: alias, extra: extra, seq: seq, lk: null, picked: pk, tab: 'todas' });
+      flash(msg);
+    };
+    var STG = [['TOFU','Frío · no te conoce'],['MOFU','Tibio · considera'],['BOFU','Caliente · listo para comprar']];
+    return {
+      title: L.editId ? 'Editar ficha de ' + L.editId : 'Vincular ' + n + ' anuncio' + (n > 1 ? 's' : '') + ' en circulación',
+      names: L.names, count: n, multi: n > 1 && !L.editId,
+      close: function(){ self.setState({ lk: null }); },
+      modes: L.editId ? [] : [['new','Registrar como pieza','Le das etapa, formato y ángulo'],['piece','Unir a una pieza existente','Del Content Pipeline o de Testing']].map(function(m){
+        return { label: m[1], sub: m[2], pick: function(){ set({ mode: m[0] }); }, style: 'flex:1;padding:8px 10px;border:none;border-radius:8px;font-size:12.5px;font-weight:600;text-align:left;' + (L.mode === m[0] ? 'background:#ffffff;color:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.1)' : 'background:transparent;color:#64748b') }; }),
+      isNew: L.mode === 'new', isPiece: L.mode === 'piece',
+      stages: STG.map(function(s){ return { label: s[0], sub: s[1], pick: function(){ set({ stage: s[0] }); }, style: chip(L.stage === s[0]) }; }),
+      types: [['video','Video'],['static','Estático'],['carousel','Carrusel']].map(function(t){ return { label: t[1], style: small(L.type === t[0]), pick: function(){ set({ type: t[0], format: K.FORMATS[t[0]].indexOf(L.format) > -1 ? L.format : K.FORMATS[t[0]][0] }); } }; }),
+      chans: [['WEB','Web'],['WA','WhatsApp']].map(function(t){ return { label: t[1], style: small(L.ch === t[0]), pick: function(){ set({ ch: t[0] }); } }; }),
+      format: L.format, formats: K.FORMATS[L.type], onFormat: function(e){ set({ format: e.target.value }); },
+      angle: L.angle, angles: [{ v: '', label: 'Sin ángulo por ahora' }].concat(K.ANGLES.map(function(a){ return { v: a, label: a }; })), onAngle: function(e){ set({ angle: e.target.value }); },
+      product: L.product, products: K.PRODUCTS, onProduct: function(e){ set({ product: e.target.value }); },
+      name: L.name, onName: function(e){ set({ name: e.target.value }); },
+      ref: L.ref, refs: [{ v: '', label: 'Ninguno' }].concat(K.REFS.map(function(r){ return { v: r[0], label: r[1] + ' (' + r[2] + ' · ' + r[3] + ')' }; })),
+      onRef: function(e){ var r = K.REFS.filter(function(x){ return x[0] === e.target.value; })[0]; var o = { ref: e.target.value };
+        if (r) { if (!L.stage) o.stage = r[3]; var tk = K.FORMATS[L.type].indexOf(r[2]) > -1 ? L.type : null; if (tk) o.format = r[2]; }
+        set(o); },
+      groups: [['one','Una pieza con ' + n + ' variaciones','Ej. mismo concepto con distinta imagen o hook: se comparan entre sí (V1, V2…)'],['each','Una pieza por anuncio','Son ideas distintas: cada una con su propia ficha']].map(function(g){
+        return { label: g[1], sub: g[2], pick: function(){ set({ group: g[0] }); }, style: 'text-align:left;padding:9px 12px;border-radius:9px;' + (L.group === g[0] ? 'border:1.5px solid #0d9488;background:#f0fdfa' : 'border:1px solid #e2e8f0;background:#ffffff') }; }),
+      q: L.q, onQ: function(e){ set({ q: e.target.value }); },
+      pieces: list.map(function(x){ var on = L.piece === x.id;
+        return { id: x.id, title: x.title, meta: x.meta, where: x.where, pick: function(){ set({ piece: x.id }); },
+          tagStyle: 'font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;flex-shrink:0;' + (x.pipe ? 'background:#eef2ff;color:#4338ca' : 'background:#ccfbf1;color:#0f766e'),
+          style: 'display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 12px;border-radius:9px;' + (on ? 'border:1.5px solid #0d9488;background:#f0fdfa' : 'border:1px solid #e2e8f0;background:#ffffff') }; }),
+      pieceHint: 'Se agregan como variaciones nuevas de esa pieza y heredan su etapa, formato y ángulo.',
+      selStyle: 'height:36px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;font-size:13px;font-weight:500;color:#0f172a;padding:0 8px',
+      inputStyle: 'height:36px;box-sizing:border-box;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;font-size:13px;font-weight:500;color:#0f172a;padding:0 10px;outline:none',
+      hasErr: !!L.err, err: L.err,
+      save: save,
+      saveLabel: L.editId ? 'Guardar ficha' : (L.mode === 'piece' ? 'Unir ' + n + ' anuncio' + (n > 1 ? 's' : '') : (n > 1 && L.group === 'one' ? 'Registrar 1 pieza · ' + n + ' variaciones' : 'Registrar ' + n + ' pieza' + (n > 1 ? 's' : '')))
+    };
+  }
+
+  renderVals() {
+    var self = this, S = this.state, RL = S.rule, M = Object.assign({}, this.META, S.extra), C$ = S.cur || 'US$';
+    var ST = { TOFU: ['#f0fdf4','#15803d','#bbf7d0'], MOFU: ['#fefce8','#a16207','#fde68a'], BOFU: ['#fef2f2','#dc2626','#fecaca'] };
+    var TONES = ['#64748b','#475569','#78716c','#57534e','#52525b','#334155'];
+    var MON = ['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];
+    var fd = function(iso){ if (!iso) return '—'; var p = iso.split('-'); return parseInt(p[2], 10) + ' ' + MON[parseInt(p[1], 10) - 1]; };
+    var dayN = function(iso){ var p = iso.split('-'); return Date.UTC(+p[0], +p[1] - 1, +p[2]) / 864e5; };
+    var money = function(v){ return C$ + ' ' + (v < 100 ? v.toFixed(2) : Math.round(v)); };
+    var flash = function(t){ self.setState({ msg: t }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 4200); };
+    var CH = { WEB: ['Web', '#eff6ff', '#1d4ed8'], WA: ['WhatsApp', '#f0fdf4', '#15803d'] };
+    var chStyle = function(c){ return 'font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:' + CH[c][1] + ';color:' + CH[c][2]; };
+
+    // ---------- aggregate rows by ad ----------
+    var ads = {}, dates = [];
+    var addN = function(a, k, v){ if (v === null || v === undefined) return; a[k] = (a[k] || 0) + v; a['has_' + k] = true; };
+    Object.keys(S.rows).forEach(function(key){
+      var r = S.rows[key]; dates.push(r.date);
+      if (S.hidden[r.ad]) return;
+      var pid = self.parseId(r.ad);
+      var ak = pid ? pid.id + '|' + pid.k : 'NOID|' + r.ad;
+      var a = ads[ak] || (ads[ak] = { id: pid ? pid.id : null, k: pid ? pid.k : null, name: r.ad, spend: 0, impr: 0, p3: 0, clicks: 0, res: 0, rts: {}, chs: {}, min: r.date, max: r.date });
+      a.spend += r.spend; a.impr += r.impr; a.p3 += r.p3; a.clicks += r.clicks; a.res += (r.res || 0);
+      ['thru','lpv','ic','buys','conv','newc'].forEach(function(k){ addN(a, k, r[k]); });
+      if (r.rt) a.rts[r.rt] = (a.rts[r.rt] || 0) + 1;
+      var c = self.chOf(r.ad, r); a.chs[c] = (a.chs[c] || 0) + 1;
+      var f = r.freq ? r.freq : (r.reach ? r.impr / r.reach : null);
+      if (f) { if (!a.fLast || r.date >= a.fLastD) { a.fLast = f; a.fLastD = r.date; } if (!a.fFirst || r.date <= a.fFirstD) { a.fFirst = f; a.fFirstD = r.date; } }
+      if (r.date < a.min) a.min = r.date; if (r.date > a.max) { a.max = r.date; a.name = r.ad; }
+    });
+    dates.sort();
+
+    // ---------- funnel ----------
+    var HINT = { Hook: 'el inicio no engancha', Hold: 'el body no retiene', CTR: 'el CTA u oferta no empuja al clic', Carga: 'la página carga lento', Pedido: 'la página no convence', Cierre: 'el formulario traba', Compra: 'la página o el formulario no cierran', 'Conversación': 'el saludo de WhatsApp no invita a escribir', Nuevos: 'llega gente que ya te había escrito' };
+    var stepsOf = function(a, ch, isVid){
+      var st = [];
+      var add = function(label, num, den, thr, minDen){
+        if (!den) return;
+        var val = num / den * 100;
+        st.push({ label: label, val: val, thr: thr, low: den < (minDen || 20) });
+      };
+      if (isVid && a.p3) add('Hook', a.p3, a.impr, RL.hook, 300);
+      if (isVid && a.has_thru && a.p3) add('Hold', a.thru, a.p3, RL.hold, 50);
+      add('CTR', a.clicks, a.impr, RL.ctr, 300);
+      if (ch === 'WEB') {
+        if (a.has_lpv) add('Carga', a.lpv, a.clicks, RL.carga);
+        if (a.has_ic && a.has_lpv) add('Pedido', a.ic, a.lpv, RL.pedido);
+        if (a.has_ic && a.has_buys) add('Cierre', a.buys, a.ic, RL.cierre, 5);
+        if (!a.has_ic && a.has_lpv && a.has_buys) add('Compra', a.buys, a.lpv, RL.pedido * RL.cierre / 100);
+      } else {
+        if (a.has_conv) add('Conversación', a.conv, a.clicks, RL.conv);
+        if (a.has_newc && a.has_conv) add('Nuevos', a.newc, a.conv, RL.nuevos, 5);
+      }
+      var weakest = null;
+      st.forEach(function(s){ if (!s.low && s.val < s.thr * 0.8 && (!weakest || s.val / s.thr < weakest.val / weakest.thr)) weakest = s; });
+      return { steps: st.map(function(s){
+          var w = s === weakest, bad = !s.low && s.val < s.thr;
+          return { label: s.label, val: (s.val < 10 ? s.val.toFixed(1) : Math.round(s.val)) + '%',
+            tip: s.label + ': ' + s.val.toFixed(1) + '% · tu umbral ' + s.thr + '%' + (s.low ? ' · poca data todavía' : (w ? ' · muy por debajo: aquí se cae' : (bad ? ' · un poco por debajo' : ' · bien'))),
+            style: 'min-width:50px;padding:4px 7px;border-radius:7px;text-align:center;' + (w ? 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca' : (s.low ? 'background:#f8fafc;color:#94a3b8;border:1px dashed #e2e8f0' : (bad ? 'background:#fffbeb;color:#a16207;border:1px solid #fde68a' : 'background:#f0fdfa;color:#0f766e;border:1px solid #ccfbf1'))) };
+        }), weakest: weakest };
+    };
+
+    var suggest = function(day, v){
+      var goal = v.ch === 'WA' ? RL.cprWa : RL.cprWeb, c = v.cost, unit = v.ch === 'WA' ? 'conversaciones' : 'compras';
+      if (v.spend >= RL.minSpend && c !== null && c <= goal) return ['win', 'Costo ' + money(c) + ' bajo la meta de ' + money(goal) + ' con ' + money(v.spend) + ' gastados'];
+      if (v.hr !== null && day >= RL.day && v.hr < RL.hook) return ['off', 'Hook ' + v.hr + '% bajo ' + RL.hook + '% al día ' + day];
+      if (v.spend >= RL.minSpend && (c === null || c > goal * 2)) return ['off', c === null ? money(v.spend) + ' sin ' + unit : 'Costo ' + money(c) + ', más del doble de la meta (' + money(goal) + ')'];
+      return ['keep', v.spend < RL.minSpend ? 'Falta gasto: ' + money(v.spend) + ' de ' + money(RL.minSpend) : 'Todavía sin señal clara'];
+    };
+    var SUG = { win: ['Candidato a ganador','#ccfbf1','#0f766e'], off: ['Candidato a apagar','#fef2f2','#b91c1c'], keep: ['Seguir probando','#f1f5f9','#475569'] };
+
+    var byPiece = {};
+    Object.keys(ads).forEach(function(k){ var a = ads[k]; var g = a.id || '~NOID'; (byPiece[g] || (byPiece[g] = [])).push(a); });
+    var order = ['SCR_046','EST_056','SCR_045','CAR_057'];
+    var ids = Object.keys(byPiece).sort(function(a, b){ if (a === '~NOID') return -1; if (b === '~NOID') return 1; var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1); });
+    var openLk = function(names, editId){ self.setState({ lk: self.newLk(names, ads, editId) }); };
+
+    var won = [], offd = [], nWa = 0, nWeb = 0;
+    var built = ids.map(function(id, pi){
+      var noid = id === '~NOID';
+      var m = noid ? { stage: 'TOFU', type: 'Video', title: '', format: '', angle: '', tone: 5, hooks: {} }
+        : (M[id] || { stage: 'TOFU', type: id.indexOf('EST') === 0 ? 'Estático' : id.indexOf('CAR') === 0 ? 'Carrusel' : 'Video', title: 'Pieza sin ficha en el pipeline', format: '—', angle: 'Sin ángulo', tone: pi % 6, hooks: {} });
+      var list = byPiece[id].sort(function(a, b){ return (a.k || a.name) < (b.k || b.name) ? -1 : 1; });
+      var min = list.reduce(function(x, a){ return a.min < x ? a.min : x; }, list[0].min);
+      var max = list.reduce(function(x, a){ return a.max > x ? a.max : x; }, list[0].max);
+      var vs = list.map(function(a){
+        var isVid = noid ? a.p3 > 0 : m.type === 'Video';
+        var ch = (a.chs.WA || 0) > (a.chs.WEB || 0) ? 'WA' : 'WEB';
+        if (ch === 'WA') nWa++; else nWeb++;
+        var hr = (isVid && a.impr && a.p3) ? Math.round(a.p3 / a.impr * 100) : null;
+        var nRes = ch === 'WA' ? (a.has_conv ? a.conv : a.res) : (a.has_buys ? a.buys : a.res);
+        var rtTop = Object.keys(a.rts).sort(function(x, y){ return a.rts[y] - a.rts[x]; })[0] || '';
+        var resType = ch === 'WA' ? (a.has_conv ? 'conversaciones' : (rtTop ? rtTop.toLowerCase() : 'resultados')) : (a.has_buys ? 'compras' : (rtTop ? rtTop.toLowerCase() : 'resultados'));
+        if (nRes === 1) resType = { conversaciones: 'conversación', compras: 'compra', resultados: 'resultado', leads: 'lead', clics: 'clic', 'pagos iniciados': 'pago iniciado', 'visitas lp': 'visita LP' }[resType] || resType;
+        var fun = stepsOf(a, ch, isVid);
+        return { k: a.k, name: a.name, hook: a.k ? (m.hooks[a.k] || '(hook no registrado)') : '', spend: a.spend, hr: hr, ch: ch,
+          res: nRes, resType: resType, cost: nRes ? a.spend / nRes : null, costType: ch === 'WA' ? 'por conversación' : (a.has_buys ? 'por compra' : 'por resultado'),
+          steps: fun.steps, weakest: fun.weakest, day: dayN(a.max) - dayN(a.min) + 1, fLast: a.fLast || null, fFirst: a.fFirst || null, fDate: a.fLastD };
+      });
+      var cs = vs.filter(function(v){ return v.cost !== null; });
+      var best = null;
+      if (!noid && cs.length > 1 && cs.every(function(v){ return v.ch === cs[0].ch; })) best = Math.min.apply(null, cs.map(function(v){ return v.cost; }));
+      var pendingN = 0, openN = 0;
+      var vars = vs.map(function(v){
+        var key = noid ? v.name : id + (v.k === 'C' ? '' : '-' + v.k), d = S.dec[key], sg = suggest(v.day, v), s = SUG[sg[0]], c = v.cost, goal = v.ch === 'WA' ? RL.cprWa : RL.cprWeb;
+        if (!d) { openN++; if (sg[0] !== 'keep') pendingN++; }
+        var cT = c !== null ? money(c) : '—';
+        var label = noid ? v.name : key;
+        if (d === 'win') won.push({ id: label, hook: noid ? '' : '“' + v.hook + '”', cpr: cT });
+        if (d === 'off') offd.push({ id: label, hook: noid ? '' : '“' + v.hook + '”', cpr: cT });
+        var setDec = function(val, text){ var dd = Object.assign({}, S.dec); if (val) dd[key] = val; else delete dd[key]; self.setState({ dec: dd }); if (text) flash(text); };
+        var diag = (v.fLast && v.fLast > RL.freq && sg[0] === 'win') ? 'Frecuencia ' + v.fLast.toFixed(2) + ': rinde, pero ya se está quemando. Prepara variaciones.' : v.weakest ? (sg[0] === 'win' ? 'Para escalar, mejora ' + v.weakest.label + ': ' + HINT[v.weakest.label] + '.' : 'Se cae en ' + v.weakest.label + ': ' + HINT[v.weakest.label] + '.') : '';
+        return { k: v.k, name: v.name, hook: v.hook, linked: !noid, unlinked: noid,
+          ch: CH[v.ch][0], chStyle: chStyle(v.ch),
+          nameStyle: noid ? 'font-size:13px;font-weight:600;max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' : "font-family:'JetBrains Mono',monospace;font-size:10px;color:#94a3b8;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis",
+          freq: v.fLast ? v.fLast.toFixed(2) : '—',
+          freqSub: !v.fLast ? 'sin alcance' : (v.fLast > RL.freq ? 'se está quemando' : (v.fFirst && v.fLast - v.fFirst >= 0.3 ? 'subiendo' : 'último día')),
+          freqColor: !v.fLast ? '#94a3b8' : (v.fLast > RL.freq ? '#b91c1c' : (v.fLast > RL.freq * 0.8 ? '#a16207' : '#0f172a')),
+          freqTip: v.fLast ? 'Frecuencia del ' + fd(v.fDate) + (v.fFirst && v.fFirst !== v.fLast ? ' (empezó en ' + v.fFirst.toFixed(2) + ')' : '') + ' · tu máximo ' + RL.freq + '. Se toma por día porque el alcance no se suma entre días.' : 'Agrega Frecuencia o Alcance al export',
+          spendT: money(v.spend), steps: v.steps, res: v.res, resType: v.resType, costType: v.costType,
+          cpr: cT, cprColor: c === null ? '#94a3b8' : (c <= goal ? '#0f766e' : (c > goal * 2 ? '#b91c1c' : '#0f172a')),
+          best: best !== null && c === best,
+          sugLabel: s[0], reason: sg[1], diag: diag, hasDiag: !!diag,
+          sugChip: 'display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + s[1] + ';color:' + s[2],
+          open: !d, closed: !!d,
+          decLabel: d === 'win' ? 'En Ganadores' : 'Apagado',
+          decChip: 'font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;' + (d === 'win' ? 'background:#0d9488;color:#ffffff' : 'background:#fef2f2;color:#b91c1c'),
+          win: function(){ setDec('win', label + ' pasa a Ganadores.' + (noid ? '' : ' Su hook queda con estrella en Hooks, suma en Formato × Ángulo y se crea la tarea "Crear 3 variaciones".')); },
+          off: function(){ setDec('off', label + ' marcado para apagar en Meta. Queda en Apagados como aprendizaje.'); },
+          undo: function(){ setDec(null); },
+          link: function(e){ var val = e.target.value; if (!val) return; var pr = val.split('|'); var al = Object.assign({}, S.alias); al[v.name] = { id: pr[0], k: pr[1] }; self.setState({ alias: al }); flash(v.name + ' quedó vinculado a ' + pr[0] + (pr[1] === 'C' ? '' : '-' + pr[1]) + '. Las próximas cargas con ese nombre se unen solas.'); },
+          hide: function(){ var h = Object.assign({}, S.hidden); h[v.name] = 1; var pk = Object.assign({}, S.picked); delete pk[v.name]; self.setState({ hidden: h, picked: pk }); },
+          picked: !!S.picked[v.name],
+          togglePick: function(){ var pk = Object.assign({}, S.picked); if (pk[v.name]) delete pk[v.name]; else pk[v.name] = 1; self.setState({ picked: pk }); },
+          pickBox: 'width:18px;height:18px;border-radius:5px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;' + (S.picked[v.name] ? 'background:#0d9488;border:1px solid #0d9488' : 'background:#ffffff;border:1.5px solid #fcd34d'),
+          linkOne: function(){ openLk([v.name]); },
+          winStyle: 'height:30px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:600;margin-right:6px;' + (sg[0] === 'win' ? 'border:none;background:#0d9488;color:#ffffff' : 'border:1px solid #99f6e4;background:#ffffff;color:#0f766e'),
+          offStyle: 'height:30px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:600;' + (sg[0] === 'off' ? 'border:none;background:#dc2626;color:#ffffff' : 'border:1px solid #fecaca;background:#ffffff;color:#b91c1c'),
+          row: d === 'off' ? 'opacity:.5' : (d === 'win' ? 'background:#f0fdfa' : ''),
+          thumb: 'width:30px;height:' + (m.type === 'Video' ? 44 : 30) + 'px;border-radius:5px;flex-shrink:0;background:linear-gradient(180deg,' + TONES[m.tone] + ',#1e293b)' };
+      });
+      var spend = vs.reduce(function(a, v){ return a + v.spend; }, 0);
+      var s0 = ST[m.stage];
+      var selNames = noid ? vs.map(function(v){ return v.name; }).filter(function(n){ return S.picked[n]; }) : [];
+      var allNames = noid ? vs.map(function(v){ return v.name; }) : [];
+      return { id: noid ? '' : id, linked: !noid, unlinked: noid, stage: m.stage, type: m.type, title: m.title, format: m.format, angle: m.angle || '', hasAngle: !!m.angle,
+        ref: m.refLabel || '', hasRef: !!m.refLabel, isExt: !!S.extra[id], edit: function(){ openLk(null, id); },
+        hasSel: selNames.length > 0, linkSelLabel: 'Vincular ' + selNames.length + ' seleccionado' + (selNames.length === 1 ? '' : 's'),
+        linkSel: function(){ openLk(selNames); },
+        selAllLabel: selNames.length === allNames.length && allNames.length ? 'Quitar selección' : 'Seleccionar todos',
+        selAll: function(){ var pk = {}; if (!(selNames.length === allNames.length)) allNames.forEach(function(n){ pk[n] = 1; }); self.setState({ picked: pk }); },
+        day: dayN(max) - dayN(min) + 1, spendT: money(spend), spend: spend, vars: vars,
+        pendingN: pendingN, openN: openN, pending: pendingN > 0, pendingText: pendingN + (pendingN === 1 ? ' decisión pendiente' : ' decisiones pendientes'),
+        box: 'background:#ffffff;border-radius:16px;overflow:hidden;' + (noid ? 'border:1px solid #fde68a' : 'border:1px solid #e2e8f0'),
+        tag: 'font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:5px;background:' + s0[0] + ';color:' + s0[1] + ';border:1px solid ' + s0[2] };
+    });
+    var tabDefs = [['decidir','Para decidir', function(p){ return p.pendingN > 0; }], ['corriendo','Corriendo', function(p){ return p.openN > 0; }], ['todas','Todas', function(){ return true; }]];
+    var tabs = tabDefs.map(function(t){ var on = S.tab === t[0];
+      return { label: t[1], n: built.filter(t[2]).length, on: on, pick: function(){ self.setState({ tab: t[0] }); },
+        style: 'height:30px;padding:0 12px;border:none;border-radius:6px;font-size:12px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'background:#f1f5f9;color:#0f172a;font-weight:600' : 'background:transparent;color:#64748b') }; });
+    var filt = tabDefs.filter(function(t){ return t[0] === S.tab; })[0][2];
+    var pieces = built.filter(filt);
+    var nAds = built.reduce(function(a, p){ return a + p.vars.length; }, 0);
+    var totalSpend = built.reduce(function(a, p){ return a + p.spend; }, 0);
+    var D = S.draft || RL;
+    var setDraft = function(k, v){ var d = Object.assign({}, D); d[k] = isNaN(v) ? 0 : v; self.setState({ draft: d }); };
+
+    var linkOpts = [{ v: '', label: 'Vincular a…' }];
+    Object.keys(M).forEach(function(id){ Object.keys(M[id].hooks).forEach(function(k){ linkOpts.push({ v: id + '|' + k, label: id + (k === 'C' ? '' : '-' + k) + ' · ' + M[id].hooks[k] }); }); });
+
+    // ---------- sync modal ----------
+    var P = S.pending, pv = {};
+    if (P) {
+      pv = { file: P.file, range: P.from === P.to ? fd(P.from) : fd(P.from) + ' – ' + fd(P.to),
+        stats: [
+          { n: P.nNew, label: 'filas nuevas (anuncio + día)', color: '#0f766e' },
+          { n: P.nRep, label: 'ya estaban: se reemplazan', color: P.nRep ? '#a16207' : '#94a3b8' },
+          { n: P.nUnk, label: 'sin ID: para vincular', color: P.nUnk ? '#a16207' : '#94a3b8' }
+        ],
+        cols: P.cols.map(function(c){ return { use: c.use, col: c.col, color: c.ok ? '#0f172a' : '#b91c1c', dot: 'width:7px;height:7px;border-radius:4px;flex-shrink:0;background:' + (c.ok ? '#0d9488' : '#f87171') }; }),
+        ads: P.ads.slice(0, 14).map(function(a){ return { label: a.pid ? a.pid.id + (a.pid.k === 'C' ? '' : '-' + a.pid.k) : a.name,
+          style: "font-family:'JetBrains Mono',monospace;font-size:10.5px;padding:2px 7px;border-radius:5px;" + (a.pid ? 'background:#ccfbf1;color:#0f766e' : 'background:#fef3c7;color:#92400e') }; }),
+        note: P.note, hasNote: !!P.note };
+    }
+    var confirmSync = function(){
+      if (!P) return;
+      var wipe = S.sample && !P.demo;
+      var rows = wipe ? {} : Object.assign({}, S.rows);
+      P.list.forEach(function(x){ rows[x.ad + '|' + x.date] = x; });
+      var now = new Date();
+      var hist = [{ file: P.file, range: P.from === P.to ? fd(P.from) : fd(P.from) + ' – ' + fd(P.to), result: P.nNew + ' nuevas · ' + P.nRep + ' reemplazadas' }].concat(S.history).slice(0, 5);
+      self.setState({ cur: P.cur || S.cur, rows: rows, sample: S.sample && !wipe, pending: null, syncOpen: false, history: hist,
+        dec: wipe ? {} : S.dec, hidden: wipe ? {} : S.hidden, tab: 'todas',
+        lastSync: 'Última sincronización: hoy ' + ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) });
+      flash('Sincronizado: ' + (P.nNew + P.nRep) + ' filas de Meta.' + (P.nUnk ? ' ' + P.nUnk + ' anuncio' + (P.nUnk > 1 ? 's' : '') + ' sin ID: vincúlalos arriba.' : ' Las sugerencias se recalcularon.'));
+    };
+    var allNames = Object.keys(ads).map(function(k){ return ads[k].name; });
+    var tryMeta = function(){
+      var T = [['Inicio del informe','Fin del informe','Nombre del anuncio','Monto gastado (USD)','Resultados','Indicador de resultado','Impresiones','Frecuencia','Hook Rate','ThruPlays','Clics únicos en el enlace','Visitas a la página de destino','Pagos iniciados','Compras','Conversaciones con mensajes iniciadas','Contactos de mensajes nuevos']];
+      allNames.forEach(function(n, i){
+        var sp = 3 + ((i * 7) % 5), impr = Math.round(sp / 7 * 1000), vid = /SCR/.test(n), clk = Math.round(impr * 0.015), wa = self.chOf(n, null) === 'WA';
+        var hk = vid ? 0.18 + (i % 4) * 0.04 : 0, p3 = Math.round(impr * hk);
+        if (wa) { var cv = Math.round(clk * 0.5); T.push(['2026-10-11','2026-10-11', n, sp.toFixed(2), cv, 'actions:onsite_conversion.messaging_conversation_started_7d', impr, (1.4 + i * 0.05).toFixed(2), vid ? hk.toFixed(4) : '', vid ? Math.round(p3 * 0.11) : '', clk, '', '', '', cv, Math.round(cv * 0.7)]); }
+        else { var lp = Math.round(clk * 0.78), b = i % 3 === 0 ? 1 : 0; T.push(['2026-10-11','2026-10-11', n, sp.toFixed(2), b || '', b ? 'actions:offsite_conversion.fb_pixel_purchase' : '', impr, (/EST056/.test(n) ? 2.9 : 1.4 + i * 0.05).toFixed(2), vid ? hk.toFixed(4) : '', vid ? Math.round(p3 * 0.12) : '', clk, lp, Math.max(b, Math.round(lp * 0.14)), b, '', '']); }
+      });
+      T.push(['2026-10-11','2026-10-11','AD_NOVAFIT_PROBLEMA/SOLUCIÓN','8.87','','',1124,'1.11','0.2838',38,20,16,2,0,'','']);
+      var res = self.analyze(T, 'nova-shop-Anuncios-11-oct-2026.xlsx', true);
+      self.setState({ pending: res.error ? null : res, error: res.error || '' });
+    };
+    var RULE_ROWS = [
+      ['Meta de costo', 'cprWeb', 'Costo por compra · Web', 'Lo máximo por compra para ser ganador', C$, '', '0.1'],
+      ['', 'cprWa', 'Costo por conversación · WhatsApp', 'Lo máximo por conversación para ser ganador', C$, '', '0.1'],
+      ['', 'minSpend', 'Gasto mínimo', 'Antes de esto no se decide nada', C$, '', '1'],
+      ['', 'day', 'Desde el día', 'Cuándo empieza a contar el hook', 'día', '', '1'],
+      ['', 'freq', 'Frecuencia máxima', 'Por encima se marca como quemándose (se mira el último día)', '', 'x', '0.1'],
+      ['Embudo · común', 'hook', 'Hook', 'Reproducciones 3 s ÷ impresiones (bajo esto se sugiere apagar)', '', '%', '1'],
+      ['', 'hold', 'Hold', 'ThruPlays ÷ reproducciones 3 s', '', '%', '1'],
+      ['', 'ctr', 'CTR', 'Clics en el enlace ÷ impresiones', '', '%', '0.1'],
+      ['Embudo · Web', 'carga', 'Carga', 'Visitas a la página ÷ clics', '', '%', '1'],
+      ['', 'pedido', 'Pedido', 'Pagos iniciados ÷ visitas', '', '%', '1'],
+      ['', 'cierre', 'Cierre', 'Compras ÷ pagos iniciados', '', '%', '1'],
+      ['Embudo · WhatsApp', 'conv', 'Conversación', 'Conversaciones ÷ clics', '', '%', '1'],
+      ['', 'nuevos', 'Nuevos', 'Contactos nuevos ÷ conversaciones', '', '%', '1']
+    ];
+
+    var lkV = this.lkVals(M, ads, flash);
+    return {
+      lkOpen: !!S.lk, lk: lkV,
+      isSample: S.sample,
+      summary: built.length + ' grupo' + (built.length === 1 ? '' : 's') + ' · ' + nAds + ' anuncio' + (nAds === 1 ? '' : 's') + ' (' + nWeb + ' Web · ' + nWa + ' WhatsApp) · ' + money(totalSpend) + ' gastados',
+      range: dates.length ? (dates[0] === dates[dates.length - 1] ? fd(dates[0]) : fd(dates[0]) + ' – ' + fd(dates[dates.length - 1])) : 'Sin datos',
+      rowsText: Object.keys(S.rows).length + ' filas',
+      resultText: 'Web: Hook → Hold → CTR → Carga → Pedido → Cierre · WhatsApp: Hook → Hold → CTR → Conversación → Nuevos',
+      lastSync: S.lastSync,
+      ruleText: 'Web ≤ ' + money(RL.cprWeb) + '/compra · WA ≤ ' + money(RL.cprWa) + '/conv. · con ' + money(RL.minSpend) + '+',
+      tabs: tabs, pieces: pieces, empty: pieces.length === 0,
+      emptyText: built.length === 0 ? 'Todavía no hay datos. Sincroniza tu Excel de Meta.' : (S.tab === 'decidir' ? 'Nada por decidir: lo que tiene datos suficientes ya está decidido. Mira la pestaña Todas.' : 'No hay anuncios aquí.'),
+      linkOpts: linkOpts,
+      wonList: won, noWon: won.length === 0, offList: offd, noOff: offd.length === 0,
+      ruleOpen: S.ruleOpen,
+      openRule: function(){ self.setState({ ruleOpen: true, draft: Object.assign({}, RL) }); },
+      closeRule: function(){ self.setState({ ruleOpen: false, draft: null }); },
+      saveRule: function(){ self.setState({ rule: Object.assign({}, D), ruleOpen: false, draft: null }); flash('Regla actualizada. Las sugerencias y el embudo se recalcularon.'); },
+      ruleRows: RULE_ROWS.map(function(r){ return { head: r[0], hasHead: !!r[0], label: r[2], help: r[3], pre: r[4], post: r[5], step: r[6], value: D[r[1]], onInput: function(e){ setDraft(r[1], parseFloat(e.target.value)); } }; }),
+
+      syncOpen: S.syncOpen,
+      openSync: function(){ self.setState({ syncOpen: true, pending: null, error: '' }); },
+      closeSync: function(){ self.setState({ syncOpen: false, pending: null, error: '' }); },
+      hasPending: !!P, noPending: !P, pv: pv,
+      hasError: !!S.error, error: S.error,
+      loadingText: S.loading ? 'Leyendo el archivo…' : '',
+      onFile: function(e){ var f = e.target.files && e.target.files[0]; self.loadFile(f); try { e.target.value = ''; } catch (x) {} },
+      onDragOver: function(e){ e.preventDefault(); if (!S.drag) self.setState({ drag: true }); },
+      onDragLeave: function(){ self.setState({ drag: false }); },
+      onDrop: function(e){ e.preventDefault(); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; self.loadFile(f); },
+      dropTitle: S.loading ? 'Leyendo el archivo…' : (S.drag ? 'Suelta el archivo aquí' : 'Arrastra tu archivo o haz clic para elegirlo'),
+      dropStyle: 'position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:26px 16px;border-radius:14px;cursor:pointer;text-align:center;' + (S.drag ? 'border:2px dashed #0d9488;background:#f0fdfa' : 'border:2px dashed #cbd5e1;background:#f8fafc'),
+      tryMeta: tryMeta,
+      discardPending: function(){ self.setState({ pending: null, error: '' }); },
+      confirmSync: confirmSync,
+      confirmLabel: P ? 'Sincronizar ' + (P.nNew + P.nRep) + ' fila' + (P.nNew + P.nRep === 1 ? '' : 's') : 'Sincronizar',
+      guide: [
+        { n: '1', t: 'Administrador de anuncios → pestaña Anuncios → elige el rango. Si tiene más de un día: Desglose → Por tiempo → Día.' },
+        { n: '2', t: 'Base para los dos: Nombre del anuncio, Monto gastado, Impresiones, Frecuencia, Hook Rate (o Reproducciones de 3 s), ThruPlays, Clics en el enlace, Resultados e Indicador de resultado.' },
+        { n: '3', t: 'Reporte “Testing · Web”: + Visitas a la página de destino, Pagos iniciados y Compras.' },
+        { n: '4', t: 'Reporte “Testing · WhatsApp”: + Conversaciones con mensajes iniciadas y Contactos de mensajes nuevos.' },
+        { n: '5', t: 'Exportar → .xlsx o .csv. Puedes subir los dos archivos, uno tras otro.' }
+      ],
+      history: S.history, hasHistory: S.history.length > 0,
+      hasMsg: !!S.msg, msg: S.msg
+    };
+  }
+}
+</script>
+</body>
+</html>

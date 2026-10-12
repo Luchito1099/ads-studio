@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hooks · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+.hc{transition:box-shadow .15s,border-color .15s}
+.hc:hover{border-color:#cbd5e1;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+.hc .tools{opacity:0;transition:opacity .15s}
+.hc:hover .tools,.hc:focus-within .tools{opacity:1}
+.ic:hover{background:#f1f5f9;color:#0f172a}
+.ch:hover{border-color:#94a3b8}
+.lst{display:flex;flex-direction:column;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden}
+.lst > .hc{min-height:0 !important;flex-direction:row !important;align-items:center;gap:12px !important;padding:8px 12px 8px 8px !important;border:none !important;border-top:1px solid #f1f5f9 !important;border-radius:0 !important;box-shadow:none !important}
+.lst > .hc:first-child{border-top:none !important}
+.lst > .hc:hover{background:#f8fafc}
+.lst .row1{flex:1;min-width:0;flex-direction:row-reverse;justify-content:flex-end;align-items:center !important}
+.lst .row1 p{font-size:14px !important;font-weight:500 !important}
+.lst .row1 button{margin:0 !important}
+.lst .row2{margin-top:0 !important;flex-shrink:0}
+.lst > .cmp{border:none !important;border-bottom:2px solid #0d9488 !important;border-radius:0 !important;box-shadow:none !important;background:#f0fdfa !important}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Hooks" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 22px 28px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+
+<!-- header -->
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+<div>
+<h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em">Hooks</h1>
+<div style="font-size: 12.5px; color: #64748b; margin-top: 2px">{{summary}}</div>
+</div>
+<div role="group" aria-label="Vista" style="margin-left: auto; display: flex; gap: 2px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 3px">
+<sc-for list="{{views}}" as="v" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{v.on}}" aria-label="Vista {{v.label}}" onClick="{{v.pick}}" style="{{v.style}}">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{v.icon}}"/></svg>{{v.label}}</button>
+</sc-for>
+</div>
+<label style="display: flex; align-items: center; gap: 8px; height: 40px; width: 280px; max-width: 100%; padding: 0 12px; box-sizing: border-box; border: 1px solid #e2e8f0; border-radius: 10px; background: #ffffff; color: #94a3b8">
+<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+<input type="search" value="{{q}}" onChange="{{onQ}}" placeholder="Buscar hook" aria-label="Buscar hook" style="flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 13.5px; color: #0f172a">
+</label>
+<button type="button" onClick="{{openNew}}" style="height: 40px; padding: 0 16px; border: none; border-radius: 10px; background: #0d9488; color: #ffffff; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nuevo hook</button>
+</header>
+
+<!-- filters -->
+<div role="group" aria-label="Filtrar" style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="7">
+<button type="button" class="ch" aria-pressed="{{c.on}}" onClick="{{c.pick}}" style="{{c.style}}">{{c.label}} <span style="opacity: .55; font-weight: 500">{{c.n}}</span></button>
+</sc-for>
+</div>
+
+<!-- grid -->
+<div class="{{gridClass}}" style="{{gridStyle}}">
+
+<!-- composer -->
+<sc-if value="{{composing}}" hint-placeholder-val="{{false}}">
+<form class="cmp" onSubmit="{{save}}" style="background: #ffffff; border: 2px solid #0d9488; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 0 4px rgba(13,148,136,.12)">
+<textarea value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}" rows="3" placeholder="Escribe el hook tal cual se dirá en los primeros 3 segundos" aria-label="Nuevo hook" style="width: 100%; box-sizing: border-box; border: none; outline: none; resize: none; font-size: 15px; font-weight: 600; line-height: 1.45; color: #0f172a; background: transparent"></textarea>
+<sc-if value="{{angleClosed}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{openAngle}}" style="align-self: flex-start; height: 28px; padding: 0 10px; border: 1px dashed #cbd5e1; border-radius: 20px; background: #ffffff; font-size: 11.5px; color: #64748b">+ Añadir ángulo (opcional)</button>
+</sc-if>
+<sc-if value="{{angleOpen}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 5px">
+<sc-for list="{{draftAngles}}" as="a" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{a.on}}" onClick="{{a.pick}}" style="{{a.style}}">{{a.label}}</button>
+</sc-for>
+<sc-if value="{{addingAngle}}" hint-placeholder-val="{{false}}">
+<span style="display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 4px 0 10px; border: 1px solid #4338ca; border-radius: 20px; background: #ffffff">
+<input type="text" value="{{newAngle}}" onChange="{{onNewAngle}}" onKeyDown="{{onNewAngleKey}}" placeholder="Nombre del ángulo" aria-label="Nuevo ángulo" style="width: 130px; border: none; outline: none; font-size: 11.5px; color: #0f172a; background: transparent">
+<button type="button" onClick="{{addAngle}}" style="height: 22px; padding: 0 8px; border: none; border-radius: 20px; background: #4338ca; color: #ffffff; font-size: 11px; font-weight: 600">Crear</button>
+</span>
+</sc-if>
+<sc-if value="{{notAddingAngle}}" hint-placeholder-val="{{true}}">
+<button type="button" onClick="{{startAngle}}" style="height: 28px; padding: 0 10px; border: 1px dashed #94a3b8; border-radius: 20px; background: #ffffff; font-size: 11.5px; color: #475569">+ Nuevo ángulo</button>
+</sc-if>
+</div>
+<div style="font-size: 11px; color: #94a3b8; margin-top: -4px">{{angleHint}}</div>
+</sc-if>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-size: 11px; color: #94a3b8">Enter para guardar · Esc para cancelar</span>
+<button type="button" onClick="{{cancel}}" style="margin-left: auto; height: 34px; padding: 0 12px; border: none; border-radius: 8px; background: transparent; font-size: 13px; color: #64748b">Cancelar</button>
+<button type="submit" style="{{saveStyle}}">Guardar</button>
+</div>
+</form>
+</sc-if>
+
+<sc-for list="{{cards}}" as="h" hint-placeholder-count="9">
+<article class="hc" style="{{h.box}}">
+<sc-if value="{{h.editing}}" hint-placeholder-val="{{false}}">
+<textarea value="{{h.editText}}" onChange="{{h.onEdit}}" onKeyDown="{{h.onEditKey}}" rows="3" aria-label="Editar hook" style="width: 100%; box-sizing: border-box; border: 1px solid #99f6e4; border-radius: 9px; padding: 8px 10px; outline: none; resize: none; font-size: 15px; font-weight: 600; line-height: 1.45; color: #0f172a"></textarea>
+<div style="display: flex; flex-direction: column; gap: 5px">
+<span style="font-size: 11px; color: #94a3b8">Ángulo · opcional, toca de nuevo para quitarlo</span>
+<div style="display: flex; flex-wrap: wrap; gap: 5px">
+<sc-for list="{{h.editAngles}}" as="ea" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{ea.on}}" onClick="{{ea.pick}}" style="{{ea.style}}">{{ea.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 6px">
+<button type="button" onClick="{{h.cancelEdit}}" style="height: 32px; padding: 0 12px; border: none; border-radius: 8px; background: transparent; font-size: 12.5px; color: #64748b">Cancelar</button>
+<button type="button" onClick="{{h.saveEdit}}" style="height: 32px; padding: 0 14px; border: none; border-radius: 8px; background: #0d9488; color: #ffffff; font-size: 12.5px; font-weight: 600">Guardar</button>
+</div>
+</sc-if>
+<sc-if value="{{h.viewing}}" hint-placeholder-val="{{true}}">
+<div class="row1" style="display: flex; align-items: flex-start; gap: 8px">
+<p style="flex: 1; margin: 0; font-size: 15px; font-weight: 600; line-height: 1.45; color: #0f172a">“{{h.text}}”</p>
+<button type="button" aria-pressed="{{h.star}}" aria-label="{{h.starLabel}}" title="{{h.starLabel}}" onClick="{{h.toggle}}" style="width: 32px; height: 32px; flex-shrink: 0; margin: -4px -4px 0 0; border: none; border-radius: 8px; background: transparent; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="{{h.fill}}" stroke="{{h.stroke}}" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></svg>
+</button>
+</div>
+<div class="row2" style="display: flex; align-items: center; gap: 6px; margin-top: auto">
+<button type="button" class="{{h.angleClass}}" onClick="{{h.edit}}" title="Cambiar ángulo" style="{{h.angleStyle}}">{{h.angleText}}</button>
+<sc-if value="{{h.hasUse}}" hint-placeholder-val="{{false}}">
+<span title="Usado en el Content Pipeline" style="font-size: 10.5px; font-weight: 600; padding: 3px 8px; border-radius: 20px; background: #f0fdfa; color: #0f766e; white-space: nowrap">{{h.useText}}</span>
+</sc-if>
+<span class="tools" style="margin-left: auto; display: flex; gap: 2px">
+<button type="button" class="ic" aria-label="Usar en el Content Pipeline" title="Usar en el Content Pipeline" onClick="{{h.use}}" style="height: 30px; padding: 0 8px; border: none; border-radius: 7px; background: transparent; color: #0f766e; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><path d="M17 12h5M19.5 9.5L22 12l-2.5 2.5"/></svg>Usar</button>
+<button type="button" class="ic" aria-label="Editar" title="Editar" onClick="{{h.edit}}" style="width: 30px; height: 30px; border: none; border-radius: 7px; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+<button type="button" class="ic" aria-label="Eliminar" title="Eliminar" onClick="{{h.remove}}" style="width: 30px; height: 30px; border: none; border-radius: 7px; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+</span>
+<button type="button" onClick="{{h.copy}}" style="{{h.copyStyle}}">
+<sc-if value="{{h.copied}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+<sc-if value="{{h.notCopied}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></sc-if>
+{{h.copyLabel}}</button>
+</div>
+</sc-if>
+</article>
+</sc-for>
+</div>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">
+<div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 14px; padding: 36px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+<div style="font-size: 14px; font-weight: 600">{{emptyTitle}}</div>
+<button type="button" onClick="{{emptyAction}}" style="height: 36px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f766e">{{emptyBtn}}</button>
+</div>
+</sc-if>
+</main>
+</div>
+
+<!-- MODAL: usar en pipeline -->
+<sc-if value="{{useOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{closeUse}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Usar hook en el Content Pipeline" style="position: relative; width: 100%; max-width: 560px; max-height: calc(100vh - 48px); overflow-y: auto; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3)">
+<div style="padding: 18px 20px 12px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11.5px; color: #94a3b8">Usar en el Content Pipeline</div>
+<div style="font-size: 17px; font-weight: 700; line-height: 1.4">“{{u.text}}”</div>
+<sc-if value="{{u.hasAngle}}" hint-placeholder-val="{{false}}"><span style="align-self: flex-start; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: #eef2ff; color: #4338ca">{{u.angle}}</span></sc-if>
+</div>
+
+<div style="padding: 4px 20px 6px; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{u.modes}}" as="m" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{m.on}}" onClick="{{m.pick}}" style="{{m.style}}">
+<span style="{{m.radio}}"></span>
+<span style="flex: 1; text-align: left"><span style="display: block; font-size: 13.5px; font-weight: 700">{{m.title}}</span><span style="display: block; font-size: 12px; color: #64748b; margin-top: 2px">{{m.sub}}</span></span>
+</button>
+</sc-for>
+</div>
+
+<sc-if value="{{u.isNew}}" hint-placeholder-val="{{true}}">
+<div style="padding: 8px 20px 4px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span style="width: 70px; font-size: 12px; color: #64748b">Destino</span>
+<sc-for list="{{u.lanes}}" as="o" hint-placeholder-count="2"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span style="width: 70px; font-size: 12px; color: #64748b">Tipo</span>
+<sc-for list="{{u.types}}" as="o" hint-placeholder-count="3"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span style="width: 70px; font-size: 12px; color: #64748b">Formato</span>
+<select value="{{u.format}}" onChange="{{u.onFormat}}" aria-label="Formato" style="height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; font: inherit; font-size: 12.5px"><sc-for list="{{u.formats}}" as="f" hint-placeholder-count="4"><option value="{{f}}">{{f}}</option></sc-for></select></div>
+</div>
+</sc-if>
+
+<sc-if value="{{u.isExisting}}" hint-placeholder-val="{{false}}">
+<div style="padding: 8px 20px 4px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; color: #64748b">Piezas que todavía aceptan hooks (Idea, Guion o Grabación)</span>
+<sc-for list="{{u.pieces}}" as="pc" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{pc.on}}" onClick="{{pc.pick}}" style="{{pc.style}}">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #475569; width: 66px; flex-shrink: 0">{{pc.id}}</span>
+<span style="flex: 1; min-width: 0; text-align: left; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pc.title}}</span>
+<span style="font-size: 10.5px; color: #64748b; white-space: nowrap">{{pc.stage}} · {{pc.n}} hooks</span>
+</button>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="margin: 12px 20px 0; padding: 10px 12px; border-radius: 10px; background: #f0fdfa; border: 1px solid #ccfbf1; font-size: 12.5px; color: #134e4a; line-height: 1.5">{{u.preview}}</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 20px; margin-top: 12px; border-top: 1px solid #f1f5f9; background: #f8fafc; border-radius: 0 0 18px 18px">
+<a href="Pipeline.dc.html" style="font-size: 12.5px; font-weight: 600; color: #0f766e; text-decoration: none">Abrir el Content Pipeline →</a>
+<button type="button" onClick="{{closeUse}}" style="margin-left: auto; height: 38px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 13px; font-weight: 600; color: #0f172a">Cancelar</button>
+<button type="button" onClick="{{u.confirm}}" style="height: 38px; padding: 0 16px; border: none; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600">{{u.cta}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; max-width: 520px; padding: 11px 16px; border-radius: 10px; background: #0f766e; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13px; box-shadow: 0 12px 30px rgba(15,23,42,.25)">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    var H = function(id, text, angle, star){ return { id: id, text: text, angle: angle, star: !!star }; };
+    this.state = { angles: ['Trabajo de pie','Fútbol sin miedo','Alternativa a la venda','Recomendado por fisio','Pagas al recibir'], addingAngle: false, newAngle: '', q: '', filter: 'Todos', composing: false, draft: '', draftAngle: '', angleOpen: false, editAngle: '', editId: null, editText: '', copiedId: null, seq: 20, hooks: [
+      H(1, 'Volví a correr sin miedo a doblarme el tobillo', 'Fútbol sin miedo', true),
+      H(2, 'Nadie me dijo que esto existía', 'Alternativa a la venda', true),
+      H(3, 'Si trabajas de pie todo el día, mira esto', 'Trabajo de pie'),
+      H(4, 'El error que yo cometía con mis esguinces', 'Alternativa a la venda'),
+      H(5, 'Mi fisio me recomendó esto y no le creí', 'Recomendado por fisio'),
+      H(6, '3 diferencias con una venda común', 'Alternativa a la venda'),
+      H(7, 'Así se pone en 10 segundos', 'Trabajo de pie'),
+      H(8, '¿Y si no me queda? Te respondo', 'Pagas al recibir'),
+      H(9, 'Pagas cuando te llega a tu casa', 'Pagas al recibir')
+    ] };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var ANG = S.angles;
+    var q = (S.q || '').trim().toLowerCase();
+    var visible = S.hooks.filter(function(h){
+      if (S.filter === 'Ganadores' && !h.star) return false;
+      if (S.filter === 'Sin ángulo' && h.angle) return false;
+      if (S.filter !== 'Todos' && S.filter !== 'Ganadores' && S.filter !== 'Sin ángulo' && h.angle !== S.filter) return false;
+      return !q || h.text.toLowerCase().indexOf(q) >= 0;
+    }).sort(function(a, b){ return (b.star ? 1 : 0) - (a.star ? 1 : 0); });
+    var setHooks = function(fn){ self.setState({ hooks: S.hooks.map(fn) }); };
+    var saveNew = function(e){
+      if (e && e.preventDefault) e.preventDefault();
+      var t = (S.draft || '').trim(); if (!t) return;
+      self.setState({ hooks: [{ id: S.seq + 1, text: t, angle: S.draftAngle || '', star: false }].concat(S.hooks), seq: S.seq + 1, draft: '', draftAngle: '', angleOpen: false, composing: false, q: '' });
+    };
+    var chipStyle = function(on){ return 'height:32px;padding:0 13px;border-radius:20px;font-size:12.5px;' + (on ? 'border:1px solid #0f172a;background:#0f172a;color:#ffffff;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569'); };
+    var nNone = S.hooks.filter(function(h){ return !h.angle; }).length;
+    var chipList = [['Todos', S.hooks.length], ['Ganadores', S.hooks.filter(function(h){ return h.star; }).length]].concat(ANG.map(function(a){ return [a, S.hooks.filter(function(h){ return h.angle === a; }).length]; }));
+    var addAngle = function(){
+      var t = (S.newAngle || '').trim();
+      if (!t) { self.setState({ addingAngle: false }); return; }
+      var exists = ANG.filter(function(a){ return a.toLowerCase() === t.toLowerCase(); })[0];
+      self.setState({ angles: exists ? ANG : ANG.concat([t]), draftAngle: exists || t, addingAngle: false, newAngle: '' });
+    };
+    var chips = chipList
+      .map(function(c){ var on = S.filter === c[0]; return { label: c[0], n: c[1], on: on, pick: function(){ self.setState({ filter: c[0], draftAngle: ANG.indexOf(c[0]) >= 0 ? c[0] : S.draftAngle }); }, style: chipStyle(on) }; });
+    var cards = visible.map(function(h){
+      var editing = S.editId === h.id, copied = S.copiedId === h.id;
+      var commit = function(){ var t = (S.editText || '').trim(); if (!t) return; self.setState({ hooks: S.hooks.map(function(x){ return x.id === h.id ? Object.assign({}, x, { text: t, angle: S.editAngle || '' }) : x; }), editId: null }); };
+      var editAngles = editing ? ANG.map(function(a){
+        var on = (S.editAngle || '') === a;
+        return { label: a, on: on, pick: function(){ self.setState({ editAngle: on ? '' : a }); },
+          style: 'height:28px;padding:0 10px;border-radius:20px;font-size:11.5px;' + (on ? 'border:1px solid #4338ca;background:#eef2ff;color:#4338ca;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#64748b') };
+      }) : [];
+      return { text: h.text, angle: h.angle, star: h.star,
+        angleText: h.angle || '+ Ángulo', angleClass: h.angle ? '' : 'tools',
+        angleStyle: 'font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;' + (h.angle ? 'border:1px solid transparent;background:#eef2ff;color:#4338ca' : 'border:1px dashed #cbd5e1;background:transparent;color:#94a3b8'), editing: editing, viewing: !editing, editText: S.editText,
+        starLabel: h.star ? 'Quitar de ganadores' : 'Marcar como ganador',
+        fill: h.star ? '#f59e0b' : 'none', stroke: h.star ? '#f59e0b' : '#cbd5e1',
+        box: 'min-height:150px;display:flex;flex-direction:column;gap:14px;background:#ffffff;border:1px solid ' + (editing ? '#0d9488' : '#e2e8f0') + ';border-radius:14px;padding:16px;box-sizing:border-box',
+        toggle: function(){ setHooks(function(x){ return x.id === h.id ? Object.assign({}, x, { star: !x.star }) : x; }); },
+        copy: function(){
+          var done = function(){ self.setState({ copiedId: h.id }); clearTimeout(self.ct); self.ct = setTimeout(function(){ self.setState({ copiedId: null }); }, 1500); };
+          try { navigator.clipboard.writeText(h.text).then(done, done); } catch (e) { done(); }
+        },
+        copied: copied, notCopied: !copied, copyLabel: copied ? 'Copiado' : 'Copiar',
+        copyStyle: 'height:32px;padding:0 12px;border-radius:8px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;' + (copied ? 'border:1px solid #0d9488;background:#0d9488;color:#ffffff' : 'border:1px solid #e2e8f0;background:#ffffff;color:#0f172a;margin-left:' + (editing ? '0' : '0')),
+        editAngles: editAngles,
+        hasUse: !!(h.used && h.used.length), useText: h.used && h.used.length ? 'En ' + h.used.join(', ') : '',
+        use: function(){ self.setState({ useId: h.id, useMode: 'new', useLane: 'Ads', useType: 'Video', useFormat: 'UGC', usePiece: 'SCR_050' }); },
+        edit: function(){ self.setState({ editId: h.id, editText: h.text, editAngle: h.angle || '' }); },
+        onEdit: function(e){ self.setState({ editText: e.target.value }); },
+        onEditKey: function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); } else if (e.key === 'Escape') { self.setState({ editId: null }); } },
+        saveEdit: commit, cancelEdit: function(){ self.setState({ editId: null }); },
+        remove: function(){ self.setState({ hooks: S.hooks.filter(function(x){ return x.id !== h.id; }) }); } };
+    });
+    var nStar = S.hooks.filter(function(h){ return h.star; }).length;
+    var hasDraft = !!(S.draft || '').trim();
+    var isList = S.view === 'list';
+    /* usar en pipeline */
+    var uh = S.hooks.filter(function(x){ return x.id === S.useId; })[0];
+    var u = { modes: [], lanes: [], types: [], formats: [], pieces: [] };
+    if (uh) {
+      var FORMATS = { Video: ['UGC','POV','Voz en off','Transformacional','Comparativo','Testimonio','Demo / modo de uso','Unboxing'], 'Estático': ['Venta directa','Comparativo','Antes y después','Reseña / testimonio','Beneficios'], Carrusel: ['Educativo','Beneficios','Comparativo','Paso a paso'] };
+      var PIECES = [['IDEA-064','Me dolía al caminar · versión NOVAFLEX','Idea',1],['SCR_050','Si trabajas de pie todo el día, mira esto','Guion',2],['CAR_057','4 errores al vendar un esguince','Guion',4],['SCR_049','El error que cometía con mis esguinces','Grabación',3]];
+      var pill = function(on){ return 'height:30px;padding:0 12px;border-radius:20px;font-size:12px;' + (on ? 'border:1px solid #0f172a;background:#0f172a;color:#ffffff;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#475569'); };
+      var isNew = S.useMode !== 'existing';
+      var piece = PIECES.filter(function(p){ return p[0] === S.usePiece; })[0] || PIECES[1];
+      var k = S.useType === 'Video' ? 'H' : (S.useType === 'Carrusel' ? 'T' : 'V');
+      var newId = 'IDEA-0' + (75 + (S.useCount || 0));
+      var mark = function(ref){ return S.hooks.map(function(x){ return x.id === uh.id ? Object.assign({}, x, { used: (x.used || []).concat([ref]) }) : x; }); };
+      u = { text: uh.text, angle: uh.angle, hasAngle: !!uh.angle, isNew: isNew, isExisting: !isNew,
+        modes: [['new','Crear una pieza nueva','Arranca en Idea con este hook como el primero.'],['existing','Agregar a una pieza existente','Suma este hook como otra versión de una pieza en curso.']].map(function(m){
+          var on = (S.useMode || 'new') === m[0];
+          return { title: m[1], sub: m[2], on: on, pick: function(){ self.setState({ useMode: m[0] }); },
+            radio: 'width:16px;height:16px;flex-shrink:0;border-radius:8px;box-sizing:border-box;' + (on ? 'border:5px solid #0d9488' : 'border:1.5px solid #cbd5e1'),
+            style: 'display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border-radius:12px;background:' + (on ? '#f0fdfa' : '#ffffff') + ';border:1px solid ' + (on ? '#0d9488' : '#e2e8f0') }; }),
+        lanes: ['Ads','Orgánico'].map(function(l){ var on = S.useLane === l; return { label: l, on: on, pick: function(){ self.setState({ useLane: l }); }, style: pill(on) }; }),
+        types: ['Video','Estático','Carrusel'].map(function(t){ var on = S.useType === t; return { label: t, on: on, pick: function(){ self.setState({ useType: t, useFormat: FORMATS[t][0] }); }, style: pill(on) }; }),
+        formats: FORMATS[S.useType] || FORMATS.Video, format: S.useFormat, onFormat: function(e){ self.setState({ useFormat: e.target.value }); },
+        pieces: PIECES.map(function(p){ var on = S.usePiece === p[0]; return { id: p[0], title: p[1], stage: p[2], n: p[3], on: on, pick: function(){ self.setState({ usePiece: p[0] }); },
+          style: 'display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border-radius:10px;background:' + (on ? '#f0fdfa' : '#ffffff') + ';border:1px solid ' + (on ? '#0d9488' : '#e2e8f0') }; }),
+        preview: isNew
+          ? 'Se crea ' + newId + ' en Idea (' + S.useLane + ' · ' + S.useType + ' · ' + S.useFormat + ') con este texto como ' + k + '1' + (uh.angle ? ' y el ángulo ' + uh.angle + ' ya elegido.' : '. El ángulo lo eliges después en la pieza.')
+          : 'Se agrega a ' + piece[0] + ' como H' + (piece[3] + 1) + '. Si la pieza ya estaba en Grabación, este hook queda pendiente de grabar en la próxima sesión.',
+        cta: isNew ? 'Crear pieza' : 'Agregar a ' + piece[0],
+        confirm: function(){
+          if (isNew) self.setState({ hooks: mark(newId), useId: null, useCount: (S.useCount || 0) + 1, msg: newId + ' creada en Idea del Content Pipeline.' });
+          else self.setState({ hooks: mark(piece[0]), useId: null, msg: 'Hook agregado a ' + piece[0] + ' como H' + (piece[3] + 1) + '.' });
+          clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 2400);
+        } };
+    }
+    return {
+      useOpen: !!uh, u: u, closeUse: function(){ self.setState({ useId: null }); },
+      hasMsg: !!S.msg, msg: S.msg,
+      views: [['cards','Cards','M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'],['list','Lista','M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01']].map(function(v){
+        var on = (S.view || 'cards') === v[0];
+        return { label: v[1], icon: v[2], on: on, pick: function(){ self.setState({ view: v[0] }); },
+          style: 'height:32px;padding:0 11px;border:none;border-radius:7px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;' + (on ? 'background:#0f172a;color:#ffffff;font-weight:600' : 'background:transparent;color:#64748b') };
+      }),
+      gridClass: isList ? 'lst' : '',
+      gridStyle: isList ? '' : 'display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px;align-items:start',
+      summary: S.hooks.length + ' hooks · ' + nStar + ' ganadores',
+      q: S.q, onQ: function(e){ self.setState({ q: e.target.value }); },
+      chips: chips, cards: cards,
+      composing: S.composing,
+      openNew: function(){ var fa = ANG.indexOf(S.filter) >= 0 ? S.filter : ''; self.setState({ composing: true, draft: S.q || '', draftAngle: fa, angleOpen: !!fa, filter: fa || 'Todos' }); },
+      angleOpen: !!S.angleOpen, angleClosed: !S.angleOpen,
+      openAngle: function(){ self.setState({ angleOpen: true }); },
+      draft: S.draft, onDraft: function(e){ self.setState({ draft: e.target.value }); },
+      onKey: function(e){ if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNew(); } else if (e.key === 'Escape') { self.setState({ composing: false, draft: '' }); } },
+      addingAngle: S.addingAngle, notAddingAngle: !S.addingAngle, newAngle: S.newAngle,
+      startAngle: function(){ self.setState({ addingAngle: true, newAngle: '' }); },
+      onNewAngle: function(e){ self.setState({ newAngle: e.target.value }); },
+      onNewAngleKey: function(e){ if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addAngle(); } else if (e.key === 'Escape') { e.stopPropagation(); self.setState({ addingAngle: false }); } },
+      addAngle: addAngle,
+      angleHint: S.draftAngle ? 'Ángulo: ' + S.draftAngle + ' · toca de nuevo para quitarlo' : 'Opcional. Si ninguno encaja, guárdalo así o crea uno nuevo.',
+      draftAngles: ANG.map(function(a){ var on = S.draftAngle === a; return { label: a, on: on, pick: function(){ self.setState({ draftAngle: on ? '' : a }); },
+        style: 'height:28px;padding:0 10px;border-radius:20px;font-size:11.5px;' + (on ? 'border:1px solid #4338ca;background:#eef2ff;color:#4338ca;font-weight:600' : 'border:1px solid #e2e8f0;background:#ffffff;color:#64748b') }; }),
+      save: saveNew, cancel: function(){ self.setState({ composing: false, draft: '' }); },
+      saveStyle: 'height:34px;padding:0 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;' + (hasDraft ? 'background:#0d9488;color:#ffffff' : 'background:#e2e8f0;color:#94a3b8'),
+      empty: cards.length === 0 && !S.composing,
+      emptyTitle: q ? 'Ningún hook coincide con "' + S.q + '"' : 'Todavía no hay hooks aquí',
+      emptyBtn: q ? 'Crear "' + S.q + '" como hook' : '+ Nuevo hook',
+      emptyAction: function(){ self.setState({ composing: true, draft: S.q || '', q: '', draftAngle: '', angleOpen: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Plan de implementación · noviitools Studio Ads</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6}
+button,a{font-family:inherit;cursor:pointer}
+.chip:hover{box-shadow:0 3px 10px rgba(15,23,42,.1);transform:translateY(-1px)}
+.chip{transition:box-shadow .12s,transform .12s}
+.cell:hover .addh{opacity:1}
+.addh{opacity:0}
+</style>
+</helmet>
+<div style="font-family: Inter, system-ui, sans-serif; color: #0f172a; background: #eef2f6; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: stretch">
+<div style="flex: 1 1 220px; max-width: 220px; display: flex"><dc-import name="Sidebar" active="Plan de implementación" hint-size="220px,100%"></dc-import></div>
+<main style="flex: 999 1 560px; min-width: 0; padding: 18px 26px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px">
+<div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 4px">NOVAFLEX / Operación</div>
+<h1 style="margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.02em">Plan de implementación</h1>
+<div style="font-size: 12.5px; color: #64748b; margin-top: 3px">Decide el lunes qué sale cada día y comprueba si con eso llegas a la meta.</div>
+</div>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 6px">
+<button type="button" aria-label="Semana anterior" onClick="{{prevWeek}}" style="{{navPrev}}"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+<div style="height: 36px; padding: 0 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600">
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>{{weekLabel}}</div>
+<button type="button" aria-label="Semana siguiente" onClick="{{nextWeek}}" style="{{navNext}}"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
+<a href="Pipeline.dc.html" style="height: 36px; padding: 0 14px; border-radius: 9px; background: #0d9488; color: #ffffff; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Content Pipeline →</a>
+</div>
+</header>
+
+<!-- VEREDICTO -->
+<section style="{{verdict.box}}">
+<span style="{{verdict.icon}}">{{verdict.mark}}</span>
+<div style="flex: 1 1 320px; min-width: 0">
+<div style="font-size: 15px; font-weight: 700">{{verdict.title}}</div>
+<div style="font-size: 12.5px; margin-top: 2px; opacity: .85">{{verdict.sub}}</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11.5px">
+<span style="opacity: .7">Datos de</span>
+<sc-for list="{{sources}}" as="s" hint-placeholder-count="3"><a href="{{s.href}}" title="{{s.tip}}" style="text-decoration: none; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: rgba(255,255,255,.7); color: #0f172a; border: 1px solid rgba(15,23,42,.08)">{{s.label}}</a></sc-for>
+</div>
+</section>
+
+<!-- KPIs -->
+<section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px">
+<sc-for list="{{kpis}}" as="k" hint-placeholder-count="6">
+<a href="{{k.href}}" style="text-decoration: none; color: inherit; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 14px; display: block">
+<div style="font-size: 11.5px; color: #64748b">{{k.label}}</div>
+<div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: {{k.color}}">{{k.value}}</span><span style="font-size: 11.5px; font-weight: 600; color: {{k.deltaColor}}">{{k.delta}}</span></div>
+<sc-if value="{{k.hasBar}}" hint-placeholder-val="{{true}}"><div style="height: 5px; border-radius: 3px; background: #f1f5f9; margin-top: 8px; overflow: hidden"><div style="{{k.bar}}"></div></div></sc-if>
+<div style="font-size: 11px; color: #94a3b8; margin-top: 6px">{{k.sub}}</div>
+</a>
+</sc-for>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start">
+
+<!-- CALENDARIO -->
+<section style="flex: 999 1 640px; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 10px">
+<div><h2 style="margin: 0; font-size: 15px; font-weight: 700">Calendario de lanzamientos</h2><div style="font-size: 12px; color: #94a3b8">Arrastra las piezas para cambiarles el día. Ads y orgánico.</div></div>
+<div style="margin-left: auto; display: flex; flex-wrap: wrap; gap: 10px; font-size: 11.5px; color: #64748b">
+<sc-for list="{{legend}}" as="l" hint-placeholder-count="5"><span style="display: inline-flex; align-items: center; gap: 5px"><span style="{{l.dot}}"></span>{{l.label}}</span></sc-for>
+</div>
+</div>
+
+<sc-if value="{{hasAlerts}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px">
+<sc-for list="{{alerts}}" as="a" hint-placeholder-count="2">
+<div style="{{a.style}}"><span style="font-weight: 700">{{a.tag}}</span> {{a.text}}</div>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="overflow-x: auto">
+<div style="display: grid; grid-template-columns: 92px repeat(7, minmax(96px, 1fr)); gap: 4px; min-width: 800px">
+<div></div>
+<sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+<div style="{{d.head}}">{{d.label}}<span style="display: block; font-size: 10px; font-weight: 600; color: {{d.subColor}}">{{d.sub}}</span></div>
+</sc-for>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<div style="padding: 8px 4px; display: flex; flex-direction: column; justify-content: center">
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: {{r.color}}"><span style="{{r.dot}}"></span>{{r.label}}</span>
+<span style="font-size: 10.5px; color: #94a3b8; padding-left: 14px">{{r.sub}}</span>
+</div>
+<sc-for list="{{r.cells}}" as="c" hint-placeholder-count="7">
+<div class="cell" onDragOver="{{c.over}}" onDragLeave="{{c.leave}}" onDrop="{{c.drop}}" style="{{c.style}}">
+<sc-for list="{{c.items}}" as="x" hint-placeholder-count="1">
+<button type="button" class="chip" draggable="true" onDragStart="{{x.drag}}" onClick="{{x.open}}" style="{{x.style}}">
+<span style="display: flex; align-items: center; gap: 4px"><span style="font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: left">{{x.title}}</span><span style="{{x.mark}}">{{x.markText}}</span></span>
+<span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #64748b; text-align: left">{{x.id}}{{x.chText}}</span>
+<sc-if value="{{x.conflict}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 9.5px; font-weight: 700; color: #c2410c; text-align: left">{{x.conflictText}}</span></sc-if>
+</button>
+</sc-for>
+<sc-if value="{{c.empty}}" hint-placeholder-val="{{true}}"><span class="addh" style="font-size: 10.5px; color: #cbd5e1; display: flex; align-items: center; justify-content: center; height: 100%">Suelta aquí</span></sc-if>
+</div>
+</sc-for>
+</sc-for>
+</div>
+</div>
+
+<!-- sin fecha -->
+<div onDragOver="{{tray.over}}" onDragLeave="{{tray.leave}}" onDrop="{{tray.drop}}" style="{{tray.style}}">
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px"><span style="font-size: 12.5px; font-weight: 700">Del Content Pipeline · sin fecha</span><span style="font-size: 11.5px; color: #94a3b8">{{tray.sub}}</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{tray.items}}" as="x" hint-placeholder-count="3">
+<button type="button" class="chip" draggable="true" onDragStart="{{x.drag}}" onClick="{{x.open}}" style="{{x.trayStyle}}">
+<span style="{{x.stageTag}}">{{x.stage}}</span>
+<span style="font-size: 12px; font-weight: 600">{{x.title}}</span>
+<span style="font-size: 10.5px; color: #64748b">{{x.stageName}} · {{x.readyText}}</span>
+</button>
+</sc-for>
+<sc-if value="{{tray.empty}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #94a3b8">Todo tiene día asignado.</span></sc-if>
+</div>
+</div>
+</section>
+
+<!-- DERECHA -->
+<aside style="flex: 1 1 290px; display: flex; flex-direction: column; gap: 14px">
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px">
+<div style="display: flex; align-items: center; margin-bottom: 4px"><h2 style="margin: 0; font-size: 14px; font-weight: 700">Meta de la semana</h2><a href="Main.dc.html" style="margin-left: auto; font-size: 12px; font-weight: 600; color: #0f766e; text-decoration: none">Cuotas →</a></div>
+<div style="font-size: 11.5px; color: #94a3b8; margin-bottom: 8px">Lanzadas + programadas contra la cuota</div>
+<sc-for list="{{goals}}" as="g" hint-placeholder-count="3">
+<div style="padding: 7px 0">
+<div style="display: flex; align-items: baseline; font-size: 12.5px"><b style="color: {{g.color}}">{{g.label}}</b><span style="color: #94a3b8; margin-left: 6px; font-size: 11.5px">{{g.sub}}</span><span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 600">{{g.n}}</span></div>
+<div style="height: 7px; border-radius: 4px; background: #f1f5f9; margin-top: 6px; overflow: hidden; display: flex"><div style="{{g.barDone}}"></div><div style="{{g.barPlan}}"></div></div>
+<div style="font-size: 11px; color: {{g.noteColor}}; margin-top: 4px">{{g.note}}</div>
+</div>
+</sc-for>
+</section>
+
+<section style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px 16px">
+<div style="display: flex; align-items: center; margin-bottom: 4px"><h2 style="margin: 0; font-size: 14px; font-weight: 700">Rutina de la semana</h2><span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #475569">{{ritualN}}</span></div>
+<div style="height: 5px; border-radius: 3px; background: #f1f5f9; margin: 6px 0 8px; overflow: hidden"><div style="{{ritualBar}}"></div></div>
+<sc-for list="{{ritual}}" as="r" hint-placeholder-count="6">
+<button type="button" role="checkbox" aria-checked="{{r.on}}" onClick="{{r.toggle}}" style="display: flex; align-items: flex-start; gap: 9px; width: 100%; border: none; background: transparent; padding: 6px 0; text-align: left">
+<span style="{{r.box}}"><sc-if value="{{r.on}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></sc-if></span>
+<span style="flex: 1; min-width: 0"><span style="{{r.titleStyle}}">{{r.title}}</span><span style="display: block; font-size: 11px; color: #94a3b8">{{r.day}} · {{r.time}}</span></span>
+</button>
+</sc-for>
+</section>
+</aside>
+</div>
+</main>
+</div>
+
+<!-- PIEZA -->
+<sc-if value="{{pOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: #0f172a">
+<button type="button" aria-label="Cerrar" onClick="{{pm.close}}" style="position: absolute; inset: 0; border: none; background: rgba(15,23,42,.5); cursor: default"></button>
+<div role="dialog" aria-modal="true" aria-label="Pieza" style="position: relative; width: 100%; max-width: 440px; background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden">
+<div style="padding: 18px 20px 6px; display: flex; gap: 10px">
+<div style="flex: 1; min-width: 0">
+<div style="display: flex; align-items: center; gap: 6px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #475569">{{pm.id}}</span><span style="{{pm.stageTag}}">{{pm.stage}}</span><span style="font-size: 11.5px; color: #64748b">{{pm.meta}}</span></div>
+<h2 style="margin: 4px 0 0; font-size: 17px; font-weight: 700">{{pm.title}}</h2>
+<div style="font-size: 12px; color: #64748b; margin-top: 3px">{{pm.when}}</div>
+</div>
+<button type="button" aria-label="Cerrar" onClick="{{pm.close}}" style="border: none; background: transparent; font-size: 20px; line-height: 1; color: #94a3b8; align-self: flex-start">×</button>
+</div>
+<div style="padding: 10px 20px 16px">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+<div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px"><div style="font-size: 11px; color: #94a3b8">Etapa en el Pipeline</div><div style="font-size: 14px; font-weight: 700; margin-top: 2px">{{pm.stageName}}</div></div>
+<div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px"><div style="font-size: 11px; color: #94a3b8">Estará lista</div><div style="font-size: 14px; font-weight: 700; margin-top: 2px; color: {{pm.readyColor}}">{{pm.ready}}</div></div>
+</div>
+<sc-if value="{{pm.conflict}}" hint-placeholder-val="{{false}}"><div style="font-size: 12px; color: #c2410c; background: #fff7ed; border-radius: 9px; padding: 8px 10px; margin-top: 8px">{{pm.conflictText}}</div></sc-if>
+<div style="font-size: 11.5px; color: #94a3b8; margin-top: 8px">{{pm.hint}}</div>
+</div>
+<div style="display: flex; gap: 8px; padding: 14px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9">
+<sc-if value="{{pm.hasDay}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{pm.unschedule}}" style="height: 36px; padding: 0 12px; border: 1px solid #e2e8f0; border-radius: 9px; background: #ffffff; font-size: 12.5px; font-weight: 600; color: #475569">Quitar fecha</button></sc-if>
+<a href="{{pm.href}}" style="margin-left: auto; height: 36px; padding: 0 14px; border-radius: 9px; background: #0f172a; color: #ffffff; font-size: 12.5px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">{{pm.goLabel}} →</a>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasMsg}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; max-width: 520px; width: calc(100% - 48px); box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: Inter, system-ui, sans-serif; font-size: 13px; line-height: 1.45; box-shadow: 0 12px 30px rgba(15,23,42,.25)">{{msg}}</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    // [id, title, row, status, week, day(0=lun..6=dom | null), canal, tipo]
+    var STG = { pub: 'Lanzado', lista: 'Listo para lanzar', prod: 'Producción', plan: 'Guion' };
+    var P = function(a){ return { id: a[0], title: a[1], row: a[2], status: a[3], week: a[4], day: a[5], ch: a[6] || '', type: a[7] || 'Video', stage: a[8] || STG[a[3]] }; };
+    this.state = { week: 0, open: null, over: null, msg: '',
+      ritual: { r1: true, r2: true, r3: true, r4: false, r5: false, r6: false },
+      pieces: [
+        ['SCR_044','POV · Jugador de fútbol','TOFU','pub',0,0,'WEB'], ['SCR_046','Trabajo 10 horas de pie','TOFU','pub',0,1,'WEB'],
+        ['SCR_048','Así se pone en 10 segundos','TOFU','pub',0,3,'WEB'], ['SCR_049','El error con mis esguinces','TOFU','prod',0,4,'WEB','Video','Producción'],
+        ['SCR_047','Mi tobillo ya no se dobla','TOFU','prod',0,6,'WEB','Video','Edición'], ['SCR_050','Si trabajas de pie, mira esto','TOFU','plan',0,null,'WEB','Video','Guion'],
+        ['CAR_057','4 errores al vendar','MOFU','pub',0,2,'WEB','Carrusel'], ['SCR_052','Nosotros vs otras','MOFU','pub',0,3,'WEB'],
+        ['SCR_045','Lo que llega en la caja','MOFU','lista',0,6,'WA'],
+        ['EST_058','2x S/ 99 · versión 2','BOFU','prod',0,5,'WEB','Estático','Revisión'], ['IDEA-063','Reseñas reales de clientes','BOFU','plan',0,null,'WEB','Estático','Idea'],
+        ['ORG_009','Así empacamos tu pedido','ORG','pub',0,0,'','Reel'], ['ORG_011','Tip: cómo ponértela','ORG','pub',0,2,'','Story'], ['ORG_010','Rutina antes de correr','ORG','lista',0,6,'','Reel'],
+        ['SCR_054','Testimonio de corredora','BOFU','prod',0,null,'WEB','Video','Edición'],
+        ['SCR_053','Subir escaleras sin dolor','TOFU','plan',1,0,'WEB','Video','Guion'], ['IDEA-064','Me dolía al caminar','TOFU','plan',1,2,'WEB','Video','Idea']
+      ].map(P) };
+  }
+  renderVals() {
+    var self = this, S = this.state;
+    var TODAY = 6; // domingo 11
+    var WEEKS = [['Semana 41 · 5–11 oct', 5], ['Semana 42 · 12–18 oct', 12]];
+    var DN = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    var ROWS = { TOFU: ['TOFU','Atraer','#16a34a', 6], MOFU: ['MOFU','Confiar','#ca8a04', 3], BOFU: ['BOFU','Convertir','#dc2626', 2], ORG: ['Orgánico','IG / TikTok','#64748b', 0] };
+    var ST = { pub: ['Publicada','#16a34a','#f0fdf4','#bbf7d0'], lista: ['Lista','#2563eb','#eff6ff','#bfdbfe'], prod: ['En producción','#d97706','#fffbeb','#fde68a'], plan: ['Planificada','#94a3b8','#ffffff','#cbd5e1'] };
+    var flash = function(m){ self.setState({ msg: m }); clearTimeout(self.mt); self.mt = setTimeout(function(){ self.setState({ msg: '' }); }, 3200); };
+    var upd = function(id, o){ self.setState({ pieces: S.pieces.map(function(x){ return x.id === id ? Object.assign({}, x, o) : x; }) }); };
+    var wk = S.week, cur = wk === 0;
+    var late = function(x){ return x.week === 0 && x.day !== null && x.day < TODAY && x.status !== 'pub'; };
+    // días que faltan para que esté lista, según su etapa en el Pipeline
+    var LEFT = { 'Idea': 6, 'Guion': 4, 'Producción': 3, 'Edición': 2, 'Revisión': 1, 'Listo para lanzar': 0, 'Lanzado': 0 };
+    var readyAbs = function(x){ return TODAY + (LEFT[x.stage] || 0); };          // índice absoluto (semana 0 = 0..6)
+    var absOf = function(x){ return x.day === null ? null : x.week * 7 + x.day; };
+    var dayName = function(abs){ var w = abs >= 7 ? 1 : 0, d = abs % 7; return DN[d] + ' ' + (WEEKS[w][1] + d); };
+    var conflict = function(x){ var a = absOf(x); return x.status !== 'pub' && a !== null && a >= TODAY && a < readyAbs(x); };
+    var dragTo = function(day){ return function(e){ e.preventDefault(); var id = self.dragId; self.dragId = null;
+      if (!id) { self.setState({ over: null }); return; }
+      var x = S.pieces.filter(function(q){ return q.id === id; })[0];
+      self.setState({ over: null, pieces: S.pieces.map(function(q){ return q.id === id ? Object.assign({}, q, { day: day, week: day === null ? q.week : wk }) : q; }) });
+      if (day !== null) {
+        var abs = wk * 7 + day, ra = readyAbs(x);
+        var act = { 'Idea': 'Escribir guion de', 'Guion': 'Terminar guion de', 'Producción': 'Grabar', 'Edición': 'Editar', 'Revisión': 'Revisar', 'Listo para lanzar': 'Subir a Meta' }[x.stage] || 'Preparar';
+        flash(abs < ra && x.status !== 'pub' ? x.id + ' en ' + dayName(abs) + ' no llega: según su etapa estará lista ~' + dayName(ra) + '.'
+          : x.id + ' programada para el ' + dayName(abs) + '. En Tareas se creó "' + act + ' ' + x.id + ' antes del ' + DN[day] + '".');
+      } }; };
+    var chipOf = function(x){
+      var s = ST[x.status], lt = late(x);
+      return { id: x.id, title: x.title, chText: x.ch ? ' · ' + (x.ch === 'WA' ? 'WA' : 'Web') : ' · ' + x.type, stage: ROWS[x.row][0],
+        drag: function(e){ self.dragId = x.id; try { e.dataTransfer.setData('text/plain', x.id); } catch (er) {} },
+        open: function(){ self.setState({ open: x.id }); },
+        markText: x.status === 'pub' ? '✓' : (lt ? '!' : ''),
+        mark: 'flex-shrink:0;font-size:11px;font-weight:800;color:' + (x.status === 'pub' ? '#16a34a' : '#dc2626'),
+        statusText: s[0], stageName: x.stage,
+        readyText: x.status === 'pub' ? 'lanzada' : (LEFT[x.stage] ? 'lista ~' + dayName(readyAbs(x)) : 'lista ya'),
+        conflict: conflict(x), conflictText: 'No llega: lista ~' + dayName(readyAbs(x)),
+        style: 'display:block;width:100%;border-radius:8px;padding:5px 7px;margin-bottom:4px;background:' + s[2] + ';border:' + (lt ? '1.5px solid #f87171' : (x.status === 'plan' ? '1.5px dashed ' + s[3] : '1px solid ' + s[3])),
+        trayStyle: 'display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:6px 10px;background:#ffffff;border:1.5px dashed #cbd5e1',
+        stageTag: 'font-size:9.5px;font-weight:800;color:' + ROWS[x.row][2] };
+    };
+    var inWeek = S.pieces.filter(function(x){ return x.week === wk && x.day !== null; });
+    var days = DN.map(function(d, i){
+      var isToday = cur && i === TODAY, ads = inWeek.filter(function(x){ return x.day === i && x.row !== 'ORG'; }).length;
+      return { label: d + ' ' + (WEEKS[wk][1] + i), sub: isToday ? 'Hoy' : (ads ? '' : (cur && i < TODAY ? '' : 'Sin Ads')), subColor: isToday ? '#0f766e' : '#cbd5e1',
+        head: 'text-align:center;font-size:12px;font-weight:600;padding:6px 0;border-radius:8px;' + (isToday ? 'background:#f0fdfa;color:#0f766e' : 'color:#475569') };
+    });
+    var rows = Object.keys(ROWS).map(function(k){
+      var R = ROWS[k];
+      return { label: R[0], sub: R[1], color: R[2], dot: 'width:8px;height:8px;border-radius:4px;background:' + R[2],
+        cells: DN.map(function(d, i){
+          var key = k + i, items = inWeek.filter(function(x){ return x.row === k && x.day === i; }).map(chipOf);
+          var over = S.over === key;
+          return { items: items, empty: items.length === 0,
+            over: function(e){ e.preventDefault(); if (S.over !== key) self.setState({ over: key }); },
+            leave: function(){ self.setState({ over: null }); },
+            drop: function(e){
+              var id = self.dragId, x = S.pieces.filter(function(q){ return q.id === id; })[0];
+              if (x && x.row !== k) { e.preventDefault(); self.dragId = null; self.setState({ over: null }); flash(x.id + ' es ' + ROWS[x.row][0] + ': suéltala en su fila.'); return; }
+              dragTo(i)(e); },
+            style: 'min-height:58px;border-radius:9px;padding:4px;box-sizing:border-box;' + (over ? 'background:#f0fdfa;outline:2px dashed #0d9488' : (cur && i === TODAY ? 'background:#f8fffe' : 'background:#f8fafc')) };
+        }) };
+    });
+    var trayItems = S.pieces.filter(function(x){ return x.day === null; }).map(chipOf);
+    var tray = { items: trayItems, empty: trayItems.length === 0, sub: trayItems.length ? 'Arrástralas a un día para programarlas' : '',
+      over: function(e){ e.preventDefault(); if (S.over !== 'tray') self.setState({ over: 'tray' }); }, leave: function(){ self.setState({ over: null }); },
+      drop: dragTo(null),
+      style: 'margin-top:12px;border-radius:12px;padding:10px 12px;' + (S.over === 'tray' ? 'background:#f0fdfa;outline:2px dashed #0d9488' : 'background:#f8fafc') };
+
+    // goals
+    var goals = ['TOFU','MOFU','BOFU'].map(function(k){
+      var R = ROWS[k], ws = S.pieces.filter(function(x){ return x.row === k && x.week === wk; });
+      var done = ws.filter(function(x){ return x.status === 'pub'; }).length;
+      var plan = ws.filter(function(x){ return x.status !== 'pub' && x.day !== null && (!cur || x.day >= TODAY); }).length;
+      var gap = R[3] - done - plan;
+      return { label: k, sub: R[1], color: R[2], n: done + '/' + R[3],
+        barDone: 'height:100%;background:' + R[2] + ';width:' + Math.min(100, done / R[3] * 100) + '%',
+        barPlan: 'height:100%;background:' + R[2] + ';opacity:.3;width:' + Math.max(0, Math.min(100 - done / R[3] * 100, plan / R[3] * 100)) + '%',
+        note: gap > 0 ? (plan ? plan + ' programada' + (plan > 1 ? 's' : '') + ' · faltan ' + gap + ' por programar' : 'Faltan ' + gap + ' por programar') : (done >= R[3] ? 'Cuota cumplida' : 'Con lo programado llegas'),
+        noteColor: gap > 0 ? '#b91c1c' : '#0f766e', gap: gap };
+    });
+
+    // alerts
+    var alerts = [];
+    var lates = S.pieces.filter(late);
+    if (cur && lates.length) alerts.push({ tag: 'Atrasadas:', text: lates.map(function(x){ return x.id + ' (' + DN[x.day] + ')'; }).join(', ') + '. Muévelas a otro día o a la próxima semana.', kind: 'r' });
+    goals.forEach(function(g){ if (g.gap > 0) alerts.push({ tag: g.label + ':', text: 'con lo programado no llegas a la cuota. Faltan ' + g.gap + '. Arrastra una pieza de "Sin fecha" o crea una nueva.', kind: 'a' }); });
+    alerts = alerts.map(function(a){ return { tag: a.tag, text: a.text, style: 'font-size:12px;line-height:1.45;padding:7px 10px;border-radius:9px;' + (a.kind === 'r' ? 'background:#fef2f2;color:#991b1b' : 'background:#fffbeb;color:#92400e') }; });
+
+    // veredicto
+    var gapTotal = goals.reduce(function(a, g){ return a + Math.max(0, g.gap); }, 0);
+    var nConf = S.pieces.filter(function(x){ return x.week === wk && conflict(x); }).length;
+    var reach = goals.reduce(function(a, g){ var R = ROWS[g.label]; return a + Math.min(R[3], R[3] - Math.max(0, g.gap)); }, 0);
+    var missing = goals.filter(function(g){ return g.gap > 0; }).map(function(g){ return g.gap + ' ' + g.label; });
+    var ok = gapTotal === 0 && nConf === 0;
+    var verdict = { mark: ok ? '✓' : '!',
+      title: ok ? 'Con lo programado llegas a la meta' : 'Con lo programado llegas a ' + reach + ' de 11',
+      sub: ok ? 'Solo queda cumplir el calendario.' : [missing.length ? 'Faltan ' + missing.join(' y ') + ' por programar' : '', nConf ? nConf + ' pieza' + (nConf > 1 ? 's' : '') + ' en un día en que todavía no va a estar lista' : ''].filter(Boolean).join(' · ') + '.',
+      box: 'display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;border-radius:14px;padding:12px 16px;' + (ok ? 'background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d' : 'background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12'),
+      icon: 'width:30px;height:30px;border-radius:15px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#ffffff;background:' + (ok ? '#16a34a' : '#ea580c') };
+    var sources = [
+      { label: 'Content Pipeline', href: 'Pipeline.dc.html', tip: 'Las piezas, su etapa y cuándo estarán listas' },
+      { label: 'Testing', href: 'Testing.dc.html', tip: 'Qué ya se publicó: aparece en el Excel de Meta' },
+      { label: 'Embudo', href: 'Main.dc.html', tip: 'Las cuotas por etapa' }
+    ];
+
+    // KPIs
+    var wsAll = S.pieces.filter(function(x){ return x.week === wk && x.row !== 'ORG'; });
+    var launched = wsAll.filter(function(x){ return x.status === 'pub'; }).length, quota = 11;
+    var KP = cur ? [
+      ['Lanzadas', launched + '/' + quota, '', '', true, launched / quota, 'Ads esta semana', 'Main.dc.html', '#0f172a'],
+      ['En producción', String(S.pieces.filter(function(x){ return x.status === 'prod'; }).length), '', '', false, 0, 'Grabando, diseñando o editando', 'Pipeline.dc.html', '#0f172a'],
+      ['Listas para lanzar', String(S.pieces.filter(function(x){ return x.status === 'lista'; }).length), '', '', false, 0, 'Esperando subir a Meta', 'Pipeline.dc.html', '#2563eb'],
+      ['Gasto en Testing', 'US$ 130', '+18%', '#b45309', false, 0, 'vs semana anterior', 'Testing.dc.html', '#0f172a'],
+      ['Costo por compra', 'US$ 8.40', '−12%', '#16a34a', false, 0, 'Web · vs semana anterior', 'Testing.dc.html', '#0f172a'],
+      ['Ganadores nuevos', '1/2', '', '', true, 0.5, 'SCR_046-H1', 'Ganadores.dc.html', '#0f766e']
+    ] : [
+      ['Programadas', String(wsAll.filter(function(x){ return x.day !== null; }).length) + '/' + quota, '', '', true, wsAll.filter(function(x){ return x.day !== null; }).length / quota, 'Ads de la próxima semana', 'Main.dc.html', '#0f172a'],
+      ['Sin fecha', String(trayItems.length), '', '', false, 0, 'Piezas por programar', 'Pipeline.dc.html', '#b45309']
+    ];
+    var kpis = KP.map(function(k){ return { label: k[0], value: k[1], delta: k[2], deltaColor: k[3], hasBar: k[4], sub: k[6], href: k[7], color: k[8],
+      bar: 'height:100%;border-radius:3px;background:#0d9488;width:' + Math.round(Math.min(1, k[5]) * 100) + '%' }; });
+
+    // ritual
+    var RIT = [['r1','Revisar métricas de la semana pasada','Lun','30 min'],['r2','Programar los lanzamientos en el calendario','Lun','30 min'],['r3','Sesión de grabación','Mar','90 min'],
+      ['r4','Revisión de mitad de semana en Testing','Mié','10 min'],['r5','Decidir ganadores y apagar','Vie','30 min'],['r6','Sincronizar Meta y cerrar la semana','Dom','10 min']];
+    var rDone = RIT.filter(function(r){ return S.ritual[r[0]]; }).length;
+    var ritual = RIT.map(function(r){ var on = !!S.ritual[r[0]];
+      return { title: r[1], day: r[2], time: r[3], on: on, toggle: function(){ var o = Object.assign({}, S.ritual); o[r[0]] = !on; self.setState({ ritual: o }); },
+        box: 'width:18px;height:18px;border-radius:5px;flex-shrink:0;margin-top:1px;display:inline-flex;align-items:center;justify-content:center;' + (on ? 'background:#0d9488;border:1px solid #0d9488' : 'background:#ffffff;border:1.5px solid #cbd5e1'),
+        titleStyle: 'display:block;font-size:12.5px;' + (on ? 'color:#94a3b8;text-decoration:line-through' : 'color:#0f172a;font-weight:600') }; });
+
+    // piece modal
+    var X = S.open ? S.pieces.filter(function(q){ return q.id === S.open; })[0] : null, pm = {};
+    if (X) {
+      pm = { id: X.id, title: X.title, stage: ROWS[X.row][0], meta: X.type + (X.ch ? ' · ' + (X.ch === 'WA' ? 'WhatsApp' : 'Web') : ''),
+        stageTag: 'font-size:9.5px;font-weight:800;color:' + ROWS[X.row][2],
+        when: X.day === null ? 'Sin fecha' : DN[X.day] + ' ' + (WEEKS[X.week][1] + X.day) + ' oct' + (late(X) ? ' · atrasada' : ''),
+        hasDay: X.day !== null,
+        states: ['plan','prod','lista','pub'].map(function(k){ var on = X.status === k, s = ST[k];
+          return { label: s[0], pick: function(){ upd(X.id, { status: k }); if (k === 'pub') flash(X.id + ' publicada: suma a la meta de la semana.'); },
+            dot: 'width:8px;height:8px;border-radius:4px;background:' + s[1],
+            style: 'height:36px;border-radius:9px;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;' + (on ? 'border:1.5px solid ' + s[1] + ';background:' + s[2] + ';color:#0f172a' : 'border:1px solid #e2e8f0;background:#ffffff;color:#64748b') }; }),
+        stageName: X.stage, ready: X.status === 'pub' ? 'Ya lanzada' : (LEFT[X.stage] ? '~' + dayName(readyAbs(X)) : 'Ya está lista'),
+        readyColor: conflict(X) ? '#c2410c' : '#0f172a', conflict: conflict(X),
+        conflictText: 'La programaste para el ' + dayName(absOf(X)) + ', pero por su etapa estará lista ~' + dayName(readyAbs(X)) + '. Muévela o apúrala en el Pipeline.',
+        hint: 'La etapa viene del Content Pipeline y "publicada" de Testing. Aquí solo decides el día.',
+        unschedule: function(){ upd(X.id, { day: null }); self.setState({ open: null }); },
+        href: X.row === 'ORG' ? 'Pipeline.dc.html' : (X.status === 'pub' ? 'Testing.dc.html' : 'Pipeline.dc.html'),
+        goLabel: X.status === 'pub' && X.row !== 'ORG' ? 'Ver en Testing' : 'Abrir en el Pipeline',
+        close: function(){ self.setState({ open: null }); } };
+    }
+
+    return {
+      weekLabel: WEEKS[wk][0],
+      prevWeek: function(){ if (wk > 0) self.setState({ week: wk - 1 }); }, nextWeek: function(){ if (wk < WEEKS.length - 1) self.setState({ week: wk + 1 }); },
+      navPrev: 'width:36px;height:36px;border:1px solid #e2e8f0;border-radius:9px;background:#ffffff;display:flex;align-items:center;justify-content:center;' + (wk === 0 ? 'color:#cbd5e1;cursor:default' : 'color:#475569'),
+      navNext: 'width:36px;height:36px;border:1px solid #e2e8f0;border-radius:9px;background:#ffffff;display:flex;align-items:center;justify-content:center;' + (wk === WEEKS.length - 1 ? 'color:#cbd5e1;cursor:default' : 'color:#475569'),
+      verdict: verdict, sources: sources,
+      kpis: kpis, days: days, rows: rows, tray: tray, goals: goals,
+      alerts: alerts, hasAlerts: alerts.length > 0,
+      legend: ['pub','lista','prod','plan'].map(function(k){ return { label: ST[k][0], dot: 'width:9px;height:9px;border-radius:3px;background:' + ST[k][2] + ';border:1.5px ' + (k === 'plan' ? 'dashed ' : 'solid ') + ST[k][1] }; })
+        .concat([{ label: 'Atrasada', dot: 'width:9px;height:9px;border-radius:3px;background:#ffffff;border:1.5px solid #f87171' }]),
+      ritual: ritual, ritualN: rDone + '/' + RIT.length, ritualBar: 'height:100%;border-radius:3px;background:#0d9488;width:' + Math.round(rDone / RIT.length * 100) + '%',
+      pOpen: !!X, pm: pm,
+      hasMsg: !!S.msg, msg: S.msg
+    };
+  }
+}
+</script>
+</body>
+</html>
