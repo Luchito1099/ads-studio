@@ -29,8 +29,11 @@ export function almacenArchivos({ kv, blobs }) {
           obj.Body.on("error", (err) => res.destroy(err)).pipe(res);
           return true;
         } catch (err) {
-          // Archivos subidos antes de configurar S3 siguen en la base.
-          if (err.name !== "NoSuchKey") throw err;
+          /* Cualquier problema con S3 (archivo subido antes de configurarlo,
+           * credenciales mal puestas, bucket equivocado, corte de red) no puede
+           * esconder un video que sí está en la base: se intenta ahí antes de
+           * dar el archivo por perdido. */
+          if (err.name !== "NoSuchKey") console.warn(`[nova] S3 falló al leer ${id} (${err.name || "error"}): se busca en la base`);
         }
       }
       const row = await kv.blobGet(id);

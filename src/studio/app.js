@@ -212,13 +212,15 @@ window.addEventListener('dragover',e=>{if([...e.dataTransfer.types].includes('Fi
 window.addEventListener('drop',e=>{ if(!e.dataTransfer.files.length)return; e.preventDefault(); const piece=UI.modal?byId(S.pieces,UI.modal):null; ingest(e.dataTransfer.files,{toPiece:piece}); });
 
 /* ============ RENDER GENERAL ============ */
-const VIEWS=[['Crear',[['ideas','spark','Ideas de contenido'],['referencias','ref','Biblioteca'],['angulos','angle','Ángulos de venta'],['conceptos','concept','Conceptos'],['hooks','hook','Hooks']]],
-  ['Producir',[['pipeline','pipe','Pipeline']]],['Lanzar',[['embudo','funnel','Embudo']]],['Medir',[['analisis','pareto','Análisis 80/20'],['fatiga','battery','Fatiga'],['competencia','store','Competencia'],['tracker','chart','Tracker']]]];
+const VIEWS=[
+  ['Creativos',[['embudo','funnel','Embudo'],['pipeline','pipe','Content Pipeline'],['hooks','hook','Hooks'],['referencias','ref','Biblioteca'],['conceptos','concept','Formatos'],['angulos','angle','Ángulos de venta'],['ideas','spark','Ideas de contenido']]],
+  ['Resultados',[['analisis','pareto','Análisis 80/20'],['fatiga','battery','Fatiga'],['competencia','store','Competencia'],['tracker','chart','Tracker']]]];
 function counts(){return {ideas:mine(S.ideas).filter(i=>['nueva','aprobada'].includes(i.estado)).length,referencias:mine(S.refs).length,angulos:mine(S.angles).length,conceptos:S.concepts.length,hooks:mine(S.hooks).length,pipeline:mine(S.pieces).length,embudo:mine(S.pieces).filter(p=>p.stage).length,tracker:mine(S.pieces).filter(p=>['lanzado','testing','resultado'].includes(p.status)).length,analisis:S.metaData?.[PID()]?.anuncios?.length||'',fatiga:S.metaData?.[PID()]?.anuncios?.length?'':'',competencia:(S.competidores||[]).length||''};}
 function renderSide(){
   const c=counts();
   $('#side').innerHTML=`
-   <div class="logo"><div class="mk">N</div><div><b>Studio de Ads</b><span>NOVA</span></div></div>
+   <div class="logo"><div class="mk">${ic('funnel')}</div><div><b>noviitools</b><span>STUDIO ADS</span></div></div>
+   <div class="marca"><span class="mk">${esc((S.marca||'NOVA').charAt(0))}</span><div style="min-width:0"><b>${esc(S.marca||'NOVA')}</b><span>${S.products.length} producto${S.products.length===1?'':'s'}</span></div></div>
    <div class="prod"><label for="prodsel">Producto</label>
      <select id="prodsel">${S.products.map(p=>`<option value="${p.id}" ${p.id===PID()?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="__new">+ Agregar producto</option></select></div>
    ${VIEWS.map(([g,items])=>`<div class="grp">${g}</div>`+items.map(([id,i,l])=>`<button class="nav ${UI.view===id?'on':''}" data-view="${id}">${ic(i)}<span>${l}</span><span class="n">${c[id]}</span></button>`).join('')).join('')}
@@ -573,7 +575,7 @@ function vRefs(){
      <div class="lfilters">
        <label class="visually-hidden" for="lff">Formato</label><select id="lff" class="fsel" data-sel="formato"><option value="">Formato</option>${FORMATS.map(x=>`<option value="${x[0]}" ${f.formato===x[0]?'selected':''}>${x[1]}</option>`).join('')}<option value="link" ${f.formato==='link'?'selected':''}>Solo enlace</option></select>
        <label class="visually-hidden" for="lfe">Etapa</label><select id="lfe" class="fsel" data-sel="etapa">${stageOpt(f.etapa,'Etapa')}</select>
-       <label class="visually-hidden" for="lfc">Concepto</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Concepto')}</select>
+       <label class="visually-hidden" for="lfc">Formato creativo</label><select id="lfc" class="fsel" data-sel="concepto">${opt(S.concepts,f.concepto,'Formato')}</select>
        <label class="visually-hidden" for="lfa">Ángulo</label><select id="lfa" class="fsel" data-sel="angulo">${opt(f.scope==='todos'?S.angles:mine(S.angles),f.angulo,'Ángulo')}</select>
        ${[['fuente','Fuente'],['coleccion','Colección'],['marca','Marca']].filter(([k])=>f[k]).map(([k,l])=>`<span class="chip">${l}: ${esc(f[k])}<button class="chipx" data-clear="${k}" aria-label="Quitar filtro ${l}">×</button></span>`).join('')}
        ${hayFiltros?'<button class="linkbtn" id="lclear">Limpiar filtros</button>':''}
@@ -645,14 +647,14 @@ function libCard(r){
     <div class="lb">
       <div style="display:flex;align-items:center;gap:6px"><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.brand||'Sin marca')}</b>${r.rating?`<span class="muted" style="margin-left:auto;font-size:12px" aria-label="${r.rating} de 5">${'★'.repeat(r.rating)}</span>`:''}</div>
       <span class="muted" style="font-size:12px;display:flex;gap:5px;align-items:center">${srcIcon(r.source)}${esc(r.source)}${dur?' · '+tstr(dur):''}</span>
-      ${r.adId?`<span class="muted" style="font-size:11px;font-family:ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}
+      ${r.adId?`<span class="muted" style="font-size:11px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}
       ${hook?`<span class="hookline">“${esc(hook.slice(0,90))}”</span>`:''}
       <div style="display:flex;gap:5px;flex-wrap:wrap">${ex.status==='error'?'<span class="chip lose">Error al extraer</span>':''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}${r.conceptId?`<span class="chip">${esc(byId(S.concepts,r.conceptId)?.name||'')}</span>`:''}${porClasificar(r)?'<span class="chip warn">Por clasificar</span>':''}</div>
       ${progHTML(r.id)}
     </div></div>`;
 }
 function libTable(list){
-  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Formato</th><th>Etapa</th><th>Concepto</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
+  return `<div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Marca</th><th>Fuente</th><th>Formato</th><th>Etapa</th><th>Formato</th><th>Colección</th><th>Guion</th><th>Agregado</th><th></th></tr></thead><tbody>
   ${list.map(r=>`<tr class="lrow" data-id="${r.id}" tabindex="0" style="cursor:pointer">
     <td style="width:52px"><div style="width:40px;height:52px">${r.mediaId?thumbHTML(r.mediaId):`<div class="thumb" style="height:52px;background:#f1f5f9">${srcIcon(r.source)}</div>`}</div></td>
     <td><b>${esc(r.brand||'Sin marca')}</b>${r.notes?`<div class="muted" style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.notes)}</div>`:''}</td>
@@ -692,7 +694,7 @@ async function openExtension(){
         </ul></div>
       <div class="panel" style="padding:12px;display:flex;flex-direction:column;gap:8px;background:#f8fafc">
         <b>Clave de conexión</b>
-        <div style="display:flex;gap:6px"><label class="visually-hidden" for="xkey">Clave</label><input id="xkey" readonly value="${esc(st.clave||'')}" type="password" style="flex-grow:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-family:ui-monospace,Menlo,monospace;font-size:12px"><button class="btn ghost sm" id="xshow">Mostrar</button><button class="btn ghost sm" id="xcopy">Copiar</button><button class="btn ghost sm" id="xnew">Regenerar</button></div>
+        <div style="display:flex;gap:6px"><label class="visually-hidden" for="xkey">Clave</label><input id="xkey" readonly value="${esc(st.clave||'')}" type="password" style="flex-grow:1;height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-family:var(--mono);font-size:12px"><button class="btn ghost sm" id="xshow">Mostrar</button><button class="btn ghost sm" id="xcopy">Copiar</button><button class="btn ghost sm" id="xnew">Regenerar</button></div>
         <span class="hint">Si instalaste la extensión desde otro lado o regeneras la clave, pégala en las opciones de la extensión junto con esta dirección: <code>${esc(location.origin)}</code></span>
       </div>
       <details class="hint"><summary style="cursor:pointer">Publicarla en Chrome Web Store</summary>
@@ -1029,7 +1031,7 @@ function renderRefModal(){
     const a=ex.analysis;
     right=`<div class="panel" style="padding:14px;background:#f8fafc;display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Desglose con IA</b><span class="hint">Usa el guion extraído y la ficha de ${esc(prod().name)}.</span><button class="btn sm" id="rgp" style="margin-left:auto">${UI.refPrompt?'Regenerar prompt':'Generar prompt'}</button></div>
-        ${UI.refPrompt?`<div class="field"><label for="rpt">Prompt</label><textarea id="rpt" style="min-height:200px;font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(buildRefPrompt(r))}</textarea></div>
+        ${UI.refPrompt?`<div class="field"><label for="rpt">Prompt</label><textarea id="rpt" style="min-height:200px;font-family:var(--mono);font-size:12px">${esc(buildRefPrompt(r))}</textarea></div>
         <div><button class="btn sm" id="rpc">Copiar prompt</button></div>
         <div class="field"><label for="rpa">Pega la respuesta de la IA</label><textarea id="rpa" placeholder='{"hook": {...}, "bloques": [...]}'></textarea></div>
         <div style="display:flex;gap:8px"><button class="btn sm" id="rpapply">Aplicar desglose</button><button class="btn ghost sm" id="rpx">Cerrar</button></div>`:''}
@@ -1037,7 +1039,7 @@ function renderRefModal(){
       ${a?`<div class="panel" style="padding:14px;display:flex;flex-direction:column;gap:12px">
         ${a.hook?`<div><div class="section-t">Hook</div><p style="margin:6px 0 2px;font-size:15px;font-weight:700">“${esc(a.hook.texto)}”</p><span class="chip">${esc(a.hook.tipo||'')}</span><p class="hint" style="margin:6px 0 0">${esc(a.hook.por_que_funciona||'')}</p></div>`:''}
         ${a.por_que?`<div><div class="section-t">Por qué funciona</div><p style="margin:6px 0 0;line-height:1.5">${esc(a.por_que)}</p></div>`:''}
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${a.concepto?`<span class="chip">Concepto: ${esc(a.concepto)}</span>`:''}${a.angulo?`<span class="chip ang">Ángulo: ${esc(a.angulo)}</span>`:''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${a.concepto?`<span class="chip">Formato: ${esc(a.concepto)}</span>`:''}${a.angulo?`<span class="chip ang">Ángulo: ${esc(a.angulo)}</span>`:''}${r.stage?`<span class="chip ${r.stage}">${r.stage}</span>`:''}</div>
         ${a.lenguaje?.length?`<div><div class="section-t">Lenguaje del público</div><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">${a.lenguaje.map((l,i)=>`<div style="display:flex;gap:8px;align-items:center"><span style="flex-grow:1">“${esc(l)}”</span><button class="btn ghost sm" data-lh="${i}">Guardar como hook</button></div>`).join('')}</div></div>`:''}
         ${a.adaptacion?.hook||a.adaptacion?.idea?`<div class="panel" style="padding:12px;background:#f0fdfa;border-color:#99f6e4"><div class="section-t">Adaptación para ${esc(prod().name)}</div>${a.adaptacion.hook?`<p style="margin:6px 0 2px;font-weight:700">“${esc(a.adaptacion.hook)}”</p>`:''}<p class="hint" style="margin:0">${esc(a.adaptacion.idea||'')}</p>
           <div style="display:flex;gap:6px;margin-top:8px"><button class="btn sm" id="radapt">Crear pieza con esta adaptación</button><button class="btn ghost sm" id="raidea">Guardar como idea</button>${a.adaptacion.hook?'<button class="btn ghost sm" id="rahook">Guardar hook</button>':''}</div></div>`:''}
@@ -1066,7 +1068,7 @@ function renderRefModal(){
           ${sug.stage?`<button class="sugb" data-sugstage="${sug.stage}">${ic('spark','sm')}Sugerido: ${sug.stage}</button>`:''}</div>
         <div class="field"><span class="lbl">Formato</span><div class="chips">${FORMATS.map(f=>`<button class="chipb ${r.format===f[0]?'on dark':''}" data-fmt="${f[0]}">${f[1]}</button>`).join('')}</div></div>
         <div class="grid2">
-          <div class="field"><label for="dc">Concepto</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
+          <div class="field"><label for="dc">Formato creativo</label><select id="dc" data-rf="conceptId">${opt(S.concepts,r.conceptId)}</select></div>
           <div class="field"><label for="dco">Colección</label><select id="dco" data-rf="collection"><option value="">Sin colección</option>${libCollections().map(c=>`<option ${c===r.collection?'selected':''}>${esc(c)}</option>`).join('')}<option value="__nueva">+ Nueva colección…</option></select></div>
         </div>
         ${sug.concepto?`<button class="sugb" data-sugcon="${esc(sug.concepto)}">${ic('spark','sm')}Sugerido: ${esc(sug.concepto)}</button>`:''}
@@ -1096,7 +1098,7 @@ function renderRefModal(){
     </div>`;
   }
   ov.innerHTML=`<div class="modal" style="max-width:1180px" role="dialog" aria-modal="true" aria-labelledby="rt">
-    <div class="mh"><b id="rt">${esc(r.brand||'Referencia sin marca')}</b>${r.adId?`<span class="chip" style="font-family:ui-monospace,Menlo,monospace" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}<span class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>${ready?'<span class="chip win">Guion extraído</span>':''}<button class="btn ghost sm" id="rx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
+    <div class="mh"><b id="rt">${esc(r.brand||'Referencia sin marca')}</b>${r.adId?`<span class="chip" style="font-family:var(--mono)" title="ID del anuncio o publicación">ID ${esc(r.adId)}</span>`:''}<span class="muted" style="font-size:13px">${esc(r.source)}${ex.duration?' · '+tstr(ex.duration):''}</span>${ready?'<span class="chip win">Guion extraído</span>':''}<button class="btn ghost sm" id="rx" style="margin-left:auto" aria-label="Cerrar">${ic('x','sm')}</button></div>
     <div class="rgrid">
       <div class="rleft">
         <div class="rplayer" id="rplayer">${r.mediaId?'':`<div class="rsube">${ic(r.kind==='link'?'link':'up')}<p>${r.kind==='link'?'Solo enlace: carga el video o la imagen para extraer el guion':'Carga el video o la imagen para ver la sincronización con el guion'}</p><button class="btn sm" id="rpick">Elegir archivo</button></div>`}</div>
@@ -1230,7 +1232,7 @@ function buildIdeasPrompt(n){
 ## Ángulos de venta
 ${angs}
 
-## Conceptos disponibles
+## Formatos disponibles
 ${cons}
 ${ganadores?`\n## Lo que ya ganó (partir de aquí para variantes)\n${ganadores}\n`:''}${refs?`\n## Aprendizajes de referencias\n${refs}\n`:''}${ya?`\n## Ideas que ya tengo (no las repitas)\n${ya}\n`:''}
 ## Qué necesito
@@ -1284,7 +1286,7 @@ function vIdeas(){
     ${UI.ideaPrompt?`<div class="panel" style="padding:14px;background:#f8fafc;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Generar ideas con IA</b><span class="hint">Usa la ficha de ${esc(prod().name)}, sus ángulos, lo que ya ganó y las ideas que ya tienes.</span>
         <label class="hint" for="inum" style="margin-left:auto">Cantidad</label><select id="inum" class="fsel">${[5,10,15,20].map(n=>`<option ${n===(UI.ideaN||10)?'selected':''}>${n}</option>`).join('')}</select></div>
-      <div class="field"><label for="ipt">Prompt listo para Claude o ChatGPT</label><textarea id="ipt" style="min-height:200px;font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(buildIdeasPrompt(UI.ideaN||10))}</textarea></div>
+      <div class="field"><label for="ipt">Prompt listo para Claude o ChatGPT</label><textarea id="ipt" style="min-height:200px;font-family:var(--mono);font-size:12px">${esc(buildIdeasPrompt(UI.ideaN||10))}</textarea></div>
       <div><button class="btn sm" id="ipc">Copiar prompt</button></div>
       <div class="field"><label for="ipa">Pega aquí la respuesta de la IA</label><textarea id="ipa" placeholder='{"ideas": [...]}'></textarea></div>
       <div style="display:flex;gap:8px"><button class="btn sm" id="ipapply">Agregar ideas</button><button class="btn ghost sm" id="ipx">Cerrar</button></div>
@@ -1357,7 +1359,7 @@ function ideaForm(i=null){
     <div class="grid3">
       <div class="field"><label for="if">Formato</label><select id="if"><option value="">—</option>${FORMATS.map(x=>`<option value="${x[0]}" ${x[0]===d.formato?'selected':''}>${x[1]}</option>`).join('')}</select></div>
       <div class="field"><label for="ia2">Ángulo</label><select id="ia2">${opt(mine(S.angles),d.angleId)}</select></div>
-      <div class="field"><label for="ic2">Concepto</label><select id="ic2">${opt(S.concepts,d.conceptId)}</select></div>
+      <div class="field"><label for="ic2">Formato creativo</label><select id="ic2">${opt(S.concepts,d.conceptId)}</select></div>
     </div>
     <div class="grid3">
       <div class="field"><label for="ie">Etapa</label><select id="ie">${stageOpt(d.stage)}</select></div>
@@ -1409,13 +1411,13 @@ function angleForm(a=null){
 
 /* ============ CONCEPTOS ============ */
 function vConcepts(){
-  setTop('Conceptos','El formato creativo: cómo cuentas el ángulo. Compartidos entre productos.',`<button class="btn" id="cnew">${ic('plus','sm')}Concepto</button>`);
+  setTop('Formatos','Cómo se hace la pieza: UGC, voz en off, testimonio… Compartidos entre productos.',`<button class="btn" id="cnew">${ic('plus','sm')}Concepto</button>`);
   const rows=S.concepts.map(c=>{const ps=mine(S.pieces).filter(p=>p.conceptId===c.id);const wins=ps.filter(p=>result(p)==='Ganador').length;
     const spend=ps.reduce((s,p)=>s+(p.spend||0),0),conf=ps.reduce((s,p)=>s+(p.conf||0),0);
     const st=wins?'<span class="chip win">Validado</span>':ps.some(p=>['lanzado','testing'].includes(p.status))?'<span class="chip warn">En prueba</span>':'<span class="chip">Sin probar</span>';
     return `<tr><td><b>${esc(c.name)}</b></td><td class="num">${mine(S.refs).filter(r=>r.conceptId===c.id).length}</td><td class="num">${mine(S.hooks).filter(h=>h.conceptId===c.id).length}</td><td class="num">${ps.length}</td><td class="num">${wins}</td><td class="num">${conf?money(spend/conf):'—'}</td><td>${st}</td><td style="text-align:right"><button class="btn ghost sm" data-ren="${c.id}">Renombrar</button></td></tr>`;}).join('');
   $('#body').innerHTML=`<div class="panel" style="padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:center"><span class="chip">Regla A/B</span><span class="muted">Las variantes de hook se prueban solo sobre conceptos validados en ${esc(prod().name)}.</span></div>
-    <div class="panel" style="overflow:auto"><table><thead><tr><th>Concepto</th><th class="num">Referencias</th><th class="num">Hooks</th><th class="num">Piezas</th><th class="num">Ganadores</th><th class="num">CPA real</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <div class="panel" style="overflow:auto"><table><thead><tr><th>Formato</th><th class="num">Referencias</th><th class="num">Hooks</th><th class="num">Piezas</th><th class="num">Ganadores</th><th class="num">CPA real</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
   $('#cnew').onclick=()=>{const n=prompt('Nombre del concepto');if(n&&n.trim()){S.concepts.push({id:uid('c'),name:n.trim()});save();render();}};
   document.querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{const c=byId(S.concepts,b.dataset.ren);const n=prompt('Nuevo nombre',c.name);if(n&&n.trim()){c.name=n.trim();save();render();}});
 }
@@ -1426,7 +1428,7 @@ function vHooks(){
   const f=UI.hookStage||'todas';
   const list=mine(S.hooks).filter(h=>f==='todas'||h.stage===f);
   $('#body').innerHTML=`<div class="seg" id="hf" style="margin-bottom:12px">${['todas',...STAGES].map(s=>`<button data-k="${s}" class="${f===s?'on':''}">${s==='todas'?'Todas las etapas':s}</button>`).join('')}</div>
-   <div class="panel" style="overflow:auto">${list.length?`<table><thead><tr><th>Hook</th><th>Tipo</th><th>Ángulo</th><th>Concepto</th><th>Etapa</th><th>Origen</th><th>Usado en</th><th></th></tr></thead><tbody>
+   <div class="panel" style="overflow:auto">${list.length?`<table><thead><tr><th>Hook</th><th>Tipo</th><th>Ángulo</th><th>Formato</th><th>Etapa</th><th>Origen</th><th>Usado en</th><th></th></tr></thead><tbody>
    ${list.map(h=>{const used=mine(S.pieces).filter(p=>p.hookId===h.id).map(p=>p.code).join(', ');
      return `<tr><td style="min-width:320px;white-space:normal"><b>${esc(h.text)}</b></td><td><span class="chip">${esc(h.type)}</span></td><td>${h.angleId?`<span class="chip ang">${esc(byId(S.angles,h.angleId)?.name||'')}</span>`:'—'}</td><td>${esc(byId(S.concepts,h.conceptId)?.name||'—')}</td><td>${h.stage?`<span class="chip ${h.stage}">${h.stage}</span>`:'—'}</td><td class="muted">${esc(h.origin||'')}</td><td class="muted">${esc(used||'—')}</td><td style="text-align:right"><button class="btn ghost sm" data-h="${h.id}">Editar</button></td></tr>`;}).join('')}
    </tbody></table>`:`<div class="empty" style="border:0">Sin hooks en esta etapa.</div>`}</div>`;
@@ -1441,7 +1443,7 @@ function hookForm(h=null){
     <div class="grid2"><div class="field"><label for="hy">Tipo</label><select id="hy">${HOOK_TYPES.map(t=>`<option ${t===d.type?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="field"><label for="ho">Origen</label><select id="ho">${['Propio','Referencia','Claude','Comentarios / chats'].map(t=>`<option ${t===d.origin?'selected':''}>${t}</option>`).join('')}</select></div></div>
     <div class="grid3"><div class="field"><label for="ha">Ángulo</label><select id="ha">${opt(mine(S.angles),d.angleId)}</select></div>
-    <div class="field"><label for="hc">Concepto</label><select id="hc">${opt(S.concepts,d.conceptId)}</select></div>
+    <div class="field"><label for="hc">Formato creativo</label><select id="hc">${opt(S.concepts,d.conceptId)}</select></div>
     <div class="field"><label for="hs">Etapa</label><select id="hs">${stageOpt(d.stage)}</select></div></div>`,
     ()=>{const v={text:$('#ht').value.trim(),type:$('#hy').value,origin:$('#ho').value,angleId:$('#ha').value,conceptId:$('#hc').value,stage:$('#hs').value};
       if(!v.text){toast('Escribe el hook');return false;} if(h)Object.assign(h,v);else S.hooks.push({id:uid('h'),productId:PID(),...v});save();render();},
@@ -1469,7 +1471,7 @@ function pieceCard(p){
     </div></div>`;
 }
 function vPipeline(){
-  setTop('Pipeline',`Piezas de ${prod().name} del guion al resultado · arrastra las tarjetas entre columnas`,`<button class="btn" id="pnew">${ic('plus','sm')}Nueva pieza</button>`);
+  setTop('Content Pipeline',`Piezas de ${prod().name} del guion al resultado · arrastra las tarjetas entre columnas`,`<button class="btn" id="pnew">${ic('plus','sm')}Nueva pieza</button>`);
   const sf=UI.stageFilter, af=UI.angleFilter||'';
   const list=mine(S.pieces).filter(p=>(sf==='todas'||p.stage===sf||(sf==='sin'&&!p.stage))&&(!af||p.angleId===af));
   $('#body').innerHTML=`
@@ -1537,7 +1539,7 @@ function buildPrompt(p){
 - Formato: ${fmt}
 - Etapa del embudo: ${p.stage||'[elige TOFU, MOFU o BOFU]'}${p.stage?` — objetivo: ${STAGE_GOAL[p.stage]}`:''}
 - Ángulo de venta: ${ang?`${ang.name}. Deseo o dolor: ${ang.deseo||'—'}. ${ang.desc||''}`:'[define el ángulo]'}
-- Concepto creativo: ${con?con.name:'[elige un concepto]'}
+- Formato creativo: ${con?con.name:'[elige un formato]'}
 - Hook base: ${hook?`"${hook.text}" (${hook.type})`:'[propón uno]'}
 ${ref?`- Referencia de inspiración: ${ref.brand||'sin marca'} (${ref.source}). Lo que rescato: ${ref.notes||'—'}${ref.extract?.analysis?.por_que?' Por qué funciona: '+ref.extract.analysis.por_que:''}\n`:''}- Datos del producto y oferta: ${pr.brief?pr.brief.replace(/\n+/g,' · '):'[completa aquí: beneficios reales, precio, packs, garantía]'}
 
@@ -1587,7 +1589,7 @@ function renderModal(){
         <div class="field"><label for="mse">Etapa</label><select id="mse">${stageOpt(p.stage)}</select></div>
       </div>
       <div class="grid2">
-        <div class="field"><label for="mco">Concepto</label><select id="mco">${opt(S.concepts,p.conceptId,'Elegir')}</select></div>
+        <div class="field"><label for="mco">Formato creativo</label><select id="mco">${opt(S.concepts,p.conceptId,'Elegir')}</select></div>
         <div class="field"><label for="mho">Hook</label><select id="mho"><option value="">—</option>${mine(S.hooks).map(h=>`<option value="${h.id}" ${h.id===p.hookId?'selected':''}>${esc(h.text.slice(0,70))}</option>`).join('')}</select></div>
       </div>
 
@@ -1598,7 +1600,7 @@ function renderModal(){
         </div>
         ${UI.promptOpen?`
         <div class="field"><label for="pbrief">Ficha de ${esc(prod().name)} (se guarda y se reutiliza en todos sus prompts)</label><textarea id="pbrief" placeholder="Beneficios reales, material, talla, precio, packs, garantía, envío">${esc(prod().brief||'')}</textarea></div>
-        <div class="field"><label for="ptxt">Prompt listo para Claude o ChatGPT</label><textarea id="ptxt" style="min-height:220px;font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(buildPrompt(p))}</textarea></div>
+        <div class="field"><label for="ptxt">Prompt listo para Claude o ChatGPT</label><textarea id="ptxt" style="min-height:220px;font-family:var(--mono);font-size:12px">${esc(buildPrompt(p))}</textarea></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="pcopy">Copiar prompt</button><span class="hint" style="align-self:center">Revisa lo que quede entre corchetes antes de enviarlo.</span></div>
         <div class="field"><label for="pans">Pega aquí la respuesta de la IA</label><textarea id="pans" placeholder='{"bloques": [...], "copy": {...}}'></textarea></div>
         <div style="display:flex;gap:8px"><button class="btn sm" id="papply">Aplicar al guion y al copy</button><button class="btn ghost sm" id="pclose">Cerrar</button></div>`:''}
@@ -1651,7 +1653,7 @@ function renderModal(){
         <div class="field"><label for="mti">Título interno</label><input id="mti" value="${esc(p.title)}"></div>
         <div class="field"><label for="mst">Estado</label><select id="mst">${STATUS.filter(s=>s[0]!=='resultado').map(s=>`<option value="${s[0]}" ${s[0]===p.status?'selected':''}>${s[1]}</option>`).join('')}</select></div>
       </div>
-      <div class="field"><label for="mcode">Nombre del anuncio</label><div style="display:flex;gap:6px"><input id="mcode" value="${esc(p.adName||'')}" placeholder="${esc(suggestCode(p))}" style="font-family:ui-monospace,Menlo,monospace;font-size:12px"><button class="btn ghost sm" id="msug" style="height:38px">Sugerir</button></div></div>
+      <div class="field"><label for="mcode">Nombre del anuncio</label><div style="display:flex;gap:6px"><input id="mcode" value="${esc(p.adName||'')}" placeholder="${esc(suggestCode(p))}" style="font-family:var(--mono);font-size:12px"><button class="btn ghost sm" id="msug" style="height:38px">Sugerir</button></div></div>
       <div class="section-t">Resultados</div>
       <div class="grid3">
         <div class="field"><label for="msp">Gasto S/</label><input id="msp" type="number" min="0" step="0.1" value="${p.spend??''}"></div>
@@ -1834,7 +1836,7 @@ function vTracker(){
      </div>
      <div class="hint" style="margin-top:8px">La línea negra marca el tope de CPA.</div>
    </div>
-   <div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Pieza</th><th>Etapa</th><th>Ángulo</th><th>Concepto</th><th>Estado</th><th class="num">Gasto S/</th><th class="num">Confirmados</th><th class="num">Entregados</th><th class="num">CPA real</th><th>Resultado</th></tr></thead><tbody>
+   <div class="panel" style="overflow:auto"><table><thead><tr><th></th><th>Pieza</th><th>Etapa</th><th>Ángulo</th><th>Formato</th><th>Estado</th><th class="num">Gasto S/</th><th class="num">Confirmados</th><th class="num">Entregados</th><th class="num">CPA real</th><th>Resultado</th></tr></thead><tbody>
    ${ps.map(p=>{const c=cpa(p),r=result(p);return `<tr>
      <td style="width:56px"><button style="border:0;padding:0;background:none;width:44px;height:44px;display:block" data-open="${p.id}" aria-label="Abrir ${esc(p.code)}"><div style="width:44px;height:44px">${thumbHTML(p.mediaIds[0],'—')}</div></button></td>
      <td><b>${esc(p.code)}</b><div class="muted" style="font-size:12px">${esc(p.title)}</div></td>
@@ -2243,7 +2245,7 @@ function bloqueClave(c){
     <p class="hint" style="margin:6px 0 8px">Con esta clave Claude deja en la app los datos de Meta y los anuncios activos de la competencia. No es una credencial de Meta.</p>
     ${c&&c.hay?`<p class="hint" style="margin:0;color:var(--accent-ink)">${ic('check','sm')}${enEntorno?'Configurada en el servidor (SYNC_TOKEN).':'Lista: generada desde aquí y guardada en la base.'}</p>`
       :`<p class="hint" style="margin:0;color:var(--amber)">Todavía no hay clave: sin ella Claude no puede dejarte datos.</p>`}
-    ${c&&c.clave?`<div class="withbtn" style="margin-top:8px"><input id="stkey" readonly value="${esc(c.clave)}" style="font-family:ui-monospace,Menlo,monospace;font-size:12px"><button class="btn ghost sm" id="stkeycopy">Copiar</button></div>
+    ${c&&c.clave?`<div class="withbtn" style="margin-top:8px"><input id="stkey" readonly value="${esc(c.clave)}" style="font-family:var(--mono);font-size:12px"><button class="btn ghost sm" id="stkeycopy">Copiar</button></div>
       <p class="hint" style="margin:6px 0 0">Pégala en el archivo <code>.env</code> de tu carpeta del proyecto, en la línea <code>SYNC_TOKEN=</code>. Después dile a Claude: <b>revisa la competencia</b>.</p>`:''}
     ${enEntorno?'':`<button class="btn sm" id="stkeynew" style="margin-top:8px">${c&&c.hay?'Generar una clave nueva':'Generar clave'}</button>`}
   </div>`;
