@@ -21,6 +21,9 @@ import { escribirZip } from "./zip.js";
 const ESTADO = "studio:state:v2";
 const PREFIJO_MEDIA = "studio:media:";
 const PREFIJO_RESPALDO = "studio:respaldo:";
+/* Lo único de `meta` que viaja en el respaldo: claves de servicio, nunca el
+ * secreto de sesión (ese se queda donde está para no cerrarle la sesión a nadie). */
+const CLAVES_META = ["swipe_token", "sync_token"];
 
 const EXT = {
   "video/mp4": ".mp4", "video/quicktime": ".mov", "video/webm": ".webm", "video/x-matroska": ".mkv",
@@ -72,6 +75,13 @@ export function respaldoRouter({ kv, almacen, requireAuth, wrap }) {
     });
   }));
 
+  /** Devuelve las claves de servicio al restaurar. Solo esas dos. */
+  router.post("/meta", requireAuth, wrap(async (req, res) => {
+    const entradas = Object.entries(req.body || {}).filter(([k, v]) => CLAVES_META.includes(k) && typeof v === "string" && v);
+    for (const [k, v] of entradas) await kv.metaSet(k, v);
+    res.json({ ok: true, puestas: entradas.map(([k]) => k) });
+  }));
+
   router.get("/", requireAuth, wrap(async (_req, res) => {
     const filas = await kv.all();
     const estado = filas.find((f) => f.key === ESTADO);
@@ -85,8 +95,12 @@ export function respaldoRouter({ kv, almacen, requireAuth, wrap }) {
     res.setHeader("Content-Disposition", `attachment; filename="novitools-respaldo-${hoy()}.zip"`);
     res.setHeader("Cache-Control", "no-store");
 
+    /* La clave de Nova Swipe y la de Claude viven en `meta`, no en `kv`: sin
+     * ellas, al restaurar la extensión sigue mandando una clave que ya no vale. */
+    const meta = (await kv.metaAll()).filter((m) => CLAVES_META.includes(m.key));
+
     const zip = escribirZip(res);
-    await zip.agregar("estado.json", Buffer.from(JSON.stringify({ respaldadoEl: new Date().toISOString(), items }), "utf8"));
+    await zip.agregar("estado.json", Buffer.from(JSON.stringify({ respaldadoEl: new Date().toISOString(), items, meta }), "utf8"));
 
     const guardados = [];
     const faltan = [];

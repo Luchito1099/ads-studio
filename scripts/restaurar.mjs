@@ -121,7 +121,7 @@ if (!estado) {
   console.error("Este zip no tiene estado.json: no es un respaldo del Studio.");
   process.exit(1);
 }
-const { items } = JSON.parse(zip.datos(estado).toString("utf8"));
+const { items, meta = [] } = JSON.parse(zip.datos(estado).toString("utf8"));
 const medios = zip.archivos.filter((a) => a.nombre.startsWith("medios/") && a.crudo > 0);
 const info = manifiesto ? JSON.parse(zip.datos(manifiesto).toString("utf8")) : null;
 const filaEstado = items.find((i) => i.key === ESTADO);
@@ -156,6 +156,8 @@ if (!forzar) {
 let claves = 0;
 for (const it of items) { await kv.set(it.key, it.value); claves++; }
 console.log(`Claves escritas: ${claves}`);
+for (const m of meta) await kv.metaSet(m.key, m.value);
+if (meta.length) console.log(`Claves de servicio: ${meta.map((m) => m.key).join(", ")}`);
 
 let puestos = 0, pesados = 0;
 for (const a of medios) {

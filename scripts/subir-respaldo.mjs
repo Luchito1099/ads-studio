@@ -98,7 +98,7 @@ if (!fs.existsSync(archivo)) { console.error(`No existe ${archivo}`); process.ex
 const zip = abrirZip(fs.readFileSync(archivo));
 const entradaEstado = zip.archivos.find((a) => a.nombre === "estado.json");
 if (!entradaEstado) { console.error("El zip no tiene estado.json: no es un respaldo del Studio."); process.exit(1); }
-const { items } = JSON.parse(zip.datos(entradaEstado).toString("utf8"));
+const { items, meta = [] } = JSON.parse(zip.datos(entradaEstado).toString("utf8"));
 const manifiesto = zip.archivos.find((a) => a.nombre === "manifiesto.json");
 const info = manifiesto ? JSON.parse(zip.datos(manifiesto).toString("utf8")) : null;
 const medios = zip.archivos.filter((a) => a.nombre.startsWith("medios/") && a.crudo > 0);
@@ -165,6 +165,16 @@ for (const it of items) {
   if (claves % 20 === 0) process.stdout.write(`  ${claves}/${items.length} claves        \r`);
 }
 console.log(`  ${claves}/${items.length} claves        `);
+
+/* Las claves de servicio van al final: si la base es nueva, la extensión vuelve
+ * a funcionar sin reinstalarla. */
+if (meta.length) {
+  const cuerpo = {};
+  for (const m of meta) cuerpo[m.key] = m.value;
+  const r = await fetch(BASE + "/api/respaldo/meta", { method: "POST", headers: { cookie, "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+  console.log(r.ok ? `  claves de servicio devueltas: ${meta.map((m) => m.key).join(", ")}`
+    : `  OJO: no pude devolver las claves de servicio (${r.status}). La extensión va a necesitar que la descargues de nuevo.`);
+}
 
 const final = await (await fetch(BASE + "/api/kv?key=" + encodeURIComponent(ESTADO), { headers: { cookie } })).json();
 console.log(`\nLISTO: la Biblioteca de ${BASE} quedó con ${cuenta(final.value, "refs")} anuncios y ${subidos} archivos.`);
